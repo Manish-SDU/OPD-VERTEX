@@ -1,6 +1,6 @@
 """SQL repository stubs.
 
-Mats: implement each class below. They receive a SQLAlchemy Session
+Gabriele and Mats: implement each class below. They receive a SQLAlchemy Session
 and must translate between domain models (app/domain/*/models.py)
 and ORM rows (app/infrastructure/db/sql/models/tables.py).
 

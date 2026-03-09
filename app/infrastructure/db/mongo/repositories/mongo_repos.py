@@ -1,6 +1,6 @@
 """MongoDB repository stubs.
 
-Gabriele: implement each class below. They receive a pymongo Database
+Mats and Gabriele: implement each class below. They receive a pymongo Database
 and must translate between domain models (app/domain/*/models.py)
 and raw MongoDB documents.
 
