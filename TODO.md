@@ -5,12 +5,12 @@ The app currently boots with **in-memory mocks**. Your job is to implement the r
 
 ---
 
-## Mats — SQL (MySQL)
+## Mats and Gabriele — SQL (MySQL)
 
 ### What's already done
-- **ORM models**: `app/infrastructure/db/sql/models/tables.py` — all 5 tables (staff, patients, consultations, prescriptions, audit_logs) with correct columns, FKs, and constraints
-- **Connection helper**: `app/infrastructure/db/sql/connection.py` — `get_engine()` and `get_session()`
-- **Alembic config**: `alembic.ini` + `alembic/env.py` — reads DB URL from app settings
+- **ORM models**: `app/infrastructure/db/sql/models/tables.py` - all 5 tables (staff, patients, consultations, prescriptions, audit_logs) with correct columns, FKs, and constraints
+- **Connection helper**: `app/infrastructure/db/sql/connection.py` - `get_engine()` and `get_session()`
+- **Alembic config**: `alembic.ini` + `alembic/env.py` - reads DB URL from app settings
 - **Domain models** (the Pydantic classes your repos return): `app/domain/auth/models.py`, `app/domain/patients/models.py`, `app/domain/consultations/models.py`, `app/domain/prescriptions/models.py`, `app/domain/audit/models.py`
 
 ### What you need to do
@@ -26,9 +26,9 @@ The app currently boots with **in-memory mocks**. Your job is to implement the r
 3. **Implement 5 repository classes** in `app/infrastructure/db/sql/repositories/sql_repos.py`:
    - `SqlStaffRepository(StaffRepository)` — implement `get_by_email()`, `get_by_id()`
    - `SqlPatientRepository(PatientRepository)` — implement `list_all()`, `get_by_id()`, `create()`
-   - `SqlConsultationRepository(ConsultationRepository)` — implement `list_all()`, `get_by_id()`, `create()`, `update_status()`
-   - `SqlPrescriptionRepository(PrescriptionRepository)` — implement `list_all()`, `get_by_id()`, `create()`
-   - `SqlAuditLogRepository(AuditLogRepository)` — implement `list_recent()`, `append()`
+   - `SqlConsultationRepository(ConsultationRepository)` - implement `list_all()`, `get_by_id()`, `create()`, `update_status()`
+   - `SqlPrescriptionRepository(PrescriptionRepository)` - implement `list_all()`, `get_by_id()`, `create()`
+   - `SqlAuditLogRepository(AuditLogRepository)` - implement `list_recent()`, `append()`
 
    Each method: query ORM row from `tables.py` → convert to domain Pydantic model → return it. See the example pattern in that file.
 
@@ -36,7 +36,7 @@ The app currently boots with **in-memory mocks**. Your job is to implement the r
 
 ---
 
-## Gabriele — NoSQL (MongoDB)
+## Gabriele and Mats — NoSQL (MongoDB)
 
 ### What's already done
 - **Connection helper**: `app/infrastructure/db/mongo/connection.py` — `get_database()` returns a pymongo Database
