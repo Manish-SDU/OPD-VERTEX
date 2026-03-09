@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h2>Start Consultation</h2>
+  <form method="post" action="/consultations">
+    <label>Patient ID <input type="text" name="patient_id" value="pat_001"></label>
+    <label>Chief complaint <input type="text" name="chief_complaint" value="Routine follow-up"></label>
+    <button type="submit">Create mock consultation</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Prescriptions</h2>
+  <ul>
+    {% for prescription in prescriptions %}
+    <li>{{ prescription.id }} | {{ prescription.status }} | consultation {{ prescription.consultation_id }}</li>
+    {% else %}
+    <li>No prescriptions available.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

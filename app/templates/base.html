@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title or "OPD-Vertex" }}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <h1>OPD-Vertex</h1>
+      <p>Local-first outpatient workflow scaffold</p>
+    </div>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/patients">Patients</a>
+      <a href="/consultations">Consultations</a>
+      <a href="/prescriptions">Prescriptions</a>
+      <a href="/admin/config">Admin</a>
+      <a href="/login">Login</a>
+    </nav>
+  </header>
+  <main class="layout">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

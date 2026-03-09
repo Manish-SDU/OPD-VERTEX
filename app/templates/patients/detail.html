@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  {% if patient %}
+  <h2>{{ patient.first_name }} {{ patient.last_name }}</h2>
+  <p>Patient ID: {{ patient.id }}</p>
+  <p>Email: {{ patient.email or "Not provided" }}</p>
+  <p>Phone: {{ patient.phone or "Not provided" }}</p>
+  <p>TODO: attach consultation timeline and approved prescriptions.</p>
+  {% else %}
+  <h2>Patient not found</h2>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h2>Create Patient</h2>
+  <form method="post" action="/patients">
+    <label>First name <input type="text" name="first_name"></label>
+    <label>Last name <input type="text" name="last_name"></label>
+    <label>Email <input type="email" name="email"></label>
+    <button type="submit">Save mock patient</button>
+  </form>
+</section>
+{% endblock %}

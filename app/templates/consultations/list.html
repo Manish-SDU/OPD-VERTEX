@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div class="split">
+    <h2>Consultations</h2>
+    <a href="/consultations/new">Start consultation</a>
+  </div>
+  <table>
+    <thead><tr><th>ID</th><th>Patient</th><th>Status</th><th>Complaint</th></tr></thead>
+    <tbody>
+      {% for consultation in consultations %}
+      <tr>
+        <td><a href="/consultations/{{ consultation.id }}">{{ consultation.id }}</a></td>
+        <td>{{ consultation.patient_id }}</td>
+        <td>{{ consultation.status }}</td>
+        <td>{{ consultation.chief_complaint }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

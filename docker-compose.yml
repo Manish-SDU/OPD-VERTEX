@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.example
+    volumes:
+      - ./:/workspace
+    depends_on:
+      - mysql
+      - mongo
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: opd_vertex
+      MYSQL_USER: opd_user
+      MYSQL_PASSWORD: opd_password
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mysql-data:
+  mongo-data:

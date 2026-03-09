@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div class="split">
+    <h2>Patients</h2>
+    <a href="/patients/new">Create patient</a>
+  </div>
+  <table>
+    <thead><tr><th>ID</th><th>Name</th><th>Email</th></tr></thead>
+    <tbody>
+      {% for patient in patients %}
+      <tr>
+        <td><a href="/patients/{{ patient.id }}">{{ patient.id }}</a></td>
+        <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+        <td>{{ patient.email or "-" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

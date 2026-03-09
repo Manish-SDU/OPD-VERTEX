@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Admin Configuration</h2>
+  <h3>Prompt Configs</h3>
+  <ul>
+    {% for prompt in prompts %}
+    <li>{{ prompt.name }}: {{ prompt.description }}</li>
+    {% endfor %}
+  </ul>
+  <h3>Email Templates</h3>
+  <ul>
+    {% for template in email_templates %}
+    <li>{{ template.name }}: {{ template.subject }}</li>
+    {% endfor %}
+  </ul>
+  <p>TODO: wire editable configs to Mongo-backed repositories and admin forms.</p>
+</section>
+{% endblock %}
