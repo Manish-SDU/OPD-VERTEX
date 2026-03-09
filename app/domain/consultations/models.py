@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel
@@ -19,18 +20,23 @@ class ConsultationStatus(StrEnum):
 
 
 class Consultation(BaseModel):
-    id: str
-    patient_id: str
-    clinician_id: str
-    status: ConsultationStatus
-    chief_complaint: str
-    transcript_document_id: str | None = None
-    generated_document_id: str | None = None
+    """Maps to SQL table: consultations."""
+
+    id: int | None = None
+    doctor_id: int
+    patient_id: int
+    status: ConsultationStatus = ConsultationStatus.RECORDING
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    approved_at: datetime | None = None
+    transcript_doc_id: str | None = None   # MongoDB ObjectId string
+    notes_doc_id: str | None = None        # MongoDB ObjectId string
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class ConsultationCreateRequest(BaseModel):
-    patient_id: str
-    chief_complaint: str
+    patient_id: int
 
 
 class ConsultationRepository(ABC):
@@ -39,9 +45,13 @@ class ConsultationRepository(ABC):
         """Return consultations."""
 
     @abstractmethod
-    def get_by_id(self, consultation_id: str) -> Consultation | None:
+    def get_by_id(self, consultation_id: int) -> Consultation | None:
         """Return consultation by id."""
 
     @abstractmethod
-    def create(self, payload: ConsultationCreateRequest, clinician_id: str) -> Consultation:
-        """Create a mock consultation."""
+    def create(self, consultation: Consultation) -> Consultation:
+        """Persist a new consultation."""
+
+    @abstractmethod
+    def update_status(self, consultation_id: int, status: ConsultationStatus) -> None:
+        """Update consultation workflow status."""

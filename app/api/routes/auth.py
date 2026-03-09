@@ -17,8 +17,8 @@ def login_page(request: Request) -> HTMLResponse:
 
 
 @router.post("/login", response_class=HTMLResponse)
-def login_submit(request: Request, username: str = Form(...), password: str = Form(...)) -> HTMLResponse:
-    staff = get_auth_app_service().login(LoginRequest(username=username, password=password))
+def login_submit(request: Request, email: str = Form(...), password: str = Form(...)) -> HTMLResponse:
+    staff = get_auth_app_service().login(LoginRequest(email=email, password=password))
     return templates.TemplateResponse(
         request,
         "auth/login.html",

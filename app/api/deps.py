@@ -1,4 +1,8 @@
-"""Dependency wiring for placeholder adapters."""
+"""Dependency wiring for placeholder adapters.
+
+When the real DB repositories are ready, swap InMemory* classes
+for Sql*/Mongo* classes here. The rest of the app stays unchanged.
+"""
 
 from __future__ import annotations
 
@@ -13,6 +17,7 @@ from app.application.review.services import ReviewApplicationService
 from app.infrastructure.auth.mock import MockAuthService
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryAuditLogRepository,
+    InMemoryConsultationDocumentRepository,
     InMemoryConsultationRepository,
     InMemoryEmailTemplateRepository,
     InMemoryGeneratedDocumentRepository,
@@ -20,7 +25,6 @@ from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryPrescriptionRepository,
     InMemoryPromptRepository,
     InMemoryStaffRepository,
-    InMemoryTranscriptRepository,
     MockClinicalNoteGenerator,
     MockEmailService,
     MockPdfGenerator,
@@ -45,8 +49,8 @@ def consultation_repository() -> InMemoryConsultationRepository:
 
 
 @lru_cache
-def transcript_repository() -> InMemoryTranscriptRepository:
-    return InMemoryTranscriptRepository()
+def consultation_doc_repository() -> InMemoryConsultationDocumentRepository:
+    return InMemoryConsultationDocumentRepository()
 
 
 @lru_cache
@@ -81,7 +85,7 @@ def auth_service() -> MockAuthService:
 
 @lru_cache
 def transcription_service() -> MockTranscriptionService:
-    return MockTranscriptionService(transcript_repository())
+    return MockTranscriptionService()
 
 
 @lru_cache
@@ -118,7 +122,7 @@ def get_consultation_app_service() -> ConsultationApplicationService:
 
 def get_review_app_service() -> ReviewApplicationService:
     return ReviewApplicationService(
-        transcript_repository(),
+        consultation_doc_repository(),
         generated_repository(),
         transcription_service(),
         note_generator(),

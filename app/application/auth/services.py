@@ -10,4 +10,4 @@ class AuthApplicationService:
         self.auth_service = auth_service
 
     def login(self, payload: LoginRequest) -> Staff | None:
-        return self.auth_service.authenticate(payload.username, payload.password)
+        return self.auth_service.authenticate(payload.email, payload.password)

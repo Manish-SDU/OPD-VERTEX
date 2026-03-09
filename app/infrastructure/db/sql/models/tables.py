@@ -1,0 +1,161 @@
+"""SQLAlchemy ORM models matching the PDF schema (5 SQL tables).
+
+Mats: implement the real MySQL repositories in
+  app/infrastructure/db/sql/repositories/
+These ORM models are ready to use with Alembic migrations.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    JSON,
+    String,
+    Text,
+    func,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+# ── Table 1: staff ─────────────────────────────────────────────────────
+
+class StaffRow(Base):
+    __tablename__ = "staff"
+
+    staff_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    specialization: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    license_number: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    role: Mapped[str] = mapped_column(
+        Enum("doctor", "admin", name="staff_role"), nullable=False, server_default="doctor"
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    consultations = relationship("ConsultationRow", back_populates="doctor")
+    prescriptions = relationship("PrescriptionRow", back_populates="doctor")
+
+
+# ── Table 2: patients ──────────────────────────────────────────────────
+
+class PatientRow(Base):
+    __tablename__ = "patients"
+
+    patient_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    date_of_birth = mapped_column(DateTime, nullable=False)
+    gender: Mapped[str | None] = mapped_column(Enum("M", "F", "Other", name="patient_gender"), nullable=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    emergency_contact: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    blood_type: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    allergies: Mapped[str | None] = mapped_column(Text, nullable=True)
+    medical_history: Mapped[str | None] = mapped_column(Text, nullable=True)
+    insurance_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    consultations = relationship("ConsultationRow", back_populates="patient")
+    prescriptions = relationship("PrescriptionRow", back_populates="patient")
+
+
+# ── Table 3: consultations ─────────────────────────────────────────────
+
+class ConsultationRow(Base):
+    __tablename__ = "consultations"
+
+    consultation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    doctor_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("staff.staff_id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False
+    )
+    patient_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("patients.patient_id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        Enum("recording", "transcribing", "processing", "review", "approved", "rejected", "cancelled",
+             name="consultation_status"),
+        nullable=False,
+        server_default="recording",
+    )
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    transcript_doc_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    notes_doc_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        CheckConstraint("ended_at IS NULL OR ended_at >= started_at", name="ck_ended_after_start"),
+        CheckConstraint("approved_at IS NULL OR approved_at >= started_at", name="ck_approved_after_start"),
+    )
+
+    doctor = relationship("StaffRow", back_populates="consultations")
+    patient = relationship("PatientRow", back_populates="consultations")
+    prescriptions = relationship("PrescriptionRow", back_populates="consultation")
+
+
+# ── Table 4: prescriptions ─────────────────────────────────────────────
+
+class PrescriptionRow(Base):
+    __tablename__ = "prescriptions"
+
+    prescription_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    consultation_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("consultations.consultation_id"), nullable=False
+    )
+    doctor_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("staff.staff_id"), nullable=False
+    )
+    patient_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("patients.patient_id"), nullable=False
+    )
+    diagnosis: Mapped[str] = mapped_column(Text, nullable=False)
+    medications = mapped_column(JSON, nullable=False)
+    instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    follow_up_date = mapped_column(DateTime, nullable=True)
+    pdf_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_approved: Mapped[bool] = mapped_column(Boolean, server_default="0")
+    is_emailed: Mapped[bool] = mapped_column(Boolean, server_default="0")
+    emailed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    version: Mapped[int] = mapped_column(Integer, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    consultation = relationship("ConsultationRow", back_populates="prescriptions")
+    doctor = relationship("StaffRow", back_populates="prescriptions")
+    patient = relationship("PatientRow", back_populates="prescriptions")
+
+
+# ── Table 5: audit_logs ────────────────────────────────────────────────
+
+class AuditLogRow(Base):
+    __tablename__ = "audit_logs"
+
+    log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_role: Mapped[str] = mapped_column(String(20), nullable=False)
+    action: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_table: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    target_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    details = mapped_column(JSON, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

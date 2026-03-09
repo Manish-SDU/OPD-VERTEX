@@ -9,16 +9,12 @@ class MockAuthService(AuthService):
     def __init__(self, staff_repository: StaffRepository) -> None:
         self.staff_repository = staff_repository
 
-    def authenticate(self, username: str, password: str) -> Staff | None:
-        # TODO: replace with proper password verification and session management.
+    def authenticate(self, email: str, password: str) -> Staff | None:
         if not password:
             return None
-        return self.staff_repository.get_by_username(username)
+        return self.staff_repository.get_by_email(email)
 
     def get_current_staff(self) -> Staff:
-        return self.staff_repository.get_by_username("doctor.demo") or Staff(
-            id="staff_fallback",
-            username="doctor.demo",
-            full_name="Dr. Placeholder",
-            role="doctor",
+        return self.staff_repository.get_by_email("doctor@example.local") or Staff(
+            id=0, first_name="Dr.", last_name="Placeholder", email="doctor@example.local", role="doctor",
         )

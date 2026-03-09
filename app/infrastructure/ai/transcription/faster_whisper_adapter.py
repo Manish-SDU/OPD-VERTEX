@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from app.domain.transcription.models import TranscriptDocument, TranscriptionService
+from app.domain.transcription.models import TranscriptResult, TranscriptionService
 
 
 class FasterWhisperTranscriptionService(TranscriptionService):
-    def transcribe(self, consultation_id: str) -> TranscriptDocument:
+    def transcribe(self, consultation_id: int) -> TranscriptResult:
         # TODO: integrate local audio capture storage and Faster-Whisper inference.
-        return TranscriptDocument(
-            id=f"trn_{consultation_id}",
+        return TranscriptResult(
             consultation_id=consultation_id,
-            raw_text="TODO: replace placeholder transcription adapter.",
+            full_text="TODO: replace placeholder transcription adapter.",
         )

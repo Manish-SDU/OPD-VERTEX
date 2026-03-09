@@ -27,16 +27,16 @@ def consultation_new(request: Request) -> HTMLResponse:
 
 
 @router.post("")
-def consultation_create(patient_id: str = Form(...), chief_complaint: str = Form(...)) -> RedirectResponse:
+def consultation_create(patient_id: int = Form(...)) -> RedirectResponse:
     get_consultation_app_service().create_consultation(
-        ConsultationCreateRequest(patient_id=patient_id, chief_complaint=chief_complaint),
-        clinician_id="staff_001",
+        ConsultationCreateRequest(patient_id=patient_id),
+        doctor_id=1,  # TODO: get from session
     )
     return RedirectResponse(url="/consultations", status_code=303)
 
 
 @router.get("/{consultation_id}", response_class=HTMLResponse)
-def consultation_detail(consultation_id: str, request: Request) -> HTMLResponse:
+def consultation_detail(consultation_id: int, request: Request) -> HTMLResponse:
     consultation = get_consultation_app_service().get_consultation(consultation_id)
     return templates.TemplateResponse(
         request,
