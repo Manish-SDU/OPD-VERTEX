@@ -16,36 +16,36 @@ from app.application.prescriptions.services import PrescriptionApplicationServic
 from app.application.review.services import ReviewApplicationService
 from app.infrastructure.auth.mock import MockAuthService
 from app.infrastructure.persistence.in_memory.repositories import (
-    InMemoryAuditLogRepository,
     InMemoryConsultationDocumentRepository,
-    InMemoryConsultationRepository,
     InMemoryEmailTemplateRepository,
     InMemoryGeneratedDocumentRepository,
-    InMemoryPatientRepository,
-    InMemoryPrescriptionRepository,
     InMemoryPromptRepository,
-    InMemoryStaffRepository,
     MockClinicalNoteGenerator,
     MockEmailService,
     MockPdfGenerator,
     MockSuggestiveModeService,
     MockTranscriptionService,
 )
+from app.infrastructure.db.sql.repositories.sql_repos import (
+    SqlStaffRepository,
+    SqlPatientRepository,
+    SqlConsultationRepository,
+    SqlPrescriptionRepository,
+    SqlAuditLogRepository,
+)
+from app.infrastructure.db.sql.connection import get_session
 
 
-@lru_cache
-def staff_repository() -> InMemoryStaffRepository:
-    return InMemoryStaffRepository()
+def staff_repository() -> SqlStaffRepository:
+    return SqlStaffRepository(get_session())
 
 
-@lru_cache
-def patient_repository() -> InMemoryPatientRepository:
-    return InMemoryPatientRepository()
+def patient_repository() -> SqlPatientRepository:
+    return SqlPatientRepository(get_session())
 
 
-@lru_cache
-def consultation_repository() -> InMemoryConsultationRepository:
-    return InMemoryConsultationRepository()
+def consultation_repository() -> SqlConsultationRepository:
+    return SqlConsultationRepository(get_session())
 
 
 @lru_cache
@@ -58,14 +58,12 @@ def generated_repository() -> InMemoryGeneratedDocumentRepository:
     return InMemoryGeneratedDocumentRepository()
 
 
-@lru_cache
-def prescription_repository() -> InMemoryPrescriptionRepository:
-    return InMemoryPrescriptionRepository()
+def prescription_repository() -> SqlPrescriptionRepository:
+    return SqlPrescriptionRepository(get_session())
 
 
-@lru_cache
-def audit_repository() -> InMemoryAuditLogRepository:
-    return InMemoryAuditLogRepository()
+def audit_repository() -> SqlAuditLogRepository:
+    return SqlAuditLogRepository(get_session())
 
 
 @lru_cache
