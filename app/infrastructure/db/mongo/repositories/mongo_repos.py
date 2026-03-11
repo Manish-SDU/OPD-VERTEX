@@ -27,6 +27,7 @@ from app.domain.clinical_notes.models import (
 )
 from app.domain.email.models import EmailTemplate, EmailTemplateRepository
 
+
 # ── Example pattern (repeat for each repository) ───────────────────────
 #
 #   class MongoEmailTemplateRepository(EmailTemplateRepository):
@@ -41,3 +42,81 @@ from app.domain.email.models import EmailTemplate, EmailTemplateRepository
 #   1. Query/insert/update via pymongo collection methods
 #   2. Convert the raw dict to/from the domain Pydantic model
 #   3. Return the domain model
+
+# ── Real MongoDB repository implementations ─────────────────────────────
+from app.infrastructure.db.mongo.collections import names
+from bson import ObjectId
+
+class MongoEmailTemplateRepository(EmailTemplateRepository):
+  def __init__(self, db: Database) -> None:
+    self.collection = db[names.EMAIL_TEMPLATES]
+
+  def list_templates(self) -> list[EmailTemplate]:
+    docs = self.collection.find()
+    return [EmailTemplate(id=str(d["_id"]), **{k: v for k, v in d.items() if k != "_id"}) for d in docs]
+
+  def get_by_id(self, template_id: str) -> EmailTemplate | None:
+    doc = self.collection.find_one({"_id": ObjectId(template_id)}) if ObjectId.is_valid(template_id) else self.collection.find_one({"_id": template_id})
+    if doc:
+      return EmailTemplate(id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"})
+    return None
+
+
+class MongoPromptRepository(PromptRepository):
+  def __init__(self, db: Database) -> None:
+    self.collection = db[names.LLM_PROMPTS]
+
+  def list_prompts(self) -> list[LlmPromptConfig]:
+    docs = self.collection.find()
+    return [LlmPromptConfig(id=str(d["_id"]), **{k: v for k, v in d.items() if k != "_id"}) for d in docs]
+
+  def get_by_id(self, prompt_id: str) -> LlmPromptConfig | None:
+    doc = self.collection.find_one({"_id": ObjectId(prompt_id)}) if ObjectId.is_valid(prompt_id) else self.collection.find_one({"_id": prompt_id})
+    if doc:
+      return LlmPromptConfig(id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"})
+    return None
+
+
+class MongoGeneratedDocumentRepository(GeneratedDocumentRepository):
+  def __init__(self, db: Database) -> None:
+    self.collection = db[names.GENERATED_DOCUMENTS]
+
+  def get_by_consultation_id(self, consultation_id: int) -> GeneratedDocument | None:
+    doc = self.collection.find_one({"consultation_id": consultation_id})
+    if doc:
+      return GeneratedDocument(id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"})
+    return None
+
+  def save(self, document: GeneratedDocument) -> GeneratedDocument:
+    data = document.model_dump(exclude={"id"}, exclude_none=True)
+    if document.id:
+      # Update existing
+      self.collection.replace_one({"_id": ObjectId(document.id)}, data, upsert=True)
+      doc_id = document.id
+    else:
+      result = self.collection.insert_one(data)
+      doc_id = str(result.inserted_id)
+    doc = self.collection.find_one({"_id": ObjectId(doc_id)})
+    return GeneratedDocument(id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"})
+
+
+class MongoConsultationDocumentRepository(ConsultationDocumentRepository):
+  def __init__(self, db: Database) -> None:
+    self.collection = db[names.CONSULTATION_DOCUMENTS]
+
+  def get_by_consultation_id(self, consultation_id: int) -> ConsultationDocument | None:
+    doc = self.collection.find_one({"consultation_id": consultation_id})
+    if doc:
+      return ConsultationDocument(id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"})
+    return None
+
+  def save(self, document: ConsultationDocument) -> ConsultationDocument:
+    data = document.model_dump(exclude={"id"}, exclude_none=True)
+    if document.id:
+      self.collection.replace_one({"_id": ObjectId(document.id)}, data, upsert=True)
+      doc_id = document.id
+    else:
+      result = self.collection.insert_one(data)
+      doc_id = str(result.inserted_id)
+    doc = self.collection.find_one({"_id": ObjectId(doc_id)})
+    return ConsultationDocument(id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"})

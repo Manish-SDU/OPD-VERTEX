@@ -34,7 +34,13 @@ from app.infrastructure.db.sql.repositories.sql_repos import (
     SqlAuditLogRepository,
 )
 from app.infrastructure.db.sql.connection import get_session
-
+from app.infrastructure.db.mongo.connection import get_database
+from app.infrastructure.db.mongo.repositories.mongo_repos import (
+    MongoConsultationDocumentRepository,
+    MongoEmailTemplateRepository,
+    MongoGeneratedDocumentRepository,
+    MongoPromptRepository,
+)
 
 def staff_repository() -> SqlStaffRepository:
     return SqlStaffRepository(get_session())
@@ -49,13 +55,13 @@ def consultation_repository() -> SqlConsultationRepository:
 
 
 @lru_cache
-def consultation_doc_repository() -> InMemoryConsultationDocumentRepository:
-    return InMemoryConsultationDocumentRepository()
+def consultation_doc_repository() -> MongoConsultationDocumentRepository:
+    return MongoConsultationDocumentRepository(get_database())
 
 
 @lru_cache
-def generated_repository() -> InMemoryGeneratedDocumentRepository:
-    return InMemoryGeneratedDocumentRepository()
+def generated_repository() -> MongoGeneratedDocumentRepository:
+    return MongoGeneratedDocumentRepository(get_database())
 
 
 def prescription_repository() -> SqlPrescriptionRepository:
@@ -67,13 +73,13 @@ def audit_repository() -> SqlAuditLogRepository:
 
 
 @lru_cache
-def prompt_repository() -> InMemoryPromptRepository:
-    return InMemoryPromptRepository()
+def prompt_repository() -> MongoPromptRepository:
+    return MongoPromptRepository(get_database())
 
 
 @lru_cache
-def email_template_repository() -> InMemoryEmailTemplateRepository:
-    return InMemoryEmailTemplateRepository()
+def email_template_repository() -> MongoEmailTemplateRepository:
+    return MongoEmailTemplateRepository(get_database())
 
 
 @lru_cache
