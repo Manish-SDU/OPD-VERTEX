@@ -84,7 +84,7 @@ def email_template_repository() -> MongoEmailTemplateRepository:
 
 @lru_cache
 def auth_service() -> MockAuthService:
-    return MockAuthService(staff_repository())
+    return MockAuthService(staff_repository(), patient_repository())
 
 
 @lru_cache

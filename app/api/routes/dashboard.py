@@ -12,16 +12,16 @@ router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
 def root(request: Request) -> HTMLResponse:
-    staff = get_auth_app_service().auth_service.get_current_staff()
-    return templates.TemplateResponse(request, "dashboard/index.html", {"staff": staff, "page_title": "Home"})
+    user = get_auth_app_service().auth_service.get_current_user()
+    return templates.TemplateResponse(request, "dashboard/index.html", {"user": user, "page_title": "Home"})
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
 def dashboard_page(request: Request) -> HTMLResponse:
-    staff = get_auth_app_service().auth_service.get_current_staff()
+    user = get_auth_app_service().auth_service.get_current_user()
     audit_entries = get_audit_app_service().recent_entries()
     return templates.TemplateResponse(
         request,
         "dashboard/index.html",
-        {"staff": staff, "audit_entries": audit_entries, "page_title": "Dashboard"},
+        {"user": user, "audit_entries": audit_entries, "page_title": "Dashboard"},
     )

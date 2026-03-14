@@ -4,8 +4,24 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+
+
+USER_ROLES = ("patient", "doctor", "admin")
+
+
+class User(BaseModel):
+
+    id: int
+    email: str
+    first_name: str
+    last_name: str
+    role: Literal["patient", "doctor", "admin"]
+    user_type: Literal["staff", "patient"]
+    is_active: bool = True
 
 
 class Staff(BaseModel):
@@ -19,11 +35,21 @@ class Staff(BaseModel):
     specialization: str | None = None
     license_number: str | None = None
     phone: str | None = None
-    role: str = "doctor"
+    role: Literal["doctor", "admin"] = "doctor"
     is_active: bool = True
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
+    def to_user(self) -> User:
+        return User(
+            id=self.id or 0,
+            email=self.email,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            role=self.role,
+            user_type="staff",
+            is_active=self.is_active
+        )
 
 class LoginRequest(BaseModel):
     email: str
@@ -32,12 +58,16 @@ class LoginRequest(BaseModel):
 
 class AuthService(ABC):
     @abstractmethod
-    def authenticate(self, email: str, password: str) -> Staff | None:
-        """Authenticate a user by email + password."""
+    def authenticate_staff(self, email: str, password: str) -> User | None:
+        """Authenticate staff user (doctor/admin) by email + password."""
 
     @abstractmethod
-    def get_current_staff(self) -> Staff:
-        """Return current staff object."""
+    def authenticate_patient(self, email: str, password: str) -> User | None:
+        """Authenticate patient user by email + password."""
+
+    @abstractmethod
+    def get_current_user(self) -> User | None:
+        """Return current authenticated user object."""
 
 
 class StaffRepository(ABC):

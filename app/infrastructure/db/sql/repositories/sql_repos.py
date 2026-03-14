@@ -122,6 +122,28 @@ class SqlPatientRepository(PatientRepository):
 			updated_at=row.updated_at,
 		)
 
+	def get_by_email(self, email: str) -> Patient | None:
+		row = self.session.query(PatientRow).filter_by(email=email).first()
+		if row is None:
+			return None
+		return Patient(
+			id=row.patient_id,
+			first_name=row.first_name,
+			last_name=row.last_name,
+			date_of_birth=row.date_of_birth.date() if hasattr(row.date_of_birth, 'date') else row.date_of_birth,
+			gender=row.gender,
+			email=row.email,
+			phone=row.phone,
+			address=row.address,
+			emergency_contact=row.emergency_contact,
+			blood_type=row.blood_type,
+			allergies=row.allergies,
+			medical_history=row.medical_history,
+			insurance_id=row.insurance_id,
+			created_at=row.created_at,
+			updated_at=row.updated_at,
+		)
+
 	def create(self, req: PatientCreateRequest) -> Patient:
 		row = PatientRow(
 			first_name=req.first_name,

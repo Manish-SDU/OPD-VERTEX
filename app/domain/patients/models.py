@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -24,6 +25,9 @@ class Patient(BaseModel):
     allergies: str | None = None
     medical_history: str | None = None
     insurance_id: str | None = None
+    password_hash: str = ""  # For patient authentication
+    role: Literal["patient"] = "patient"  # Role for authentication
+    is_active: bool = True  # For authentication
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -47,6 +51,10 @@ class PatientRepository(ABC):
     @abstractmethod
     def get_by_id(self, patient_id: int) -> Patient | None:
         """Return patient by id."""
+
+    @abstractmethod
+    def get_by_email(self, email: str) -> Patient | None:
+        """Return patient by email."""
 
     @abstractmethod
     def create(self, payload: PatientCreateRequest) -> Patient:
