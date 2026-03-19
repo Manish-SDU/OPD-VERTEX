@@ -54,6 +54,7 @@ class PatientCreateRequest(BaseModel):
     allergies: str | None = None
     medical_history: str | None = None
     password_hash: str
+    role: Literal["patient"] = "patient"
 
 
 class PatientRepository(ABC):

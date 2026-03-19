@@ -20,7 +20,6 @@ class User(BaseModel):
     first_name: str
     last_name: str
     role: Literal["patient", "doctor", "admin"]
-    user_type: str = "staff"
     is_active: bool = True
 
 
@@ -71,12 +70,8 @@ class AuthService(ABC):
     staff_repository: StaffRepository 
 
     @abstractmethod
-    def authenticate_staff(self, email: str, password: str) -> User | None:
-        """Authenticate staff user (doctor/admin) by email + password."""
-
-    @abstractmethod
-    def authenticate_patient(self, email: str, password: str) -> User | None:
-        """Authenticate patient user by email + password."""
+    def authenticate(self, email: str, password: str) -> User | None:
+        """Try staff first, then patient authentication."""
 
     @abstractmethod
     def get_current_user(self) -> User | None:
