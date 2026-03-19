@@ -4,10 +4,10 @@
   <h2>Mock Login</h2>
   <p>Placeholder authentication only. No real session security yet.</p>
   {% if message %}<p>{{ message }}</p>{% endif %}
-  {% if staff %}<p>Authenticated as {{ staff.full_name }}.</p>{% endif %}
+  {% if staff %}<p>Authenticated as {{ user.email }}.</p>{% endif %}
   <form method="post" action="/login">
-    <label>Username <input type="text" name="username" value="doctor.demo"></label>
-    <label>Password <input type="password" name="password" value="demo"></label>
+    <label>Username <input type="email" name="email" value="john@example.com"></label>
+    <label>Password <input type="password" name="password" value="password"></label>
     <button type="submit">Login</button>
   </form>
 </section>

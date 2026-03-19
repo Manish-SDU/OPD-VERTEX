@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="card">
-  <h2>{{ staff.full_name if staff else "Clinical Workspace" }}</h2>
-  <p>Role: {{ staff.role if staff else "guest" }}</p>
+  <h2>{{ user.full_name if staff else "Clinical Workspace" }}</h2>
+  <p>Role: {{ user.role}}</p>
   <p>This scaffold boots with mock repositories and placeholder adapters only.</p>
+  <p><a href="/logout" class="button">Logout</a></p>
 </section>
 <section class="card">
   <h3>Recent Audit Events</h3>

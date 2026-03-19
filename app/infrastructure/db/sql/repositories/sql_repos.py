@@ -12,12 +12,15 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from datetime import datetime
+
 from app.domain.audit.models import AuditLog, AuditLogRepository
 from app.domain.auth.models import Staff, StaffRepository
 from app.domain.consultations.models import Consultation, ConsultationRepository, ConsultationStatus
 from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
 from app.domain.prescriptions.models import Prescription, PrescriptionRepository
 from app.infrastructure.db.sql.models.tables import StaffRow, PatientRow, ConsultationRow, PrescriptionRow, AuditLogRow
+from app.domain.auth.models import StaffCreateRequest
 
 # ── Example pattern (repeat for each repository) ───────────────────────
 #
@@ -37,113 +40,98 @@ class SqlStaffRepository(StaffRepository):
 	def __init__(self, session: Session) -> None:
 		self.session = session
 
+	def _to_domain(self, row: StaffRow) -> Staff:
+		return Staff(
+			id = row.staff_id,
+			first_name = row.first_name,
+			last_name = row.last_name,
+			email = row.email,
+			phone = row.phone,
+			password_hash = row.password_hash,
+			role = row.role,
+			license_number = row.license_number,
+			specialization = row.specialization,
+			is_active = row.is_active,
+			created_at = row.created_at,
+			updated_at = row.updated_at,
+		)
+	
+
 	def get_by_email(self, email: str) -> Staff | None:
 		row = self.session.query(StaffRow).filter_by(email=email).first()
 		if row is None:
 			return None
-		return Staff(
-			id=row.staff_id,
-			first_name=row.first_name,
-			last_name=row.last_name,
-			email=row.email,
-			password_hash=row.password_hash,
-			specialization=row.specialization,
-			license_number=row.license_number,
-			phone=row.phone,
-			role=row.role,
-			is_active=row.is_active,
-			created_at=row.created_at,
-			updated_at=row.updated_at,
-		)
+		return self._to_domain(row)
+	
 
 	def get_by_id(self, staff_id: int) -> Staff | None:
 		row = self.session.query(StaffRow).filter_by(staff_id=staff_id).first()
 		if row is None:
 			return None
-		return Staff(
-			id=row.staff_id,
-			first_name=row.first_name,
-			last_name=row.last_name,
-			email=row.email,
-			password_hash=row.password_hash,
-			specialization=row.specialization,
-			license_number=row.license_number,
-			phone=row.phone,
-			role=row.role,
-			is_active=row.is_active,
-			created_at=row.created_at,
-			updated_at=row.updated_at,
+		return self._to_domain(row)
+	
+	def create(self, req: StaffCreateRequest) -> Staff:
+		row = StaffRow(
+		first_name=req.first_name,
+		last_name=req.last_name,
+		email=req.email,
+		phone=req.phone,
+		password_hash = req.password_hash,
+		role = "doctor",
+		is_active = True,
+		specialization=req.specialization,
+		license_number=req.license_number,
 		)
+		self.session.add(row)
+		self.session.commit()
+		self.session.refresh(row)
+		return self._to_domain(row)
+		
+
 
 # ── SqlPatientRepository ─────────────────────────────────────────────
 class SqlPatientRepository(PatientRepository):
 	def __init__(self, session: Session) -> None:
 		self.session = session
 
+	def _to_domain(self, row: PatientRow) -> Patient:
+		return Patient(
+			id = row.patient_id,
+			first_name = row.first_name,
+			last_name = row.last_name,
+			date_of_birth = row.date_of_birth.date() if hasattr(row.date_of_birth, 'date') else row.date_of_birth,
+			gender = row.gender,
+			email = row.email,
+			phone = row.phone,
+			address = row.address,
+			emergency_contact = row.emergency_contact,
+			blood_type = row.blood_type,
+			allergies = row.allergies,
+			medical_history = row.medical_history,
+			insurance_id = row.insurance_id,
+			password_hash = row.password_hash,
+			role = row.role,
+			is_active = row.is_active,
+			created_at = row.created_at,
+			updated_at = row.updated_at,
+		)
+
 	def list_all(self) -> list[Patient]:
 		rows = self.session.query(PatientRow).all()
-		return [Patient(
-			id=row.patient_id,
-			first_name=row.first_name,
-			last_name=row.last_name,
-			date_of_birth=row.date_of_birth.date() if hasattr(row.date_of_birth, 'date') else row.date_of_birth,
-			gender=row.gender,
-			email=row.email,
-			phone=row.phone,
-			address=row.address,
-			emergency_contact=row.emergency_contact,
-			blood_type=row.blood_type,
-			allergies=row.allergies,
-			medical_history=row.medical_history,
-			insurance_id=row.insurance_id,
-			created_at=row.created_at,
-			updated_at=row.updated_at,
-		) for row in rows]
+		return [self._to_domain(row) for row in rows]
 
 	def get_by_id(self, patient_id: int) -> Patient | None:
 		row = self.session.query(PatientRow).filter_by(patient_id=patient_id).first()
 		if row is None:
 			return None
-		return Patient(
-			id=row.patient_id,
-			first_name=row.first_name,
-			last_name=row.last_name,
-			date_of_birth=row.date_of_birth.date() if hasattr(row.date_of_birth, 'date') else row.date_of_birth,
-			gender=row.gender,
-			email=row.email,
-			phone=row.phone,
-			address=row.address,
-			emergency_contact=row.emergency_contact,
-			blood_type=row.blood_type,
-			allergies=row.allergies,
-			medical_history=row.medical_history,
-			insurance_id=row.insurance_id,
-			created_at=row.created_at,
-			updated_at=row.updated_at,
-		)
+		return self._to_domain(row)
 
 	def get_by_email(self, email: str) -> Patient | None:
 		row = self.session.query(PatientRow).filter_by(email=email).first()
 		if row is None:
 			return None
-		return Patient(
-			id=row.patient_id,
-			first_name=row.first_name,
-			last_name=row.last_name,
-			date_of_birth=row.date_of_birth.date() if hasattr(row.date_of_birth, 'date') else row.date_of_birth,
-			gender=row.gender,
-			email=row.email,
-			phone=row.phone,
-			address=row.address,
-			emergency_contact=row.emergency_contact,
-			blood_type=row.blood_type,
-			allergies=row.allergies,
-			medical_history=row.medical_history,
-			insurance_id=row.insurance_id,
-			created_at=row.created_at,
-			updated_at=row.updated_at,
-		)
-
+		return self._to_domain(row)
+	
 	def create(self, req: PatientCreateRequest) -> Patient:
 		row = PatientRow(
 			first_name=req.first_name,
@@ -154,27 +142,14 @@ class SqlPatientRepository(PatientRepository):
 			phone=req.phone,
 			allergies=req.allergies,
 			medical_history=req.medical_history,
+			password_hash = req.password_hash,
+			role = "patient",
+			is_active = True,
 		)
 		self.session.add(row)
 		self.session.commit()
 		self.session.refresh(row)
-		return Patient(
-			id=row.patient_id,
-			first_name=row.first_name,
-			last_name=row.last_name,
-			date_of_birth=row.date_of_birth.date() if hasattr(row.date_of_birth, 'date') else row.date_of_birth,
-			gender=row.gender,
-			email=row.email,
-			phone=row.phone,
-			address=row.address,
-			emergency_contact=row.emergency_contact,
-			blood_type=row.blood_type,
-			allergies=row.allergies,
-			medical_history=row.medical_history,
-			insurance_id=row.insurance_id,
-			created_at=row.created_at,
-			updated_at=row.updated_at,
-		)
+		return self._to_domain(row)
 
 # ── SqlConsultationRepository ────────────────────────────────────────
 class SqlConsultationRepository(ConsultationRepository):

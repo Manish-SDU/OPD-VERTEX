@@ -2,17 +2,25 @@
 
 from __future__ import annotations
 
-from app.domain.auth.models import AuthService, LoginRequest, User
+from app.domain.auth.models import AuthService, LoginRequest, User, StaffCreateRequest
+from app.domain.patients.models import PatientCreateRequest
+
+from app.core.security import hash_password
 
 
 class AuthApplicationService:
     def __init__(self, auth_service: AuthService) -> None:
         self.auth_service = auth_service
+    
+    def register_patient(self, req: PatientCreateRequest) -> User:
+        req.password_hash = hash_password(req.password_hash)
+        patient = self.auth_service.patient_repository.create(req)
+        return patient.to_user()
 
-    def login_staff(self, payload: LoginRequest) -> User | None:
-        """Login specifically as staff (doctor/admin)."""
-        return self.auth_service.authenticate_staff(payload.email, payload.password)
+    def register_staff(self, req: StaffCreateRequest) -> User:
+        req.password_hash = hash_password(req.password_hash)
+        staff = self.auth_service.staff_repository.create(req)
+        return staff.to_user()
 
-    def login_patient(self, payload: LoginRequest) -> User | None:
-        """Login specifically as patient."""
-        return self.auth_service.authenticate_patient(payload.email, payload.password)
+    def login(self, payload: LoginRequest) -> User | None:
+        return self.auth_service.authenticate(payload.email, payload.password)

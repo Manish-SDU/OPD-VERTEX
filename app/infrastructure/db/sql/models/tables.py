@@ -62,7 +62,7 @@ class PatientRow(Base):
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     date_of_birth = mapped_column(DateTime, nullable=False)
     gender: Mapped[str | None] = mapped_column(Enum("M", "F", "Other", name="patient_gender"), nullable=True)
-    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
     emergency_contact: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -70,6 +70,9 @@ class PatientRow(Base):
     allergies: Mapped[str | None] = mapped_column(Text, nullable=True)
     medical_history: Mapped[str | None] = mapped_column(Text, nullable=True)
     insurance_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(Enum("patient", name="role"), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

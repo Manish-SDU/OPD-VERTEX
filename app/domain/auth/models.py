@@ -20,7 +20,7 @@ class User(BaseModel):
     first_name: str
     last_name: str
     role: Literal["patient", "doctor", "admin"]
-    user_type: Literal["staff", "patient"]
+    user_type: str = "staff"
     is_active: bool = True
 
 
@@ -35,7 +35,7 @@ class Staff(BaseModel):
     specialization: str | None = None
     license_number: str | None = None
     phone: str | None = None
-    role: Literal["doctor", "admin"] = "doctor"
+    role: Literal[ "doctor", "admin"]
     is_active: bool = True
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -47,9 +47,18 @@ class Staff(BaseModel):
             first_name=self.first_name,
             last_name=self.last_name,
             role=self.role,
-            user_type="staff",
             is_active=self.is_active
         )
+    
+class StaffCreateRequest(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    phone: str | None = None
+    password_hash: str
+    role: str
+    specialization: str | None = None
+    license_number: str | None = None
 
 class LoginRequest(BaseModel):
     email: str
@@ -57,6 +66,10 @@ class LoginRequest(BaseModel):
 
 
 class AuthService(ABC):
+    from app.domain.patients.models import PatientCreateRequest, PatientRepository
+    patient_repository: PatientRepository  # For cross-repository operations if needed
+    staff_repository: StaffRepository 
+
     @abstractmethod
     def authenticate_staff(self, email: str, password: str) -> User | None:
         """Authenticate staff user (doctor/admin) by email + password."""
@@ -68,6 +81,8 @@ class AuthService(ABC):
     @abstractmethod
     def get_current_user(self) -> User | None:
         """Return current authenticated user object."""
+    
+    
 
 
 class StaffRepository(ABC):
@@ -78,3 +93,7 @@ class StaffRepository(ABC):
     @abstractmethod
     def get_by_id(self, staff_id: int) -> Staff | None:
         """Fetch staff by id."""
+
+    @abstractmethod
+    def create(self, staff: StaffCreateRequest) -> Staff:
+        """Persist a new staff."""

@@ -31,6 +31,18 @@ class Patient(BaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
+    def to_user(self) -> Patient:
+        return Patient(
+            id=self.id or 0,
+            email=self.email,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            role=self.role,
+            is_active=self.is_active,
+            date_of_birth=self.date_of_birth,
+
+        )
+
 
 class PatientCreateRequest(BaseModel):
     first_name: str
@@ -41,6 +53,7 @@ class PatientCreateRequest(BaseModel):
     phone: str | None = None
     allergies: str | None = None
     medical_history: str | None = None
+    password_hash: str
 
 
 class PatientRepository(ABC):
