@@ -42,7 +42,7 @@ class StaffRow(Base):
     license_number: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     role: Mapped[str] = mapped_column(
-        Enum("doctor", "admin", name="staff_role"), nullable=False, server_default="doctor"
+        Enum("doctor", "admin", name="staff_role"), nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

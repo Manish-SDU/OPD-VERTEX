@@ -77,7 +77,7 @@ class SqlStaffRepository(StaffRepository):
 		email=req.email,
 		phone=req.phone,
 		password_hash = req.password_hash,
-		role = "doctor",
+		role = req.role,
 		is_active = True,
 		specialization=req.specialization,
 		license_number=req.license_number,

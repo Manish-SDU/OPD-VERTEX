@@ -56,9 +56,19 @@ def register_submit(
                 email=email,
                 password_hash=password,
                 phone=phone,
-                role=role, # "doctor" or "admin"
+                role=role,
                 specialization=specialization,
                 license_number=license_number
+            )
+            auth_app.register_staff(staff_req)
+        elif role == "admin":
+            staff_req = StaffCreateRequest(
+                first_name = first_name,
+                last_name=last_name,
+                email=email,
+                password_hash=password,
+                phone=phone,
+                role=role,
             )
             auth_app.register_staff(staff_req)
 
