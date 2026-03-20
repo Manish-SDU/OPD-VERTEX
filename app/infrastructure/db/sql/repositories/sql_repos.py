@@ -15,12 +15,11 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.domain.audit.models import AuditLog, AuditLogRepository
-from app.domain.auth.models import Staff, StaffRepository
+from app.domain.auth.models import Staff, StaffRepository, StaffCreateRequest
 from app.domain.consultations.models import Consultation, ConsultationRepository, ConsultationStatus
 from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
 from app.domain.prescriptions.models import Prescription, PrescriptionRepository
 from app.infrastructure.db.sql.models.tables import StaffRow, PatientRow, ConsultationRow, PrescriptionRow, AuditLogRow
-from app.domain.auth.models import StaffCreateRequest
 
 # ── Example pattern (repeat for each repository) ───────────────────────
 #
@@ -164,33 +163,35 @@ class SqlConsultationRepository(ConsultationRepository):
 		row = self.session.query(ConsultationRow).filter_by(consultation_id=consultation_id).first()
 		return self._to_domain(row) if row else None
 
-	def create(self, patient_id: int, doctor_id: int, status: str = "recording") -> Consultation:
+	def create(self, consultation: Consultation) -> Consultation:
 		row = ConsultationRow(
-			patient_id=patient_id,
-			doctor_id=doctor_id,
-			status=status,
-			started_at=datetime.utcnow(),
+			patient_id=consultation.patient_id,
+			doctor_id=consultation.doctor_id,
+			status=consultation.status.value,
+			started_at=consultation.started_at or datetime.utcnow(),
+			ended_at=consultation.ended_at,
+			approved_at=consultation.approved_at,
+			transcript_doc_id=consultation.transcript_doc_id,
+			notes_doc_id=consultation.notes_doc_id,
 		)
 		self.session.add(row)
 		self.session.commit()
 		self.session.refresh(row)
 		return self._to_domain(row)
 
-	def update_status(self, consultation_id: int, status: str) -> Consultation | None:
+	def update_status(self, consultation_id: int, status: ConsultationStatus) -> None:
 		row = self.session.query(ConsultationRow).filter_by(consultation_id=consultation_id).first()
 		if not row:
-			return None
-		row.status = status
+			return
+		row.status = status.value
 		self.session.commit()
-		self.session.refresh(row)
-		return self._to_domain(row)
 
 	def _to_domain(self, row: ConsultationRow) -> Consultation:
 		return Consultation(
 			id=row.consultation_id,
 			doctor_id=row.doctor_id,
 			patient_id=row.patient_id,
-			status=row.status,
+			status=ConsultationStatus(row.status),
 			started_at=row.started_at,
 			ended_at=row.ended_at,
 			approved_at=row.approved_at,
@@ -213,8 +214,21 @@ class SqlPrescriptionRepository(PrescriptionRepository):
 		row = self.session.query(PrescriptionRow).filter_by(prescription_id=prescription_id).first()
 		return self._to_domain(row) if row else None
 
-	def create(self, **kwargs) -> Prescription:
-		row = PrescriptionRow(**kwargs)
+	def create(self, prescription: Prescription) -> Prescription:
+		row = PrescriptionRow(
+			consultation_id=prescription.consultation_id,
+			doctor_id=prescription.doctor_id,
+			patient_id=prescription.patient_id,
+			diagnosis=prescription.diagnosis,
+			medications=prescription.medications,
+			instructions=prescription.instructions,
+			follow_up_date=prescription.follow_up_date,
+			pdf_path=prescription.pdf_path,
+			is_approved=prescription.is_approved,
+			is_emailed=prescription.is_emailed,
+			emailed_at=prescription.emailed_at,
+			version=prescription.version,
+		)
 		self.session.add(row)
 		self.session.commit()
 		self.session.refresh(row)
