@@ -49,4 +49,3 @@ def test_openapi_schema_available() -> None:
     schema = response.json()
     assert schema["info"]["title"] == "OPD-Vertex"
     assert "/health" in schema["paths"]
-

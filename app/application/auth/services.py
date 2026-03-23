@@ -13,7 +13,7 @@ from app.infrastructure.logging import apply_logging_aspect
 class AuthApplicationService:
     def __init__(self, auth_service: AuthService) -> None:
         self.auth_service = auth_service
-    
+
     def register_patient(self, req: PatientCreateRequest) -> User:
         req.password_hash = hash_password(req.password_hash)
         patient = self.auth_service.patient_repository.create(req)

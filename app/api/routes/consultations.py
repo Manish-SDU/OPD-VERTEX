@@ -23,7 +23,9 @@ def consultation_list(request: Request) -> HTMLResponse:
 
 @router.get("/new", response_class=HTMLResponse)
 def consultation_new(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "consultations/create.html", {"page_title": "Start Consultation"})
+    return templates.TemplateResponse(
+        request, "consultations/create.html", {"page_title": "Start Consultation"}
+    )
 
 
 @router.post("")

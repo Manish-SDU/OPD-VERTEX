@@ -40,7 +40,6 @@ class Patient(BaseModel):
             role=self.role,
             is_active=self.is_active,
             date_of_birth=self.date_of_birth,
-
         )
 
 

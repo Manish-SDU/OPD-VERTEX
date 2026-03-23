@@ -16,6 +16,7 @@ from app.domain.prescriptions.models import Medication
 
 # --- Vitals sub-model --------------------------------------------------
 
+
 class Vitals(BaseModel):
     blood_pressure: str = "Not recorded"
     heart_rate: str = "Not recorded"
@@ -25,6 +26,7 @@ class Vitals(BaseModel):
 
 
 # --- Generated clinical notes (LLM output) -----------------------------
+
 
 class GeneratedClinicalNotes(BaseModel):
     """Structure returned by the Prescription & Clinical Notes Generator prompt."""
@@ -46,6 +48,7 @@ class GeneratedClinicalNotes(BaseModel):
 
 # --- Doctor edit tracking -----------------------------------------------
 
+
 class DoctorEdit(BaseModel):
     field_path: str
     old_value: str
@@ -55,6 +58,7 @@ class DoctorEdit(BaseModel):
 
 # --- MongoDB: generated_documents (Collection 3) -----------------------
 
+
 class GeneratedDocument(BaseModel):
     """Staging area for LLM outputs. Doctor reviews here before approval."""
 
@@ -63,7 +67,9 @@ class GeneratedDocument(BaseModel):
     doctor_id: int
     patient_id: int
     document_type: str = "clinical_notes_and_prescription"
-    generated_output: GeneratedClinicalNotes = Field(default_factory=GeneratedClinicalNotes)
+    generated_output: GeneratedClinicalNotes = Field(
+        default_factory=GeneratedClinicalNotes
+    )
     suggestive_output: dict[str, Any] | None = None
     doctor_edits: list[DoctorEdit] = Field(default_factory=list)
     status: str = "pending_review"  # pending_review | approved | rejected | revised
@@ -73,6 +79,7 @@ class GeneratedDocument(BaseModel):
 
 
 # --- MongoDB: consultation_documents (Collection 4) --------------------
+
 
 class ConsultationDocument(BaseModel):
     """Stores transcript + AI notes + doctor edits per consultation."""
@@ -89,6 +96,7 @@ class ConsultationDocument(BaseModel):
 
 
 # --- MongoDB: llm_prompts (Collection 2) --------------------------------
+
 
 class LlmPromptConfig(BaseModel):
     """Stored in MongoDB so prompts can be updated without redeploying."""
@@ -107,9 +115,12 @@ class LlmPromptConfig(BaseModel):
 
 # --- Repository contracts -----------------------------------------------
 
+
 class GeneratedDocumentRepository(ABC):
     @abstractmethod
-    def get_by_consultation_id(self, consultation_id: int) -> GeneratedDocument | None: ...
+    def get_by_consultation_id(
+        self, consultation_id: int
+    ) -> GeneratedDocument | None: ...
 
     @abstractmethod
     def save(self, document: GeneratedDocument) -> GeneratedDocument: ...
@@ -117,7 +128,9 @@ class GeneratedDocumentRepository(ABC):
 
 class ConsultationDocumentRepository(ABC):
     @abstractmethod
-    def get_by_consultation_id(self, consultation_id: int) -> ConsultationDocument | None: ...
+    def get_by_consultation_id(
+        self, consultation_id: int
+    ) -> ConsultationDocument | None: ...
 
     @abstractmethod
     def save(self, document: ConsultationDocument) -> ConsultationDocument: ...

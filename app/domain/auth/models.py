@@ -9,12 +9,10 @@ from typing import Literal
 from pydantic import BaseModel
 
 
-
 USER_ROLES = ("patient", "doctor", "admin")
 
 
 class User(BaseModel):
-
     id: int
     email: str
     first_name: str
@@ -34,7 +32,7 @@ class Staff(BaseModel):
     specialization: str | None = None
     license_number: str | None = None
     phone: str | None = None
-    role: Literal[ "doctor", "admin"]
+    role: Literal["doctor", "admin"]
     is_active: bool = True
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -46,9 +44,10 @@ class Staff(BaseModel):
             first_name=self.first_name,
             last_name=self.last_name,
             role=self.role,
-            is_active=self.is_active
+            is_active=self.is_active,
         )
-    
+
+
 class StaffCreateRequest(BaseModel):
     first_name: str
     last_name: str
@@ -59,6 +58,7 @@ class StaffCreateRequest(BaseModel):
     specialization: str | None = None
     license_number: str | None = None
 
+
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -66,8 +66,9 @@ class LoginRequest(BaseModel):
 
 class AuthService(ABC):
     from app.domain.patients.models import PatientCreateRequest, PatientRepository
+
     patient_repository: PatientRepository  # For cross-repository operations if needed
-    staff_repository: StaffRepository 
+    staff_repository: StaffRepository
 
     @abstractmethod
     def authenticate(self, email: str, password: str) -> User | None:
@@ -76,8 +77,6 @@ class AuthService(ABC):
     @abstractmethod
     def get_current_user(self) -> User | None:
         """Return current authenticated user object."""
-    
-    
 
 
 class StaffRepository(ABC):

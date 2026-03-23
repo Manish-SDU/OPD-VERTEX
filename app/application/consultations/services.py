@@ -23,7 +23,9 @@ class ConsultationApplicationService:
     def get_consultation(self, consultation_id: int) -> Consultation | None:
         return self.repository.get_by_id(consultation_id)
 
-    def create_consultation(self, payload: ConsultationCreateRequest, doctor_id: int) -> Consultation:
+    def create_consultation(
+        self, payload: ConsultationCreateRequest, doctor_id: int
+    ) -> Consultation:
         consultation = Consultation(
             doctor_id=doctor_id,
             patient_id=payload.patient_id,

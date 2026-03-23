@@ -23,4 +23,3 @@ def test_health_endpoint() -> None:
 def test_health_returns_json_content_type() -> None:
     response = client.get("/health")
     assert "application/json" in response.headers["content-type"]
-

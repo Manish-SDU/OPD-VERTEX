@@ -6,9 +6,10 @@ so no database connection is needed.
 
 from datetime import date
 
-from app.domain.audit.models import AuditLog
-from app.domain.auth.models import LoginRequest, StaffCreateRequest
-from app.domain.consultations.models import ConsultationCreateRequest, ConsultationStatus
+from app.domain.consultations.models import (
+    ConsultationCreateRequest,
+    ConsultationStatus,
+)
 from app.domain.patients.models import PatientCreateRequest
 from app.domain.suggestive_mode.models import RiskLevel
 
@@ -97,7 +98,9 @@ class TestAuditApplicationService:
 
 
 class TestReviewApplicationService:
-    def test_build_review_context_creates_transcript_and_notes(self, review_app_service):
+    def test_build_review_context_creates_transcript_and_notes(
+        self, review_app_service
+    ):
         con_doc, gen_doc, review = review_app_service.build_review_context(99)
 
         assert con_doc is not None
@@ -117,4 +120,3 @@ class TestReviewApplicationService:
         con_doc, gen_doc, review = review_app_service.build_review_context(50)
         assert con_doc.consultation_id == 50
         assert gen_doc.consultation_id == 50
-

@@ -5,14 +5,6 @@ from __future__ import annotations
 from app.domain.suggestive_mode.models import RiskLevel
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryConsultationDocumentRepository,
-    InMemoryGeneratedDocumentRepository,
-    InMemoryPromptRepository,
-    InMemoryEmailTemplateRepository,
-    MockClinicalNoteGenerator,
-    MockEmailService,
-    MockPdfGenerator,
-    MockSuggestiveModeService,
-    MockTranscriptionService,
 )
 from app.domain.clinical_notes.models import ConsultationDocument
 

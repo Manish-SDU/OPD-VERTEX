@@ -37,13 +37,19 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             elapsed_ms = (time.perf_counter() - start) * 1000
             logger.exception(
                 "[REQUEST]  %s %s from %s — unhandled error after %.1fms",
-                method, path, client_ip, elapsed_ms,
+                method,
+                path,
+                client_ip,
+                elapsed_ms,
             )
             raise
 
         elapsed_ms = (time.perf_counter() - start) * 1000
         logger.info(
             "[RESPONSE] %s %s → %s (%.1fms)",
-            method, path, response.status_code, elapsed_ms,
+            method,
+            path,
+            response.status_code,
+            elapsed_ms,
         )
         return response

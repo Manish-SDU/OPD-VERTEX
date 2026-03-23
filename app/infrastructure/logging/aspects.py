@@ -20,6 +20,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 # Component-aware logger factory
 # ---------------------------------------------------------------------------
 
+
 def get_component_logger(component: str, module: str | None = None) -> logging.Logger:
     """Return a logger namespaced by architectural component.
 
@@ -36,6 +37,7 @@ def get_component_logger(component: str, module: str | None = None) -> logging.L
 # ---------------------------------------------------------------------------
 # Generic method-level logging aspect
 # ---------------------------------------------------------------------------
+
 
 def log_method(
     component: str,
@@ -65,7 +67,9 @@ def log_method(
             extra_info = ""
             if log_args:
                 # Exclude 'self' for bound methods
-                display_args = args[1:] if args and hasattr(args[0], fn.__name__) else args
+                display_args = (
+                    args[1:] if args and hasattr(args[0], fn.__name__) else args
+                )
                 extra_info = f" args={display_args} kwargs={kwargs}"
 
             logger.log(level, "[ENTER] %s%s", fn_name, extra_info)
@@ -80,7 +84,13 @@ def log_method(
 
             elapsed_ms = (time.perf_counter() - start) * 1000
             result_info = f" result={result}" if log_result else ""
-            logger.log(level, "[EXIT]  %s completed in %.1fms%s", fn_name, elapsed_ms, result_info)
+            logger.log(
+                level,
+                "[EXIT]  %s completed in %.1fms%s",
+                fn_name,
+                elapsed_ms,
+                result_info,
+            )
             return result
 
         return wrapper  # type: ignore[return-value]
@@ -91,6 +101,7 @@ def log_method(
 # ---------------------------------------------------------------------------
 # Layer-specific convenience decorators
 # ---------------------------------------------------------------------------
+
 
 def log_service(module: str, *, log_args: bool = False) -> Callable[[F], F]:
     """Aspect for application-service methods."""
@@ -115,6 +126,7 @@ def log_infrastructure(module: str) -> Callable[[F], F]:
 # ---------------------------------------------------------------------------
 # Class-level aspect applicator
 # ---------------------------------------------------------------------------
+
 
 def apply_logging_aspect(
     component: str,

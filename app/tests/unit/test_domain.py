@@ -9,7 +9,11 @@ from app.domain.common.types import generate_id, utcnow
 from app.domain.consultations.models import ConsultationStatus
 from app.domain.patients.models import Patient
 from app.domain.prescriptions.models import Medication
-from app.domain.suggestive_mode.models import RiskLevel, SuggestionSeverity, SuggestionType
+from app.domain.suggestive_mode.models import (
+    RiskLevel,
+    SuggestionSeverity,
+    SuggestionType,
+)
 
 
 class TestGenerateId:
@@ -30,15 +34,26 @@ class TestUtcNow:
 
 class TestConsultationStatus:
     def test_all_statuses(self):
-        expected = {"recording", "transcribing", "processing", "review", "approved", "rejected", "cancelled"}
+        expected = {
+            "recording",
+            "transcribing",
+            "processing",
+            "review",
+            "approved",
+            "rejected",
+            "cancelled",
+        }
         assert {s.value for s in ConsultationStatus} == expected
 
 
 class TestStaffToUser:
     def test_converts_to_user(self):
         staff = Staff(
-            id=1, first_name="Ada", last_name="Demo",
-            email="ada@example.com", role="doctor",
+            id=1,
+            first_name="Ada",
+            last_name="Demo",
+            email="ada@example.com",
+            role="doctor",
         )
         user = staff.to_user()
         assert isinstance(user, User)
@@ -49,15 +64,19 @@ class TestStaffToUser:
 class TestPatientModel:
     def test_default_role(self):
         p = Patient(
-            first_name="A", last_name="B",
-            date_of_birth=date(2000, 1, 1), email="a@b.com",
+            first_name="A",
+            last_name="B",
+            date_of_birth=date(2000, 1, 1),
+            email="a@b.com",
         )
         assert p.role == "patient"
 
 
 class TestMedicationModel:
     def test_default_route(self):
-        med = Medication(name="Aspirin", dosage="100mg", frequency="daily", duration="7 days")
+        med = Medication(
+            name="Aspirin", dosage="100mg", frequency="daily", duration="7 days"
+        )
         assert med.route == "oral"
 
 

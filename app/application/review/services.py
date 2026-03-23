@@ -34,12 +34,17 @@ class ReviewApplicationService:
         self, consultation_id: int
     ) -> tuple[ConsultationDocument | None, GeneratedDocument | None, SuggestiveReview]:
         # Get or create transcript
-        con_doc = self.consultation_doc_repository.get_by_consultation_id(consultation_id)
+        con_doc = self.consultation_doc_repository.get_by_consultation_id(
+            consultation_id
+        )
         if con_doc is None:
             transcript_result = self.transcription_service.transcribe(consultation_id)
             con_doc = ConsultationDocument(
                 consultation_id=consultation_id,
-                transcript={"full_text": transcript_result.full_text, "file_path": transcript_result.file_path},
+                transcript={
+                    "full_text": transcript_result.full_text,
+                    "file_path": transcript_result.file_path,
+                },
             )
             con_doc = self.consultation_doc_repository.save(con_doc)
 

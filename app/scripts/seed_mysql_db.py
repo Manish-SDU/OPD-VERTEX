@@ -1,6 +1,5 @@
 import sys
 import os
-from pathlib import Path
 
 sys.path.append(os.getcwd())
 
@@ -13,14 +12,17 @@ from passlib.hash import bcrypt
 
 DATABASE_URL = "mysql+pymysql://opd_user:opd_password@mysql:3306/opd_vertex"
 
+
 def seed():
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     db = Session()
 
-    try: 
+    try:
         print("Seeding database...")
-        existing_patient = db.query(PatientRow).filter_by(email="jane@example.com").first()
+        existing_patient = (
+            db.query(PatientRow).filter_by(email="jane@example.com").first()
+        )
         if not existing_patient:
             hashed_pw = bcrypt.hash("password")
             new_patient = PatientRow(
@@ -30,7 +32,7 @@ def seed():
                 date_of_birth="1990-01-01",
                 password_hash=hashed_pw,
                 role="patient",
-                is_active=True
+                is_active=True,
             )
             db.add(new_patient)
 
@@ -45,7 +47,7 @@ def seed():
                 role="doctor",
                 is_active=True,
                 specialization="Diagnostics",
-                license_number="DOC123456"
+                license_number="DOC123456",
             )
             db.add(new_doctor)
 
@@ -68,6 +70,7 @@ def seed():
         db.rollback()
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed()

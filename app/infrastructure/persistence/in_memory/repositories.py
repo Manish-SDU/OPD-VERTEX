@@ -19,29 +19,54 @@ from app.domain.clinical_notes.models import (
     GeneratedDocumentRepository,
     LlmPromptConfig,
     PromptRepository,
-    Vitals,
 )
 from app.domain.common.types import utcnow
-from app.domain.consultations.models import Consultation, ConsultationRepository, ConsultationStatus
+from app.domain.consultations.models import (
+    Consultation,
+    ConsultationRepository,
+    ConsultationStatus,
+)
 from app.domain.email.models import EmailService, EmailTemplate, EmailTemplateRepository
 from app.domain.auth.models import StaffCreateRequest
 from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
 from app.domain.pdf.models import PdfGenerator
-from app.domain.prescriptions.models import Medication, Prescription, PrescriptionRepository
-from app.domain.suggestive_mode.models import RiskLevel, SuggestiveModeService, SuggestiveReview
+from app.domain.prescriptions.models import (
+    Medication,
+    Prescription,
+    PrescriptionRepository,
+)
+from app.domain.suggestive_mode.models import (
+    RiskLevel,
+    SuggestiveModeService,
+    SuggestiveReview,
+)
 from app.domain.transcription.models import TranscriptResult, TranscriptionService
 
 
 # ── staff ──────────────────────────────────────────────────────────────
 
+
 class InMemoryStaffRepository(StaffRepository):
     def __init__(self) -> None:
         self._staff = [
-            Staff(id=1, first_name="Ada", last_name="Demo", email="doctor@example.local",
-                  password_hash="", specialization="General Medicine", license_number="LIC001",
-                  role="doctor"),
-            Staff(id=2, first_name="Alex", last_name="Admin", email="admin@example.local",
-                  password_hash="", role="admin"),
+            Staff(
+                id=1,
+                first_name="Ada",
+                last_name="Demo",
+                email="doctor@example.local",
+                password_hash="",
+                specialization="General Medicine",
+                license_number="LIC001",
+                role="doctor",
+            ),
+            Staff(
+                id=2,
+                first_name="Alex",
+                last_name="Admin",
+                email="admin@example.local",
+                password_hash="",
+                role="admin",
+            ),
         ]
 
     def get_by_email(self, email: str) -> Staff | None:
@@ -68,13 +93,28 @@ class InMemoryStaffRepository(StaffRepository):
 
 # ── patients ───────────────────────────────────────────────────────────
 
+
 class InMemoryPatientRepository(PatientRepository):
     def __init__(self) -> None:
         self._patients = [
-            Patient(id=1, first_name="Giulia", last_name="Rossi", date_of_birth=date(1990, 4, 12),
-                    email="giulia@example.local", gender="F", phone="+39 0001"),
-            Patient(id=2, first_name="Marco", last_name="Bianchi", date_of_birth=date(1984, 8, 19),
-                    email="marco@example.local", gender="M", phone="+39 0002"),
+            Patient(
+                id=1,
+                first_name="Giulia",
+                last_name="Rossi",
+                date_of_birth=date(1990, 4, 12),
+                email="giulia@example.local",
+                gender="F",
+                phone="+39 0001",
+            ),
+            Patient(
+                id=2,
+                first_name="Marco",
+                last_name="Bianchi",
+                date_of_birth=date(1984, 8, 19),
+                email="marco@example.local",
+                gender="M",
+                phone="+39 0002",
+            ),
         ]
         self._next_id = 3
 
@@ -88,9 +128,14 @@ class InMemoryPatientRepository(PatientRepository):
         return next((p for p in self._patients if p.email == email), None)
 
     def create(self, payload: PatientCreateRequest) -> Patient:
-        patient = Patient(id=self._next_id, first_name=payload.first_name,
-                          last_name=payload.last_name, date_of_birth=payload.date_of_birth,
-                          email=payload.email, gender=payload.gender)
+        patient = Patient(
+            id=self._next_id,
+            first_name=payload.first_name,
+            last_name=payload.last_name,
+            date_of_birth=payload.date_of_birth,
+            email=payload.email,
+            gender=payload.gender,
+        )
         self._next_id += 1
         self._patients.append(patient)
         return patient
@@ -98,12 +143,25 @@ class InMemoryPatientRepository(PatientRepository):
 
 # ── consultations ──────────────────────────────────────────────────────
 
+
 class InMemoryConsultationRepository(ConsultationRepository):
     def __init__(self) -> None:
         now = utcnow()
         self._consultations = [
-            Consultation(id=1, doctor_id=1, patient_id=1, status=ConsultationStatus.REVIEW, started_at=now),
-            Consultation(id=2, doctor_id=1, patient_id=2, status=ConsultationStatus.TRANSCRIBING, started_at=now),
+            Consultation(
+                id=1,
+                doctor_id=1,
+                patient_id=1,
+                status=ConsultationStatus.REVIEW,
+                started_at=now,
+            ),
+            Consultation(
+                id=2,
+                doctor_id=1,
+                patient_id=2,
+                status=ConsultationStatus.TRANSCRIBING,
+                started_at=now,
+            ),
         ]
         self._next_id = 3
 
@@ -127,11 +185,14 @@ class InMemoryConsultationRepository(ConsultationRepository):
 
 # ── consultation_documents (NoSQL mock) ────────────────────────────────
 
+
 class InMemoryConsultationDocumentRepository(ConsultationDocumentRepository):
     def __init__(self) -> None:
         self._docs: dict[int, ConsultationDocument] = {}
 
-    def get_by_consultation_id(self, consultation_id: int) -> ConsultationDocument | None:
+    def get_by_consultation_id(
+        self, consultation_id: int
+    ) -> ConsultationDocument | None:
         return self._docs.get(consultation_id)
 
     def save(self, document: ConsultationDocument) -> ConsultationDocument:
@@ -141,17 +202,28 @@ class InMemoryConsultationDocumentRepository(ConsultationDocumentRepository):
 
 # ── generated_documents (NoSQL mock) ───────────────────────────────────
 
+
 class InMemoryGeneratedDocumentRepository(GeneratedDocumentRepository):
     def __init__(self) -> None:
         self._documents: dict[int, GeneratedDocument] = {
             1: GeneratedDocument(
-                id="gen_001", consultation_id=1, doctor_id=1, patient_id=1,
+                id="gen_001",
+                consultation_id=1,
+                doctor_id=1,
+                patient_id=1,
                 generated_output=GeneratedClinicalNotes(
                     patient_info={"name": "Giulia Rossi", "age": "36", "gender": "F"},
                     chief_complaint="Follow-up hypertension",
                     diagnosis="Essential hypertension, controlled",
-                    medications=[Medication(name="Lisinopril", dosage="10 mg", frequency="once daily",
-                                           duration="30 days", route="oral")],
+                    medications=[
+                        Medication(
+                            name="Lisinopril",
+                            dosage="10 mg",
+                            frequency="once daily",
+                            duration="30 days",
+                            route="oral",
+                        )
+                    ],
                     clinical_notes_summary="Routine follow-up. BP controlled on current medication.",
                 ),
             ),
@@ -167,15 +239,24 @@ class InMemoryGeneratedDocumentRepository(GeneratedDocumentRepository):
 
 # ── llm_prompts (NoSQL mock) ───────────────────────────────────────────
 
+
 class InMemoryPromptRepository(PromptRepository):
     def list_prompts(self) -> list[LlmPromptConfig]:
         return [
-            LlmPromptConfig(id="prescription_generation_v1",
-                            prompt_name="Prescription & Clinical Notes Generator",
-                            model_target="llama3.1-8b", temperature=0.2, max_tokens=2048),
-            LlmPromptConfig(id="suggestive_mode_v1",
-                            prompt_name="Suggestive Mode -- Clinical Safety Net",
-                            model_target="llama3.1-8b", temperature=0.3, max_tokens=1500),
+            LlmPromptConfig(
+                id="prescription_generation_v1",
+                prompt_name="Prescription & Clinical Notes Generator",
+                model_target="llama3.1-8b",
+                temperature=0.2,
+                max_tokens=2048,
+            ),
+            LlmPromptConfig(
+                id="suggestive_mode_v1",
+                prompt_name="Suggestive Mode -- Clinical Safety Net",
+                model_target="llama3.1-8b",
+                temperature=0.3,
+                max_tokens=1500,
+            ),
         ]
 
     def get_by_id(self, prompt_id: str) -> LlmPromptConfig | None:
@@ -183,6 +264,7 @@ class InMemoryPromptRepository(PromptRepository):
 
 
 # ── email_templates (NoSQL mock) ───────────────────────────────────────
+
 
 class InMemoryEmailTemplateRepository(EmailTemplateRepository):
     def list_templates(self) -> list[EmailTemplate]:
@@ -201,15 +283,27 @@ class InMemoryEmailTemplateRepository(EmailTemplateRepository):
 
 # ── prescriptions ──────────────────────────────────────────────────────
 
+
 class InMemoryPrescriptionRepository(PrescriptionRepository):
     def __init__(self) -> None:
         self._prescriptions = [
             Prescription(
-                id=1, consultation_id=1, doctor_id=1, patient_id=1,
+                id=1,
+                consultation_id=1,
+                doctor_id=1,
+                patient_id=1,
                 diagnosis="Essential hypertension, controlled",
-                medications=[Medication(name="Lisinopril", dosage="10 mg", frequency="once daily",
-                                        duration="30 days", route="oral")],
-                is_approved=True, version=1,
+                medications=[
+                    Medication(
+                        name="Lisinopril",
+                        dosage="10 mg",
+                        frequency="once daily",
+                        duration="30 days",
+                        route="oral",
+                    )
+                ],
+                is_approved=True,
+                version=1,
             )
         ]
         self._next_id = 2
@@ -229,10 +323,18 @@ class InMemoryPrescriptionRepository(PrescriptionRepository):
 
 # ── audit_logs ─────────────────────────────────────────────────────────
 
+
 class InMemoryAuditLogRepository(AuditLogRepository):
     def __init__(self) -> None:
         self._entries = [
-            AuditLog(id=1, user_id=1, user_role="doctor", action="LOGIN", target_table="staff", target_id=1),
+            AuditLog(
+                id=1,
+                user_id=1,
+                user_role="doctor",
+                action="LOGIN",
+                target_table="staff",
+                target_id=1,
+            ),
         ]
         self._next_id = 2
 
@@ -248,6 +350,7 @@ class InMemoryAuditLogRepository(AuditLogRepository):
 
 # ── Mock services (transcription, LLM, suggestive, PDF, email) ────────
 
+
 class MockTranscriptionService(TranscriptionService):
     def transcribe(self, consultation_id: int) -> TranscriptResult:
         return TranscriptResult(
@@ -262,7 +365,9 @@ class MockClinicalNoteGenerator(ClinicalNoteGenerator):
 
     def generate(self, consultation_id: int, transcript_text: str) -> GeneratedDocument:
         document = GeneratedDocument(
-            consultation_id=consultation_id, doctor_id=1, patient_id=1,
+            consultation_id=consultation_id,
+            doctor_id=1,
+            patient_id=1,
             generated_output=GeneratedClinicalNotes(
                 chief_complaint="Mock complaint",
                 diagnosis="Mock diagnosis",

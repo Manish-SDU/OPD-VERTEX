@@ -12,7 +12,9 @@ router = APIRouter()
 
 @router.get("/{consultation_id}", response_class=HTMLResponse)
 def review_page(consultation_id: int, request: Request) -> HTMLResponse:
-    con_doc, gen_doc, suggestive_review = get_review_app_service().build_review_context(consultation_id)
+    con_doc, gen_doc, suggestive_review = get_review_app_service().build_review_context(
+        consultation_id
+    )
     return templates.TemplateResponse(
         request,
         "review/detail.html",
@@ -28,9 +30,17 @@ def review_page(consultation_id: int, request: Request) -> HTMLResponse:
 
 @router.post("/{consultation_id}/approve")
 def approve_review(consultation_id: int) -> dict[str, str]:
-    return {"status": "approved", "consultation_id": str(consultation_id), "detail": "TODO: persist approval workflow."}
+    return {
+        "status": "approved",
+        "consultation_id": str(consultation_id),
+        "detail": "TODO: persist approval workflow.",
+    }
 
 
 @router.post("/{consultation_id}/reject")
 def reject_review(consultation_id: int) -> dict[str, str]:
-    return {"status": "rejected", "consultation_id": str(consultation_id), "detail": "TODO: persist rejection workflow."}
+    return {
+        "status": "rejected",
+        "consultation_id": str(consultation_id),
+        "detail": "TODO: persist rejection workflow.",
+    }

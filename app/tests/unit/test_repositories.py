@@ -6,13 +6,6 @@ from app.domain.audit.models import AuditLog
 from app.domain.consultations.models import Consultation, ConsultationStatus
 from app.domain.patients.models import PatientCreateRequest
 from app.domain.prescriptions.models import Medication, Prescription
-from app.infrastructure.persistence.in_memory.repositories import (
-    InMemoryAuditLogRepository,
-    InMemoryConsultationRepository,
-    InMemoryPatientRepository,
-    InMemoryPrescriptionRepository,
-    InMemoryStaffRepository,
-)
 
 
 # ── Staff Repository ───────────────────────────────────────────────────
@@ -67,9 +60,11 @@ class TestInMemoryPatientRepository:
     def test_create_increments_id(self, patient_repo):
         initial_count = len(patient_repo.list_all())
         req = PatientCreateRequest(
-            first_name="A", last_name="B",
+            first_name="A",
+            last_name="B",
             date_of_birth=date(1990, 1, 1),
-            email="a@b.com", password_hash="x",
+            email="a@b.com",
+            password_hash="x",
         )
         patient_repo.create(req)
         assert len(patient_repo.list_all()) == initial_count + 1
@@ -116,9 +111,15 @@ class TestInMemoryPrescriptionRepository:
 
     def test_create_prescription(self, prescription_repo):
         p = Prescription(
-            consultation_id=1, doctor_id=1, patient_id=1,
+            consultation_id=1,
+            doctor_id=1,
+            patient_id=1,
             diagnosis="Test diagnosis",
-            medications=[Medication(name="Aspirin", dosage="100mg", frequency="daily", duration="7 days")],
+            medications=[
+                Medication(
+                    name="Aspirin", dosage="100mg", frequency="daily", duration="7 days"
+                )
+            ],
         )
         created = prescription_repo.create(p)
         assert created.id is not None
@@ -137,4 +138,3 @@ class TestInMemoryAuditLogRepository:
         created = audit_repo.append(entry)
         assert created.id is not None
         assert any(e.action == "TEST_ACTION" for e in audit_repo.list_recent())
-

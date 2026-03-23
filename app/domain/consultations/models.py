@@ -29,8 +29,8 @@ class Consultation(BaseModel):
     started_at: datetime | None = None
     ended_at: datetime | None = None
     approved_at: datetime | None = None
-    transcript_doc_id: str | None = None   # MongoDB ObjectId string
-    notes_doc_id: str | None = None        # MongoDB ObjectId string
+    transcript_doc_id: str | None = None  # MongoDB ObjectId string
+    notes_doc_id: str | None = None  # MongoDB ObjectId string
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

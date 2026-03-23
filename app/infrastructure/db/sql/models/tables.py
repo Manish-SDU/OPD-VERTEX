@@ -30,6 +30,7 @@ class Base(DeclarativeBase):
 
 # ── Table 1: staff ─────────────────────────────────────────────────────
 
+
 class StaffRow(Base):
     __tablename__ = "staff"
 
@@ -39,14 +40,18 @@ class StaffRow(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     specialization: Mapped[str | None] = mapped_column(String(150), nullable=True)
-    license_number: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True)
+    license_number: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, unique=True
+    )
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     role: Mapped[str] = mapped_column(
         Enum("doctor", "admin", name="staff_role"), nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
     consultations = relationship("ConsultationRow", back_populates="doctor")
     prescriptions = relationship("PrescriptionRow", back_populates="doctor")
@@ -54,14 +59,19 @@ class StaffRow(Base):
 
 # ── Table 2: patients ──────────────────────────────────────────────────
 
+
 class PatientRow(Base):
     __tablename__ = "patients"
 
-    patient_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    patient_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     date_of_birth = mapped_column(DateTime, nullable=False)
-    gender: Mapped[str | None] = mapped_column(Enum("M", "F", "Other", name="patient_gender"), nullable=True)
+    gender: Mapped[str | None] = mapped_column(
+        Enum("M", "F", "Other", name="patient_gender"), nullable=True
+    )
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -74,7 +84,9 @@ class PatientRow(Base):
     role: Mapped[str] = mapped_column(Enum("patient", name="role"), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
     consultations = relationship("ConsultationRow", back_populates="patient")
     prescriptions = relationship("PrescriptionRow", back_populates="patient")
@@ -82,19 +94,34 @@ class PatientRow(Base):
 
 # ── Table 3: consultations ─────────────────────────────────────────────
 
+
 class ConsultationRow(Base):
     __tablename__ = "consultations"
 
-    consultation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    consultation_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
     doctor_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("staff.staff_id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False
+        Integer,
+        ForeignKey("staff.staff_id", onupdate="CASCADE", ondelete="RESTRICT"),
+        nullable=False,
     )
     patient_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("patients.patient_id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False
+        Integer,
+        ForeignKey("patients.patient_id", onupdate="CASCADE", ondelete="RESTRICT"),
+        nullable=False,
     )
     status: Mapped[str] = mapped_column(
-        Enum("recording", "transcribing", "processing", "review", "approved", "rejected", "cancelled",
-             name="consultation_status"),
+        Enum(
+            "recording",
+            "transcribing",
+            "processing",
+            "review",
+            "approved",
+            "rejected",
+            "cancelled",
+            name="consultation_status",
+        ),
         nullable=False,
         server_default="recording",
     )
@@ -104,11 +131,18 @@ class ConsultationRow(Base):
     transcript_doc_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     notes_doc_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
     __table_args__ = (
-        CheckConstraint("ended_at IS NULL OR ended_at >= started_at", name="ck_ended_after_start"),
-        CheckConstraint("approved_at IS NULL OR approved_at >= started_at", name="ck_approved_after_start"),
+        CheckConstraint(
+            "ended_at IS NULL OR ended_at >= started_at", name="ck_ended_after_start"
+        ),
+        CheckConstraint(
+            "approved_at IS NULL OR approved_at >= started_at",
+            name="ck_approved_after_start",
+        ),
     )
 
     doctor = relationship("StaffRow", back_populates="consultations")
@@ -118,10 +152,13 @@ class ConsultationRow(Base):
 
 # ── Table 4: prescriptions ─────────────────────────────────────────────
 
+
 class PrescriptionRow(Base):
     __tablename__ = "prescriptions"
 
-    prescription_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    prescription_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
     consultation_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("consultations.consultation_id"), nullable=False
     )
@@ -141,7 +178,9 @@ class PrescriptionRow(Base):
     emailed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     version: Mapped[int] = mapped_column(Integer, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
     consultation = relationship("ConsultationRow", back_populates="prescriptions")
     doctor = relationship("StaffRow", back_populates="prescriptions")
@@ -149,6 +188,7 @@ class PrescriptionRow(Base):
 
 
 # ── Table 5: audit_logs ────────────────────────────────────────────────
+
 
 class AuditLogRow(Base):
     __tablename__ = "audit_logs"

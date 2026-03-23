@@ -6,14 +6,13 @@ from typing import Optional
 
 from bcrypt import checkpw
 
-from app.domain.auth.models import AuthService, Staff, StaffRepository, User
+from app.domain.auth.models import AuthService, StaffRepository, User
 from app.domain.patients.models import PatientRepository
 from app.infrastructure.logging import apply_logging_aspect
 
 
 @apply_logging_aspect("infrastructure", "auth", exclude=frozenset({"_verify_password"}))
 class MockAuthService(AuthService):
-
     def __init__(
         self,
         staff_repository: StaffRepository,
@@ -21,7 +20,7 @@ class MockAuthService(AuthService):
     ) -> None:
         self.staff_repository = staff_repository
         self.patient_repository = patient_repository
-        
+
         self._current_user: Optional[User] = None
 
     def _verify_password(self, plain: str, hashed: str) -> bool:
@@ -60,4 +59,3 @@ class MockAuthService(AuthService):
 
     def get_current_user(self) -> User | None:
         return self._current_user
-

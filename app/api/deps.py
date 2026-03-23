@@ -16,10 +16,6 @@ from app.application.prescriptions.services import PrescriptionApplicationServic
 from app.application.review.services import ReviewApplicationService
 from app.infrastructure.auth.mock import MockAuthService
 from app.infrastructure.persistence.in_memory.repositories import (
-    InMemoryConsultationDocumentRepository,
-    InMemoryEmailTemplateRepository,
-    InMemoryGeneratedDocumentRepository,
-    InMemoryPromptRepository,
     MockClinicalNoteGenerator,
     MockEmailService,
     MockPdfGenerator,
@@ -41,9 +37,10 @@ from app.infrastructure.db.mongo.repositories.mongo_repos import (
     MongoGeneratedDocumentRepository,
     MongoPromptRepository,
 )
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException
 from jose import jwt, JWTError
 from app.core.security import SECRET_KEY, ALGORITHM
+
 
 def get_current_user(request: Request):
     token = request.cookies.get("access_token")
@@ -53,8 +50,9 @@ def get_current_user(request: Request):
         token = token.replace("Bearer ", "")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError:    
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
 
 def staff_repository() -> SqlStaffRepository:
     return SqlStaffRepository(get_session())
