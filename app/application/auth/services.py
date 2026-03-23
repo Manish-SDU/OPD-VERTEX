@@ -6,8 +6,10 @@ from app.domain.auth.models import AuthService, LoginRequest, User, StaffCreateR
 from app.domain.patients.models import PatientCreateRequest
 
 from app.core.security import hash_password
+from app.infrastructure.logging import apply_logging_aspect
 
 
+@apply_logging_aspect("service", "auth")
 class AuthApplicationService:
     def __init__(self, auth_service: AuthService) -> None:
         self.auth_service = auth_service

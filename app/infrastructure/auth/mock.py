@@ -8,8 +8,10 @@ from bcrypt import checkpw
 
 from app.domain.auth.models import AuthService, Staff, StaffRepository, User
 from app.domain.patients.models import PatientRepository
+from app.infrastructure.logging import apply_logging_aspect
 
 
+@apply_logging_aspect("infrastructure", "auth", exclude=frozenset({"_verify_password"}))
 class MockAuthService(AuthService):
 
     def __init__(

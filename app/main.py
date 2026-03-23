@@ -9,10 +9,12 @@ from app.api.router import router
 from app.core.config import get_settings
 from app.core.constants import APP_VERSION
 from app.core.logging import configure_logging
+from app.infrastructure.logging.middleware import RequestLoggingMiddleware
 
 settings = get_settings()
 configure_logging(settings.log_level)
 
 app = FastAPI(title=settings.app_name, version=APP_VERSION, debug=settings.debug)
+app.add_middleware(RequestLoggingMiddleware)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(router)

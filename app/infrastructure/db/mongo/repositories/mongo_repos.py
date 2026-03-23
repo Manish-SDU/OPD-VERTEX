@@ -46,7 +46,9 @@ from app.domain.email.models import EmailTemplate, EmailTemplateRepository
 # ── Real MongoDB repository implementations ─────────────────────────────
 from app.infrastructure.db.mongo.collections import names
 from bson import ObjectId
+from app.infrastructure.logging import apply_logging_aspect
 
+@apply_logging_aspect("repository", "email_templates")
 class MongoEmailTemplateRepository(EmailTemplateRepository):
   def __init__(self, db: Database) -> None:
     self.collection = db[names.EMAIL_TEMPLATES]
@@ -61,7 +63,7 @@ class MongoEmailTemplateRepository(EmailTemplateRepository):
       return EmailTemplate(id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"})
     return None
 
-
+@apply_logging_aspect("repository", "prompts")
 class MongoPromptRepository(PromptRepository):
   def __init__(self, db: Database) -> None:
     self.collection = db[names.LLM_PROMPTS]
@@ -77,6 +79,7 @@ class MongoPromptRepository(PromptRepository):
     return None
 
 
+@apply_logging_aspect("repository", "generated_documents")
 class MongoGeneratedDocumentRepository(GeneratedDocumentRepository):
   def __init__(self, db: Database) -> None:
     self.collection = db[names.GENERATED_DOCUMENTS]
@@ -100,6 +103,7 @@ class MongoGeneratedDocumentRepository(GeneratedDocumentRepository):
     return GeneratedDocument(id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"})
 
 
+@apply_logging_aspect("repository", "consultation_documents")
 class MongoConsultationDocumentRepository(ConsultationDocumentRepository):
   def __init__(self, db: Database) -> None:
     self.collection = db[names.CONSULTATION_DOCUMENTS]

@@ -9,8 +9,10 @@ from app.domain.consultations.models import (
     ConsultationRepository,
     ConsultationStatus,
 )
+from app.infrastructure.logging import apply_logging_aspect
 
 
+@apply_logging_aspect("service", "consultations")
 class ConsultationApplicationService:
     def __init__(self, repository: ConsultationRepository) -> None:
         self.repository = repository

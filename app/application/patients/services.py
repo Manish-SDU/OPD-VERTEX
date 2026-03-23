@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
+from app.infrastructure.logging import apply_logging_aspect
 
 
+@apply_logging_aspect("service", "patients")
 class PatientApplicationService:
     def __init__(self, repository: PatientRepository) -> None:
         self.repository = repository

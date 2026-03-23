@@ -11,8 +11,10 @@ from app.domain.clinical_notes.models import (
 )
 from app.domain.suggestive_mode.models import SuggestiveModeService, SuggestiveReview
 from app.domain.transcription.models import TranscriptionService
+from app.infrastructure.logging import apply_logging_aspect
 
 
+@apply_logging_aspect("service", "review")
 class ReviewApplicationService:
     def __init__(
         self,

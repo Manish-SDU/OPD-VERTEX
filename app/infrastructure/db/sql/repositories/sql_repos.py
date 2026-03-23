@@ -20,6 +20,7 @@ from app.domain.consultations.models import Consultation, ConsultationRepository
 from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
 from app.domain.prescriptions.models import Prescription, PrescriptionRepository
 from app.infrastructure.db.sql.models.tables import StaffRow, PatientRow, ConsultationRow, PrescriptionRow, AuditLogRow
+from app.infrastructure.logging import apply_logging_aspect
 
 # ── Example pattern (repeat for each repository) ───────────────────────
 #
@@ -35,6 +36,7 @@ from app.infrastructure.db.sql.models.tables import StaffRow, PatientRow, Consul
 #
 
 # ── SqlStaffRepository ───────────────────────────────────────────────
+@apply_logging_aspect("repository", "staff")
 class SqlStaffRepository(StaffRepository):
 	def __init__(self, session: Session) -> None:
 		self.session = session
@@ -89,6 +91,7 @@ class SqlStaffRepository(StaffRepository):
 
 
 # ── SqlPatientRepository ─────────────────────────────────────────────
+@apply_logging_aspect("repository", "patients")
 class SqlPatientRepository(PatientRepository):
 	def __init__(self, session: Session) -> None:
 		self.session = session
@@ -151,6 +154,7 @@ class SqlPatientRepository(PatientRepository):
 		return self._to_domain(row)
 
 # ── SqlConsultationRepository ────────────────────────────────────────
+@apply_logging_aspect("repository", "consultations")
 class SqlConsultationRepository(ConsultationRepository):
 	def __init__(self, session: Session) -> None:
 		self.session = session
@@ -202,6 +206,7 @@ class SqlConsultationRepository(ConsultationRepository):
 		)
 
 # ── SqlPrescriptionRepository ────────────────────────────────────────
+@apply_logging_aspect("repository", "prescriptions")
 class SqlPrescriptionRepository(PrescriptionRepository):
 	def __init__(self, session: Session) -> None:
 		self.session = session
@@ -254,6 +259,7 @@ class SqlPrescriptionRepository(PrescriptionRepository):
 		)
 
 # ── SqlAuditLogRepository ────────────────────────────────────────────
+@apply_logging_aspect("repository", "audit")
 class SqlAuditLogRepository(AuditLogRepository):
 	def __init__(self, session: Session) -> None:
 		self.session = session
