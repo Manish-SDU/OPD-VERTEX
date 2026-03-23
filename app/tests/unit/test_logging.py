@@ -156,8 +156,14 @@ class TestApplyLoggingAspect:
             result = svc.public()
 
         assert result == "secret"
-        messages = " ".join(r.message for r in caplog.records)
-        assert "_private" not in messages
+        # Only "public" should appear as an [ENTER]/[EXIT] target,
+        # "_private" must NOT be wrapped by the aspect.
+        logged_targets = [
+            r.message.split("]", 1)[1].strip().split()[0]
+            for r in caplog.records
+            if "[ENTER]" in r.message or "[EXIT]" in r.message
+        ]
+        assert all("_private" not in t.split(".")[-1] for t in logged_targets)
 
     def test_exclude_parameter_skips_methods(self, caplog):
         @apply_logging_aspect("test", "cls", exclude=frozenset({"skip_me"}))

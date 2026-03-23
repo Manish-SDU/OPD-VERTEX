@@ -24,6 +24,7 @@ from app.domain.clinical_notes.models import (
 from app.domain.common.types import utcnow
 from app.domain.consultations.models import Consultation, ConsultationRepository, ConsultationStatus
 from app.domain.email.models import EmailService, EmailTemplate, EmailTemplateRepository
+from app.domain.auth.models import StaffCreateRequest
 from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
 from app.domain.pdf.models import PdfGenerator
 from app.domain.prescriptions.models import Medication, Prescription, PrescriptionRepository
@@ -49,6 +50,21 @@ class InMemoryStaffRepository(StaffRepository):
     def get_by_id(self, staff_id: int) -> Staff | None:
         return next((s for s in self._staff if s.id == staff_id), None)
 
+    def create(self, staff: StaffCreateRequest) -> Staff:
+        new_id = max((s.id for s in self._staff), default=0) + 1
+        new_staff = Staff(
+            id=new_id,
+            first_name=staff.first_name,
+            last_name=staff.last_name,
+            email=staff.email,
+            password_hash=staff.password_hash,
+            role=staff.role,
+            specialization=staff.specialization,
+            license_number=staff.license_number,
+        )
+        self._staff.append(new_staff)
+        return new_staff
+
 
 # ── patients ───────────────────────────────────────────────────────────
 
@@ -67,6 +83,9 @@ class InMemoryPatientRepository(PatientRepository):
 
     def get_by_id(self, patient_id: int) -> Patient | None:
         return next((p for p in self._patients if p.id == patient_id), None)
+
+    def get_by_email(self, email: str) -> Patient | None:
+        return next((p for p in self._patients if p.email == email), None)
 
     def create(self, payload: PatientCreateRequest) -> Patient:
         patient = Patient(id=self._next_id, first_name=payload.first_name,
