@@ -16,8 +16,11 @@ from app.domain.clinical_notes.models import (
     ConsultationDocumentRepository,
     GeneratedClinicalNotes,
     GeneratedDocument,
+    GeneratedDocumentStatus,
     GeneratedDocumentRepository,
     LlmPromptConfig,
+    PrescriptionArtifact,
+    PrescriptionArtifactRepository,
     PromptRepository,
 )
 from app.domain.common.types import utcnow
@@ -200,6 +203,28 @@ class InMemoryConsultationDocumentRepository(ConsultationDocumentRepository):
         return document
 
 
+class InMemoryPrescriptionArtifactRepository(PrescriptionArtifactRepository):
+    def __init__(self) -> None:
+        self._artifacts: dict[int, list[PrescriptionArtifact]] = {}
+        self._next_id = 1
+
+    def get_latest_by_prescription_id(
+        self, prescription_id: int
+    ) -> PrescriptionArtifact | None:
+        artifacts = self._artifacts.get(prescription_id, [])
+        return artifacts[-1] if artifacts else None
+
+    def save(self, artifact: PrescriptionArtifact) -> PrescriptionArtifact:
+        stored = artifact.model_copy(
+            update={"id": artifact.id or f"artifact_{self._next_id}"}
+        )
+        if artifact.id is None:
+            self._next_id += 1
+        self._artifacts.setdefault(stored.prescription_id, []).append(stored)
+        self._artifacts[stored.prescription_id].sort(key=lambda item: item.version)
+        return stored
+
+
 # ── generated_documents (NoSQL mock) ───────────────────────────────────
 
 
@@ -211,6 +236,7 @@ class InMemoryGeneratedDocumentRepository(GeneratedDocumentRepository):
                 consultation_id=1,
                 doctor_id=1,
                 patient_id=1,
+                status=GeneratedDocumentStatus.PENDING_REVIEW,
                 generated_output=GeneratedClinicalNotes(
                     patient_info={"name": "Giulia Rossi", "age": "36", "gender": "F"},
                     chief_complaint="Follow-up hypertension",
@@ -387,8 +413,19 @@ class MockSuggestiveModeService(SuggestiveModeService):
 
 
 class MockPdfGenerator(PdfGenerator):
-    def generate_prescription_pdf(self, prescription_id: int) -> str:
-        return f"/tmp/prescription_{prescription_id}.pdf"
+    def generate_prescription_pdf(
+        self, prescription: Prescription
+    ) -> PrescriptionArtifact:
+        return PrescriptionArtifact(
+            prescription_id=prescription.id or 0,
+            consultation_id=prescription.consultation_id,
+            doctor_id=prescription.doctor_id,
+            patient_id=prescription.patient_id,
+            version=prescription.version,
+            storage_backend="mongo_metadata",
+            file_name=f"prescription_{prescription.id or 'draft'}.pdf",
+            byte_size=0,
+        )
 
 
 class MockEmailService(EmailService):

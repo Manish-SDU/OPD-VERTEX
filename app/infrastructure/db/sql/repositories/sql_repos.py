@@ -22,7 +22,11 @@ from app.domain.consultations.models import (
     ConsultationStatus,
 )
 from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
-from app.domain.prescriptions.models import Prescription, PrescriptionRepository
+from app.domain.prescriptions.models import (
+    Medication,
+    Prescription,
+    PrescriptionRepository,
+)
 from app.infrastructure.db.sql.models.tables import (
     StaffRow,
     PatientRow,
@@ -109,9 +113,7 @@ class SqlPatientRepository(PatientRepository):
             id=row.patient_id,
             first_name=row.first_name,
             last_name=row.last_name,
-            date_of_birth=row.date_of_birth.date()
-            if hasattr(row.date_of_birth, "date")
-            else row.date_of_birth,
+            date_of_birth=row.date_of_birth,
             gender=row.gender,
             email=row.email,
             phone=row.phone,
@@ -190,8 +192,6 @@ class SqlConsultationRepository(ConsultationRepository):
             started_at=consultation.started_at or datetime.utcnow(),
             ended_at=consultation.ended_at,
             approved_at=consultation.approved_at,
-            transcript_doc_id=consultation.transcript_doc_id,
-            notes_doc_id=consultation.notes_doc_id,
         )
         self.session.add(row)
         self.session.commit()
@@ -218,8 +218,6 @@ class SqlConsultationRepository(ConsultationRepository):
             started_at=row.started_at,
             ended_at=row.ended_at,
             approved_at=row.approved_at,
-            transcript_doc_id=row.transcript_doc_id,
-            notes_doc_id=row.notes_doc_id,
             created_at=row.created_at,
             updated_at=row.updated_at,
         )
@@ -249,10 +247,9 @@ class SqlPrescriptionRepository(PrescriptionRepository):
             doctor_id=prescription.doctor_id,
             patient_id=prescription.patient_id,
             diagnosis=prescription.diagnosis,
-            medications=prescription.medications,
+            medications=[medication.model_dump() for medication in prescription.medications],
             instructions=prescription.instructions,
             follow_up_date=prescription.follow_up_date,
-            pdf_path=prescription.pdf_path,
             is_approved=prescription.is_approved,
             is_emailed=prescription.is_emailed,
             emailed_at=prescription.emailed_at,
@@ -270,10 +267,9 @@ class SqlPrescriptionRepository(PrescriptionRepository):
             doctor_id=row.doctor_id,
             patient_id=row.patient_id,
             diagnosis=row.diagnosis,
-            medications=row.medications,
+            medications=[Medication.model_validate(item) for item in row.medications],
             instructions=row.instructions,
             follow_up_date=row.follow_up_date,
-            pdf_path=row.pdf_path,
             is_approved=row.is_approved,
             is_emailed=row.is_emailed,
             emailed_at=row.emailed_at,
@@ -316,7 +312,7 @@ class SqlAuditLogRepository(AuditLogRepository):
 
     def _to_domain(self, row: AuditLogRow) -> AuditLog:
         return AuditLog(
-            id=row.id,
+            id=row.log_id,
             user_id=row.user_id,
             user_role=row.user_role,
             action=row.action,

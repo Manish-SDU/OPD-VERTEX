@@ -30,7 +30,6 @@ class Prescription(BaseModel):
     medications: list[Medication] = Field(default_factory=list)
     instructions: str | None = None
     follow_up_date: date | None = None
-    pdf_path: str | None = None
     is_approved: bool = False
     is_emailed: bool = False
     emailed_at: datetime | None = None

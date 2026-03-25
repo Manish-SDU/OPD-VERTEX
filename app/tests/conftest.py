@@ -15,6 +15,7 @@ from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryEmailTemplateRepository,
     InMemoryGeneratedDocumentRepository,
     InMemoryPatientRepository,
+    InMemoryPrescriptionArtifactRepository,
     InMemoryPromptRepository,
     InMemoryPrescriptionRepository,
     InMemoryStaffRepository,
@@ -59,6 +60,11 @@ def consultation_doc_repo():
 @pytest.fixture
 def generated_doc_repo():
     return InMemoryGeneratedDocumentRepository()
+
+
+@pytest.fixture
+def prescription_artifact_repo():
+    return InMemoryPrescriptionArtifactRepository()
 
 
 @pytest.fixture

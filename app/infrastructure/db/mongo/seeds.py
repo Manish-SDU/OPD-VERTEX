@@ -20,7 +20,7 @@ def seed_llm_prompts(db) -> None:
         print("llm_prompts already seeded, skipping.")
         return
 
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
 
     collection.insert_many(
         [
@@ -59,7 +59,7 @@ def seed_email_templates(db) -> None:
         print("email_templates already seeded, skipping.")
         return
 
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
 
     collection.insert_one(
         {

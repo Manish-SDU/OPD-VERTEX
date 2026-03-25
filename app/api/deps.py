@@ -35,6 +35,7 @@ from app.infrastructure.db.mongo.repositories.mongo_repos import (
     MongoConsultationDocumentRepository,
     MongoEmailTemplateRepository,
     MongoGeneratedDocumentRepository,
+    MongoPrescriptionArtifactRepository,
     MongoPromptRepository,
 )
 from fastapi import Request, HTTPException
@@ -92,6 +93,11 @@ def prompt_repository() -> MongoPromptRepository:
 @lru_cache
 def email_template_repository() -> MongoEmailTemplateRepository:
     return MongoEmailTemplateRepository(get_database())
+
+
+@lru_cache
+def prescription_artifact_repository() -> MongoPrescriptionArtifactRepository:
+    return MongoPrescriptionArtifactRepository(get_database())
 
 
 @lru_cache

@@ -15,6 +15,9 @@ See TODO.md for step-by-step instructions.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
+from pymongo import ASCENDING, DESCENDING
 from pymongo.database import Database
 
 from app.domain.clinical_notes.models import (
@@ -23,6 +26,8 @@ from app.domain.clinical_notes.models import (
     GeneratedDocument,
     GeneratedDocumentRepository,
     LlmPromptConfig,
+    PrescriptionArtifact,
+    PrescriptionArtifactRepository,
     PromptRepository,
 )
 from app.domain.email.models import EmailTemplate, EmailTemplateRepository
@@ -107,6 +112,11 @@ class MongoPromptRepository(PromptRepository):
 class MongoGeneratedDocumentRepository(GeneratedDocumentRepository):
     def __init__(self, db: Database) -> None:
         self.collection = db[names.GENERATED_DOCUMENTS]
+        self.collection.create_index(
+            [("consultation_id", ASCENDING)],
+            unique=True,
+            name="uq_generated_documents_consultation_id",
+        )
 
     def get_by_consultation_id(self, consultation_id: int) -> GeneratedDocument | None:
         doc = self.collection.find_one({"consultation_id": consultation_id})
@@ -137,6 +147,11 @@ class MongoGeneratedDocumentRepository(GeneratedDocumentRepository):
 class MongoConsultationDocumentRepository(ConsultationDocumentRepository):
     def __init__(self, db: Database) -> None:
         self.collection = db[names.CONSULTATION_DOCUMENTS]
+        self.collection.create_index(
+            [("consultation_id", ASCENDING)],
+            unique=True,
+            name="uq_consultation_documents_consultation_id",
+        )
 
     def get_by_consultation_id(
         self, consultation_id: int
@@ -160,5 +175,55 @@ class MongoConsultationDocumentRepository(ConsultationDocumentRepository):
             doc_id = str(result.inserted_id)
         doc = self.collection.find_one({"_id": ObjectId(doc_id)})
         return ConsultationDocument(
+            id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}
+        )
+
+
+@apply_logging_aspect("repository", "prescription_artifacts")
+class MongoPrescriptionArtifactRepository(PrescriptionArtifactRepository):
+    def __init__(self, db: Database) -> None:
+        self.collection = db[names.PRESCRIPTION_ARTIFACTS]
+        self.collection.create_index(
+            [("prescription_id", ASCENDING), ("version", DESCENDING)],
+            name="ix_prescription_artifacts_prescription_version",
+        )
+        self.collection.create_index(
+            [("consultation_id", ASCENDING)],
+            name="ix_prescription_artifacts_consultation_id",
+        )
+
+    def get_latest_by_prescription_id(
+        self, prescription_id: int
+    ) -> PrescriptionArtifact | None:
+        doc = self.collection.find_one(
+            {"prescription_id": prescription_id},
+            sort=[("version", DESCENDING)],
+        )
+        if doc:
+            return PrescriptionArtifact(
+                id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}
+            )
+        return None
+
+    def save(self, artifact: PrescriptionArtifact) -> PrescriptionArtifact:
+        now = datetime.now(UTC)
+        data = artifact.model_dump(exclude={"id"}, exclude_none=True)
+        data["updated_at"] = now
+        if "created_at" not in data:
+            data["created_at"] = now
+
+        if artifact.id:
+            self.collection.replace_one(
+                {"_id": ObjectId(artifact.id)},
+                data,
+                upsert=True,
+            )
+            doc_id = artifact.id
+        else:
+            result = self.collection.insert_one(data)
+            doc_id = str(result.inserted_id)
+
+        doc = self.collection.find_one({"_id": ObjectId(doc_id)})
+        return PrescriptionArtifact(
             id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}
         )

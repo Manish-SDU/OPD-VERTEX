@@ -12,11 +12,14 @@ from datetime import datetime
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     JSON,
+    UniqueConstraint,
     String,
     Text,
     func,
@@ -50,7 +53,10 @@ class StaffRow(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()
+        DateTime,
+        server_default=func.now(),
+        server_onupdate=func.now(),
+        onupdate=func.now(),
     )
 
     consultations = relationship("ConsultationRow", back_populates="doctor")
@@ -68,7 +74,7 @@ class PatientRow(Base):
     )
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    date_of_birth = mapped_column(DateTime, nullable=False)
+    date_of_birth = mapped_column(Date, nullable=False)
     gender: Mapped[str | None] = mapped_column(
         Enum("M", "F", "Other", name="patient_gender"), nullable=True
     )
@@ -85,8 +91,13 @@ class PatientRow(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()
+        DateTime,
+        server_default=func.now(),
+        server_onupdate=func.now(),
+        onupdate=func.now(),
     )
+
+    __table_args__ = (Index("ix_patients_date_of_birth", "date_of_birth"),)
 
     consultations = relationship("ConsultationRow", back_populates="patient")
     prescriptions = relationship("PrescriptionRow", back_populates="patient")
@@ -128,11 +139,12 @@ class ConsultationRow(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    transcript_doc_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    notes_doc_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()
+        DateTime,
+        server_default=func.now(),
+        server_onupdate=func.now(),
+        onupdate=func.now(),
     )
 
     __table_args__ = (
@@ -143,6 +155,9 @@ class ConsultationRow(Base):
             "approved_at IS NULL OR approved_at >= started_at",
             name="ck_approved_after_start",
         ),
+        Index("ix_consultations_doctor_id", "doctor_id"),
+        Index("ix_consultations_patient_id", "patient_id"),
+        Index("ix_consultations_status", "status"),
     )
 
     doctor = relationship("StaffRow", back_populates="consultations")
@@ -171,15 +186,29 @@ class PrescriptionRow(Base):
     diagnosis: Mapped[str] = mapped_column(Text, nullable=False)
     medications = mapped_column(JSON, nullable=False)
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
-    follow_up_date = mapped_column(DateTime, nullable=True)
-    pdf_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    follow_up_date = mapped_column(Date, nullable=True)
     is_approved: Mapped[bool] = mapped_column(Boolean, server_default="0")
     is_emailed: Mapped[bool] = mapped_column(Boolean, server_default="0")
     emailed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     version: Mapped[int] = mapped_column(Integer, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()
+        DateTime,
+        server_default=func.now(),
+        server_onupdate=func.now(),
+        onupdate=func.now(),
+    )
+
+    __table_args__ = (
+        CheckConstraint("version >= 1", name="ck_prescriptions_version_positive"),
+        UniqueConstraint(
+            "consultation_id",
+            "version",
+            name="uq_prescriptions_consultation_version",
+        ),
+        Index("ix_prescriptions_consultation_id", "consultation_id"),
+        Index("ix_prescriptions_doctor_id", "doctor_id"),
+        Index("ix_prescriptions_patient_id", "patient_id"),
     )
 
     consultation = relationship("ConsultationRow", back_populates="prescriptions")
@@ -202,3 +231,9 @@ class AuditLogRow(Base):
     details = mapped_column(JSON, nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_audit_logs_user_id", "user_id"),
+        Index("ix_audit_logs_action", "action"),
+        Index("ix_audit_logs_timestamp", "timestamp"),
+    )

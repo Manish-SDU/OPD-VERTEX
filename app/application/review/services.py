@@ -8,6 +8,7 @@ from app.domain.clinical_notes.models import (
     ConsultationDocumentRepository,
     GeneratedDocument,
     GeneratedDocumentRepository,
+    TranscriptDocument,
 )
 from app.domain.suggestive_mode.models import SuggestiveModeService, SuggestiveReview
 from app.domain.transcription.models import TranscriptionService
@@ -41,17 +42,17 @@ class ReviewApplicationService:
             transcript_result = self.transcription_service.transcribe(consultation_id)
             con_doc = ConsultationDocument(
                 consultation_id=consultation_id,
-                transcript={
-                    "full_text": transcript_result.full_text,
-                    "file_path": transcript_result.file_path,
-                },
+                transcript=TranscriptDocument(
+                    full_text=transcript_result.full_text,
+                    file_name=transcript_result.file_path or None,
+                ),
             )
             con_doc = self.consultation_doc_repository.save(con_doc)
 
         # Get or create generated notes
         gen_doc = self.generated_repository.get_by_consultation_id(consultation_id)
         if gen_doc is None:
-            transcript_text = con_doc.transcript.get("full_text", "")
+            transcript_text = con_doc.transcript.full_text
             gen_doc = self.note_generator.generate(consultation_id, transcript_text)
 
         # Run suggestive review

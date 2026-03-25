@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from app.domain.prescriptions.models import Prescription
 from app.domain.suggestive_mode.models import RiskLevel
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryConsultationDocumentRepository,
+    InMemoryPrescriptionArtifactRepository,
 )
-from app.domain.clinical_notes.models import ConsultationDocument
+from app.domain.clinical_notes.models import ConsultationDocument, PrescriptionArtifact
 
 
 class TestMockTranscriptionService:
@@ -40,10 +42,22 @@ class TestMockSuggestiveModeService:
 
 
 class TestMockPdfGenerator:
-    def test_returns_file_path(self, pdf_generator):
-        path = pdf_generator.generate_prescription_pdf(42)
-        assert "42" in path
-        assert path.endswith(".pdf")
+    def test_returns_artifact_metadata(self, pdf_generator):
+        artifact = pdf_generator.generate_prescription_pdf(
+            Prescription(
+                id=42,
+                consultation_id=7,
+                doctor_id=3,
+                patient_id=9,
+                diagnosis="Test diagnosis",
+            )
+        )
+        assert isinstance(artifact, PrescriptionArtifact)
+        assert artifact.prescription_id == 42
+        assert artifact.consultation_id == 7
+        assert artifact.doctor_id == 3
+        assert artifact.patient_id == 9
+        assert artifact.file_name.endswith(".pdf")
 
 
 class TestMockEmailService:
@@ -62,11 +76,30 @@ class TestConsultationDocumentRepository:
         repo.save(doc)
         retrieved = repo.get_by_consultation_id(5)
         assert retrieved is not None
-        assert retrieved.transcript["full_text"] == "hello world"
+        assert retrieved.transcript.full_text == "hello world"
+
+
+class TestPrescriptionArtifactRepository:
+    def test_save_and_get_latest(self, prescription_artifact_repo):
+        prescription_artifact_repo.save(
+            PrescriptionArtifact(
+                prescription_id=7,
+                consultation_id=7,
+                doctor_id=1,
+                patient_id=1,
+                version=1,
+                storage_backend="gridfs",
+                gridfs_file_id="abc123",
+                file_name="prescription_7_v1.pdf",
+            )
+        )
+        latest = prescription_artifact_repo.get_latest_by_prescription_id(7)
+        assert latest is not None
+        assert latest.file_name == "prescription_7_v1.pdf"
 
     def test_get_nonexistent_returns_none(self):
-        repo = InMemoryConsultationDocumentRepository()
-        assert repo.get_by_consultation_id(999) is None
+        repo = InMemoryPrescriptionArtifactRepository()
+        assert repo.get_latest_by_prescription_id(999) is None
 
 
 class TestPromptRepository:

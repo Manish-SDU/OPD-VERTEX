@@ -105,7 +105,7 @@ class TestReviewApplicationService:
 
         assert con_doc is not None
         assert con_doc.consultation_id == 99
-        assert "full_text" in con_doc.transcript
+        assert con_doc.transcript.full_text
 
         assert gen_doc is not None
         assert gen_doc.consultation_id == 99
