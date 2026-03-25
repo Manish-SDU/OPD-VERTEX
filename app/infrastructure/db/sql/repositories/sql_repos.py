@@ -8,14 +8,12 @@ See TODO.md for step-by-step instructions.
 """
 
 from __future__ import annotations
-
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from datetime import datetime
-
 from app.domain.audit.models import AuditLog, AuditLogRepository
-from app.domain.auth.models import Staff, StaffRepository, StaffCreateRequest
+from app.domain.auth.models import Staff, StaffCreateRequest, StaffRepository
 from app.domain.consultations.models import (
     Consultation,
     ConsultationRepository,
@@ -247,7 +245,9 @@ class SqlPrescriptionRepository(PrescriptionRepository):
             doctor_id=prescription.doctor_id,
             patient_id=prescription.patient_id,
             diagnosis=prescription.diagnosis,
-            medications=[medication.model_dump() for medication in prescription.medications],
+            medications=[
+                medication.model_dump() for medication in prescription.medications
+            ],
             instructions=prescription.instructions,
             follow_up_date=prescription.follow_up_date,
             is_approved=prescription.is_approved,

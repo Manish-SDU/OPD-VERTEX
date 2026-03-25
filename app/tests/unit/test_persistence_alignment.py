@@ -28,8 +28,14 @@ class TestSqlSchemaAlignment:
         assert "notes_doc_id" not in ConsultationRow.__table__.columns
 
     def test_date_columns_match_domain_expectations(self):
-        assert isinstance(PatientRow.__table__.columns["date_of_birth"].type, Date)
-        assert isinstance(PrescriptionRow.__table__.columns["follow_up_date"].type, Date)
+        assert isinstance(
+            PatientRow.__table__.columns["date_of_birth"].type,
+            Date,
+        )
+        assert isinstance(
+            PrescriptionRow.__table__.columns["follow_up_date"].type,
+            Date,
+        )
 
     def test_prescriptions_table_has_version_uniqueness(self):
         constraint_names = {

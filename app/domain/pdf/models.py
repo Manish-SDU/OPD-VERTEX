@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from app.domain.clinical_notes.models import PrescriptionArtifact
 from app.domain.prescriptions.models import Prescription
 
+
 class PdfGenerator(ABC):
     @abstractmethod
     def generate_prescription_pdf(
