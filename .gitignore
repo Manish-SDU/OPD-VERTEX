@@ -21,3 +21,4 @@ app/infrastructure/db/mongo/seeds/.keep
 app/static/img/.keep
 app/prompts/.keep
 app/email_templates/.keep
+app/models/whisper
