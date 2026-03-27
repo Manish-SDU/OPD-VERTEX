@@ -11,7 +11,7 @@ from app.domain.clinical_notes.models import (
     TranscriptDocument,
 )
 from app.domain.suggestive_mode.models import SuggestiveModeService, SuggestiveReview
-from app.domain.transcription.models import TranscriptionService
+from app.domain.transcriptions.models import TranscriptionService
 from app.infrastructure.logging import apply_logging_aspect
 
 

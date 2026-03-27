@@ -42,6 +42,11 @@ from fastapi import Request, HTTPException
 from jose import jwt, JWTError
 from app.core.security import SECRET_KEY, ALGORITHM
 
+from app.application.transcriptions.services import TranscriptionApplicationService
+from app.infrastructure.ai.transcription.faster_whisper_adapter import (
+    StreamingFasterWhisperService,
+)
+
 
 def get_current_user(request: Request):
     token = request.cookies.get("access_token")
@@ -158,3 +163,16 @@ def get_prescription_app_service() -> PrescriptionApplicationService:
 
 def get_audit_app_service() -> AuditApplicationService:
     return AuditApplicationService(audit_repository())
+
+@lru_cache
+@lru_cache
+def get_transcription_service() -> TranscriptionApplicationService:
+    """Provide transcription service instance."""
+    import torch
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    streaming_service = StreamingFasterWhisperService(
+        model_size="base",
+        device=device,
+        chunk_duration=2.0,
+    )
+    return TranscriptionApplicationService(streaming_service=streaming_service)

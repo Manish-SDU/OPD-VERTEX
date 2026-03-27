@@ -43,7 +43,7 @@ from app.domain.suggestive_mode.models import (
     SuggestiveModeService,
     SuggestiveReview,
 )
-from app.domain.transcription.models import TranscriptResult, TranscriptionService
+from app.domain.transcriptions.models import TranscriptResult, TranscriptionService
 
 
 # ── staff ──────────────────────────────────────────────────────────────

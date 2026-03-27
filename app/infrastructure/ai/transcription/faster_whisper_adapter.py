@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 from faster_whisper import WhisperModel
 
-from app.domain.transcription.models import (
+from app.domain.transcriptions.models import (
     StreamingTranscriptChunk,
     StreamingTranscriptionService,
     TranscriptResult,

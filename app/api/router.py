@@ -11,6 +11,7 @@ from app.api.routes import (
     patients,
     prescriptions,
     review,
+    transcriptions,
 )
 
 router = APIRouter()
@@ -26,3 +27,5 @@ router.include_router(
     prescriptions.router, prefix="/prescriptions", tags=["prescriptions"]
 )
 router.include_router(admin.router, prefix="/admin", tags=["admin"])
+
+router.include_router(transcriptions.router, prefix="/transcriptions", tags=["transcriptions"])
