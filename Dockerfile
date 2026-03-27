@@ -21,7 +21,7 @@ FROM python:3.12-slim
 
 WORKDIR /workspace
 
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md alembic.ini ./
 COPY app ./app
 COPY alembic ./alembic
 COPY .env.example ./.env.example

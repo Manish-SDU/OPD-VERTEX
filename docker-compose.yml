@@ -10,7 +10,7 @@ services:
     env_file:
       - .env.example
     volumes:
-      - ./app:/workspace/app
+      - ./:/workspace
       - model-cache:/workspace/app/models
     depends_on:
       - mysql
