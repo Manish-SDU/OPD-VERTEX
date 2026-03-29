@@ -34,3 +34,7 @@ class TranscriptionApplicationService:
     def get_partial_transcription(self, session_id: str) -> str:
         """Get what's been transcribed so far."""
         return self.streaming_service.get_current_text(session_id)
+
+    def get_completed_results(self, session_id: str) -> list[dict]:
+        """Get completed transcription chunks from background processing."""
+        return self.streaming_service.get_completed_results(session_id)

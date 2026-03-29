@@ -35,7 +35,8 @@ class FasterWhisperTranscriptionService(TranscriptionService):
     def transcribe(self, audio_path: str) -> TranscriptResult:
         """Transcribe complete audio file."""
         segments, info = self.model.transcribe(audio_path, language="en")
-        full_text = " ".join([segment.text for segment in segments])
+        segments_list = list(segments)
+        full_text = " ".join([segment.text for segment in segments_list])
 
         return TranscriptResult(
             consultation_id=0,
@@ -104,26 +105,28 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
                 audio_chunk = np.concatenate(list(session["buffer"]))
                 session["buffer"].clear()
 
+                chunk_id = session["chunk_count"]
+                session["chunk_count"] += 1
+                timestamp = session["timestamp"]
+                session["timestamp"] += self.chunk_duration
+
                 thread = threading.Thread(
                     target=self._transcribe_chunk,
-                    args=(session_id, audio_chunk),
+                    args=(session_id, chunk_id, audio_chunk, timestamp),
                 )
                 thread.daemon = True
                 thread.start()
 
-                chunk_id = session["chunk_count"]
-                session["chunk_count"] += 1
-
                 return StreamingTranscriptChunk(
                     chunk_id=chunk_id,
                     text="[processing...]",
-                    timestamp=session["timestamp"],
+                    timestamp=timestamp,
                     is_final=False,
                 )
 
         return None
 
-    def _transcribe_chunk(self, session_id: str, audio_chunk: np.ndarray) -> None:
+    def _transcribe_chunk(self, session_id: str, chunk_id: int, audio_chunk: np.ndarray, timestamp: float) -> None:
         """Transcribe audio chunk in background thread."""
         try:
             import tempfile
@@ -134,14 +137,62 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
                 sf.write(f.name, audio_chunk, self.sample_rate)
 
                 segments, info = self.model.transcribe(f.name, language="en")
-                text = " ".join([segment.text for segment in segments])
+                segments_list = list(segments)
+                text = " ".join([segment.text for segment in segments_list])
 
                 with self.lock:
                     if session_id in self.sessions:
-                        self.sessions[session_id]["results"].append(text)
+                        self.sessions[session_id]["results"].append({
+                            "chunk_id": chunk_id,
+                            "text": text,
+                            "timestamp": timestamp,
+                            "is_final": True,
+                        })
 
         except Exception as e:
-            print(f"Error transcribing chunk: {e}")
+            print(f"[ERROR] Error transcribing chunk: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _transcribe_chunk_sync(self, session_id: str, chunk_id: int, audio_chunk: np.ndarray, timestamp: float) -> None:
+        """Synchronously transcribe audio chunk (used for final buffer flush)."""
+        try:
+            import tempfile
+            import soundfile as sf
+
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                sf.write(f.name, audio_chunk, self.sample_rate)
+
+                segments, info = self.model.transcribe(f.name, language="en")
+                segments_list = list(segments)
+                text = " ".join([segment.text for segment in segments_list])
+                
+                print(f"[DEBUG] Final chunk {chunk_id}: text='{text}', segments={len(segments_list)}")
+
+                if session_id in self.sessions:
+                    self.sessions[session_id]["results"].append({
+                        "chunk_id": chunk_id,
+                        "text": text,
+                        "timestamp": timestamp,
+                        "is_final": True,
+                    })
+                    print(f"[DEBUG] Added final chunk to results")
+                else:
+                    print(f"[ERROR] Session {session_id} not found when adding final chunk!")
+
+        except Exception as e:
+            print(f"[ERROR] Error transcribing final chunk: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def get_completed_results(self, session_id: str) -> list[dict]:
+        """Get completed transcription results without clearing."""
+        with self.lock:
+            if session_id not in self.sessions:
+                return []
+            
+            session = self.sessions[session_id]
+            return session["results"].copy()
 
     def finalize_session(self, session_id: str) -> TranscriptResult:
         """End streaming and combine all results."""
@@ -149,8 +200,27 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
             if session_id not in self.sessions:
                 raise ValueError(f"Session {session_id} not found")
 
+            session = self.sessions[session_id]
+            
+            # Flush any remaining audio in buffer
+            if session["buffer"]:
+                audio_chunk = np.concatenate(list(session["buffer"]))
+                session["buffer"].clear()
+                
+                chunk_id = session["chunk_count"]
+                timestamp = session["timestamp"]
+                
+                print(f"[DEBUG] Flushing buffer: chunk_id={chunk_id}, audio_samples={len(audio_chunk)}, duration={(len(audio_chunk)/self.sample_rate):.2f}s")
+                
+                # Transcribe remaining audio synchronously before finalizing
+                self._transcribe_chunk_sync(session_id, chunk_id, audio_chunk, timestamp)
+            
             session = self.sessions.pop(session_id)
-            full_text = " ".join(session["results"])
+            results = session["results"]
+            texts = [r["text"] if isinstance(r, dict) else r for r in results]
+            full_text = " ".join(texts)
+            
+            print(f"[DEBUG] Session finalized: {len(results)} chunks, full_text='{full_text}'")
 
         return TranscriptResult(
             consultation_id=session["consultation_id"],
@@ -163,4 +233,7 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
         with self.lock:
             if session_id not in self.sessions:
                 return ""
-            return " ".join(self.sessions[session_id]["results"])
+            results = self.sessions[session_id]["results"]
+            # Extract text from result dicts
+            texts = [r["text"] if isinstance(r, dict) else r for r in results]
+            return " ".join(texts)

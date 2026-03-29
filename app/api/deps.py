@@ -168,11 +168,9 @@ def get_audit_app_service() -> AuditApplicationService:
 @lru_cache
 def get_transcription_service() -> TranscriptionApplicationService:
     """Provide transcription service instance."""
-    import torch
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     streaming_service = StreamingFasterWhisperService(
         model_size="base",
-        device=device,
+        device="cpu",
         chunk_duration=2.0,
     )
     return TranscriptionApplicationService(streaming_service=streaming_service)

@@ -18,6 +18,7 @@ alembic/versions/__pycache__/
 app/infrastructure/db/sql/migrations/.keep
 app/infrastructure/db/sql/seeds/.keep
 app/infrastructure/db/mongo/seeds/.keep
+app/infrastructure/models/
 app/static/img/.keep
 app/prompts/.keep
 app/email_templates/.keep
