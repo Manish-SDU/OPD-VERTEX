@@ -2,10 +2,28 @@
 {% block content %}
 <section class="card narrow">
   <h2>Start Consultation</h2>
-  <form method="post" action="/consultations">
+  <form id="create-consultation-form">
     <label>Patient ID <input type="text" name="patient_id" value="pat_001"></label>
     <label>Chief complaint <input type="text" name="chief_complaint" value="Routine follow-up"></label>
     <button type="submit">Create mock consultation</button>
   </form>
+  <div id="consultation-success" style="color:green;"></div>
+  <div id="consultation-error" style="color:red;"></div>
+  <div id="transcription-ui" style="display:none; margin-top:2em;">
+    <h3>Transcription</h3>
+    <button id="start-transcription" disabled>Start Transcription</button>
+    <button id="stop-transcription" disabled>Stop</button>
+    <button id="save-transcription" disabled>Save Transcription</button>
+    <div>
+      <strong>Partial:</strong> <span id="partial-text"></span>
+    </div>
+    <div>
+      <strong>Final chunks:</strong>
+      <ul id="transcription-chunks"></ul>
+    </div>
+    <div id="transcription-error" style="color:red;"></div>
+    <div id="transcription-saved" style="color:green;"></div>
+  </div>
+  <script src="/static/js/consultation_create.js"></script>
 </section>
 {% endblock %}

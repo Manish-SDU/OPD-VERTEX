@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, WebSocket, HTTPException, Depends
 
-from app.api.deps import get_transcription_service
+from app.api.deps import get_transcription_service, consultation_doc_repository
 from app.application.transcriptions.services import TranscriptionApplicationService
+from app.domain.clinical_notes.models import ConsultationDocument, TranscriptDocument
 
 router = APIRouter(prefix="/transcriptions", tags=["transcriptions"])
 
@@ -56,10 +57,24 @@ async def transcription_websocket(
 async def complete_transcription(
     session_id: str,
     service: TranscriptionApplicationService = Depends(get_transcription_service),
+    doc_repo: object = Depends(consultation_doc_repository),
 ):
     """Complete and finalize transcription session."""
     try:
         result = service.complete_transcription(session_id)
+        
+        # Save transcription to database
+        consultation_doc = doc_repo.get_by_consultation_id(result.consultation_id)
+        if not consultation_doc:
+            consultation_doc = ConsultationDocument(
+                consultation_id=result.consultation_id,
+                transcript=TranscriptDocument(full_text=result.full_text)
+            )
+        else:
+            consultation_doc.transcript.full_text = result.full_text
+        
+        doc_repo.save(consultation_doc)
+        
         return {
             "consultation_id": result.consultation_id,
             "full_text": result.full_text,
