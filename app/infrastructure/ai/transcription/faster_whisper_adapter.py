@@ -58,7 +58,9 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
         """Initialize a streaming session via Whisper API."""
         try:
             client = self._get_client()
-            print(f"[DEBUG] Posting to /sessions/start with consultation_id={consultation_id}")
+            print(
+                f"[DEBUG] Posting to /sessions/start with consultation_id={consultation_id}"
+            )
             response = client.post(
                 "/sessions/start",
                 json={
@@ -67,7 +69,9 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
                     "sample_rate": self.sample_rate,
                 },
             )
-            print(f"[DEBUG] Response status: {response.status_code}, body: {response.text}")
+            print(
+                f"[DEBUG] Response status: {response.status_code}, body: {response.text}"
+            )
             response.raise_for_status()
             data = response.json()
             return data["session_id"]
@@ -87,7 +91,7 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
                 headers={"Content-Type": "application/octet-stream"},
             )
             response.raise_for_status()
-            
+
             try:
                 chunk_data = response.json()
                 if chunk_data:
@@ -99,7 +103,7 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
                     )
             except Exception:
                 pass
-            
+
             return None
         except Exception as e:
             print(f"[ERROR] Failed to add audio chunk: {e}")
@@ -144,5 +148,3 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
             return data.get("partial_text", "")
         except Exception:
             return ""
-
-

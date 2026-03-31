@@ -9,13 +9,13 @@ def download_models():
     """Download Faster-Whisper models."""
     models_dir = Path(__file__).parent.parent / "models" / "whisper"
     models_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Set HuggingFace cache to our models directory
-    os.environ['HF_HOME'] = str(models_dir)
-    
+    os.environ["HF_HOME"] = str(models_dir)
+
     # Download models
     model_sizes = ["base"]  # Add "small", "medium" if needed
-    
+
     for size in model_sizes:
         print(f"Downloading Faster-Whisper {size} model...")
         try:

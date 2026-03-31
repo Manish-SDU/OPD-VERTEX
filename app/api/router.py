@@ -28,4 +28,6 @@ router.include_router(
 )
 router.include_router(admin.router, prefix="/admin", tags=["admin"])
 
-router.include_router(transcriptions.router, prefix="/transcriptions", tags=["transcriptions"])
+router.include_router(
+    transcriptions.router, prefix="/transcriptions", tags=["transcriptions"]
+)

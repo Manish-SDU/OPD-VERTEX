@@ -164,6 +164,7 @@ def get_prescription_app_service() -> PrescriptionApplicationService:
 def get_audit_app_service() -> AuditApplicationService:
     return AuditApplicationService(audit_repository())
 
+
 @lru_cache
 @lru_cache
 def get_transcription_service() -> TranscriptionApplicationService:

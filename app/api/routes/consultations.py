@@ -29,7 +29,9 @@ def consultation_new(request: Request) -> HTMLResponse:
 
 
 @router.post("")
-def consultation_create(patient_id: int = Form(...), chief_complaint: str = Form(...)) -> RedirectResponse:
+def consultation_create(
+    patient_id: int = Form(...), chief_complaint: str = Form(...)
+) -> RedirectResponse:
     consultation = get_consultation_app_service().create_consultation(
         ConsultationCreateRequest(patient_id=patient_id),
         doctor_id=1,  # TODO: get from session

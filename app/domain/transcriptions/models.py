@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 class TranscriptResult(BaseModel):
     """Output from Faster-Whisper. Stored inside consultation_documents."""
+
     consultation_id: int
     file_path: str = ""
     full_text: str = ""
@@ -16,6 +17,7 @@ class TranscriptResult(BaseModel):
 
 class StreamingTranscriptChunk(BaseModel):
     """Single chunk result from streaming transcription."""
+
     chunk_id: int
     text: str
     timestamp: float  # seconds in audio
@@ -34,7 +36,9 @@ class StreamingTranscriptionService(ABC):
         """Initialize streaming session. Returns session_id."""
 
     @abstractmethod
-    def add_audio_chunk(self, session_id: str, audio_bytes: bytes) -> StreamingTranscriptChunk | None:
+    def add_audio_chunk(
+        self, session_id: str, audio_bytes: bytes
+    ) -> StreamingTranscriptChunk | None:
         """Process audio chunk. Returns transcription if ready."""
 
     @abstractmethod

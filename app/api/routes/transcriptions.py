@@ -6,7 +6,7 @@ from fastapi import APIRouter, WebSocket, HTTPException, Depends
 from pydantic import BaseModel
 
 from app.api.deps import (
-    get_transcription_service, 
+    get_transcription_service,
     consultation_doc_repository,
     consultation_repository,
 )
@@ -41,7 +41,7 @@ async def transcription_websocket(
     """WebSocket endpoint for streaming transcription."""
     await websocket.accept()
     print(f"[WS] WebSocket connected for session {session_id}")
-    
+
     import asyncio
     from starlette.websockets import WebSocketDisconnect
 
@@ -54,12 +54,14 @@ async def transcription_websocket(
                 chunk_result = service.process_audio_chunk(session_id, data)
                 if chunk_result:
                     print(f"[WS] Got chunk result: {chunk_result}")
-                    await websocket.send_json({
-                        "chunk_id": chunk_result.chunk_id,
-                        "text": chunk_result.text,
-                        "timestamp": chunk_result.timestamp,
-                        "is_final": chunk_result.is_final,
-                    })
+                    await websocket.send_json(
+                        {
+                            "chunk_id": chunk_result.chunk_id,
+                            "text": chunk_result.text,
+                            "timestamp": chunk_result.timestamp,
+                            "is_final": chunk_result.is_final,
+                        }
+                    )
             except asyncio.TimeoutError:
                 # Timeout is normal - just continue to check for results
                 pass
@@ -69,7 +71,7 @@ async def transcription_websocket(
             for result in completed:
                 print(f"[WS] Sending completed result: {result}")
                 await websocket.send_json(result)
-            
+
             # Send current accumulated text
             partial = service.get_partial_transcription(session_id)
             if partial and partial.strip():  # Only send if not empty after stripping
@@ -87,6 +89,7 @@ async def transcription_websocket(
         except Exception:
             pass
 
+
 @router.get("/session/{session_id}/results")
 async def get_session_results(
     session_id: str,
@@ -100,36 +103,39 @@ async def get_session_results(
         "partial_text": partial,
     }
 
+
 @router.post("/session/{session_id}/complete")
 async def complete_transcription(
     session_id: str,
     service: TranscriptionApplicationService = Depends(get_transcription_service),
-    doc_repo = Depends(consultation_doc_repository),
-    cons_repo = Depends(consultation_repository),
+    doc_repo=Depends(consultation_doc_repository),
+    cons_repo=Depends(consultation_repository),
 ):
     """Complete and finalize transcription session."""
     try:
         print(f"[DEBUG] Saving session {session_id}")
         result = service.complete_transcription(session_id)
         consultation_id = result.consultation_id
-        
-        print(f"[DEBUG] Save result: consultation_id={consultation_id}, full_text='{result.full_text}'")
-        
+
+        print(
+            f"[DEBUG] Save result: consultation_id={consultation_id}, full_text='{result.full_text}'"
+        )
+
         # Save transcription to database
         consultation_doc = doc_repo.get_by_consultation_id(consultation_id)
         if not consultation_doc:
             consultation_doc = ConsultationDocument(
                 consultation_id=consultation_id,
-                transcript=TranscriptDocument(full_text=result.full_text)
+                transcript=TranscriptDocument(full_text=result.full_text),
             )
         else:
             consultation_doc.transcript.full_text = result.full_text
-        
+
         doc_repo.save(consultation_doc)
-        
+
         # Update consultation status to REVIEW (transcription complete)
         cons_repo.update_status(consultation_id, ConsultationStatus.REVIEW)
-        
+
         return {
             "consultation_id": consultation_id,
             "full_text": result.full_text,
