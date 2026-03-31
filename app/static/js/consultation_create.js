@@ -185,10 +185,14 @@ if (startBtn) {
         // Log audio level every 10 frames (~225ms)
         if (frameCount % 10 === 0) {
           console.log(`[Audio Level] Frame ${frameCount}: RMS: ${rms.toFixed(4)}, Peak: ${peak.toFixed(4)}, Max Peak So Far: ${maxPeak.toFixed(4)}`);
+          console.log(`[WS Debug] Frame ${frameCount}: ws=${ws}, readyState=${ws ? ws.readyState : 'N/A'}, OPEN=${WebSocket.OPEN}`);
         }
         
         if (ws && ws.readyState === WebSocket.OPEN) {
+          console.log(`[WS Send] Sending ${int16Array.length} int16 samples, buffer size: ${int16Array.buffer.byteLength} bytes`);
           ws.send(int16Array.buffer);
+        } else {
+          console.warn(`[WS Send] WebSocket not ready: readyState=${ws ? ws.readyState : 'undefined'}, ws=${ws}`);
         }
       };
     } catch (err) {

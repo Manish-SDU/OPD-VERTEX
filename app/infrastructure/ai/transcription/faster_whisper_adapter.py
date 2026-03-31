@@ -1,15 +1,8 @@
-"""Faster-Whisper streaming transcription adapter with pre-downloaded models."""
+"""Faster-Whisper API client - communicates with Whisper microservice."""
 
 from __future__ import annotations
 
-import os
-import threading
-import uuid
-from collections import deque
-from pathlib import Path
-
-import numpy as np
-from faster_whisper import WhisperModel
+import httpx
 
 from app.domain.transcriptions.models import (
     StreamingTranscriptChunk,
@@ -18,36 +11,29 @@ from app.domain.transcriptions.models import (
     TranscriptionService,
 )
 
+# Whisper API service URL
+WHISPER_API_URL = "http://whisper:8001"
+
 
 class FasterWhisperTranscriptionService(TranscriptionService):
-    """Batch transcription service for complete audio files."""
+    """Batch transcription service for complete audio files (via Whisper API)."""
 
     def __init__(self, model_size: str = "base", device: str = "cuda"):
-        # Set HuggingFace cache to models directory
-        models_dir = Path(__file__).parent.parent.parent / "models"
-        os.environ['HF_HOME'] = str(models_dir)
-        
-        self.model = WhisperModel(
-            model_size,
-            device=device,
-        )
+        self.http_client = None
+
+    def _get_client(self):
+        """Lazy initialize HTTP client."""
+        if self.http_client is None:
+            self.http_client = httpx.Client(base_url=WHISPER_API_URL, timeout=60.0)
+        return self.http_client
 
     def transcribe(self, audio_path: str) -> TranscriptResult:
         """Transcribe complete audio file."""
-        segments, info = self.model.transcribe(audio_path, language="en")
-        segments_list = list(segments)
-        full_text = " ".join([segment.text for segment in segments_list])
-
-        return TranscriptResult(
-            consultation_id=0,
-            file_path=audio_path,
-            full_text=full_text,
-            language=info.language,
-        )
+        raise NotImplementedError("Use StreamingFasterWhisperService instead")
 
 
 class StreamingFasterWhisperService(StreamingTranscriptionService):
-    """Streaming transcription service that processes audio in chunks."""
+    """Streaming transcription service that calls the Whisper API microservice."""
 
     def __init__(
         self,
@@ -56,184 +42,107 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
         chunk_duration: float = 2.0,
         sample_rate: int = 16000,
     ):
-        # Set HuggingFace cache to models directory
-        models_dir = Path(__file__).parent.parent.parent / "models"
-        os.environ['HF_HOME'] = str(models_dir)
-        
-        self.model = WhisperModel(
-            model_size,
-            device=device,
-        )
         self.chunk_duration = chunk_duration
         self.sample_rate = sample_rate
         self.chunk_size = int(chunk_duration * sample_rate)
+        self.http_client = None
 
-        self.sessions: dict[str, dict] = {}
-        self.lock = threading.Lock()
+    def _get_client(self):
+        """Lazy initialize HTTP client."""
+        if self.http_client is None:
+            print(f"[DEBUG] Creating httpx client to {WHISPER_API_URL}")
+            self.http_client = httpx.Client(base_url=WHISPER_API_URL, timeout=60.0)
+        return self.http_client
 
     def start_streaming(self, consultation_id: int) -> str:
-        """Initialize a streaming session."""
-        session_id = str(uuid.uuid4())
-        with self.lock:
-            self.sessions[session_id] = {
-                "consultation_id": consultation_id,
-                "buffer": deque(),
-                "results": [],
-                "chunk_count": 0,
-                "timestamp": 0.0,
-            }
-        return session_id
+        """Initialize a streaming session via Whisper API."""
+        try:
+            client = self._get_client()
+            print(f"[DEBUG] Posting to /sessions/start with consultation_id={consultation_id}")
+            response = client.post(
+                "/sessions/start",
+                json={
+                    "consultation_id": consultation_id,
+                    "chunk_duration": self.chunk_duration,
+                    "sample_rate": self.sample_rate,
+                },
+            )
+            print(f"[DEBUG] Response status: {response.status_code}, body: {response.text}")
+            response.raise_for_status()
+            data = response.json()
+            return data["session_id"]
+        except Exception as e:
+            print(f"[ERROR] Failed to start streaming: {e}")
+            raise
 
     def add_audio_chunk(
         self, session_id: str, audio_bytes: bytes
     ) -> StreamingTranscriptChunk | None:
-        """Add audio chunk and optionally return transcription."""
-        with self.lock:
-            if session_id not in self.sessions:
-                raise ValueError(f"Session {session_id} not found")
-
-            session = self.sessions[session_id]
-
-            audio_data = np.frombuffer(audio_bytes, dtype=np.int16).astype(
-                np.float32
-            ) / 32768.0
-            session["buffer"].append(audio_data)
-
-            total_samples = sum(len(chunk) for chunk in session["buffer"])
-
-            if total_samples >= self.chunk_size:
-                audio_chunk = np.concatenate(list(session["buffer"]))
-                session["buffer"].clear()
-
-                chunk_id = session["chunk_count"]
-                session["chunk_count"] += 1
-                timestamp = session["timestamp"]
-                session["timestamp"] += self.chunk_duration
-
-                thread = threading.Thread(
-                    target=self._transcribe_chunk,
-                    args=(session_id, chunk_id, audio_chunk, timestamp),
-                )
-                thread.daemon = True
-                thread.start()
-
-                return StreamingTranscriptChunk(
-                    chunk_id=chunk_id,
-                    text="[processing...]",
-                    timestamp=timestamp,
-                    is_final=False,
-                )
-
-        return None
-
-    def _transcribe_chunk(self, session_id: str, chunk_id: int, audio_chunk: np.ndarray, timestamp: float) -> None:
-        """Transcribe audio chunk in background thread."""
+        """Add audio chunk via Whisper API."""
         try:
-            import tempfile
-
-            import soundfile as sf
-
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-                sf.write(f.name, audio_chunk, self.sample_rate)
-
-                segments, info = self.model.transcribe(f.name, language="en")
-                segments_list = list(segments)
-                text = " ".join([segment.text for segment in segments_list])
-
-                with self.lock:
-                    if session_id in self.sessions:
-                        self.sessions[session_id]["results"].append({
-                            "chunk_id": chunk_id,
-                            "text": text,
-                            "timestamp": timestamp,
-                            "is_final": True,
-                        })
-
+            client = self._get_client()
+            response = client.post(
+                f"/sessions/{session_id}/chunk",
+                content=audio_bytes,
+                headers={"Content-Type": "application/octet-stream"},
+            )
+            response.raise_for_status()
+            
+            try:
+                chunk_data = response.json()
+                if chunk_data:
+                    return StreamingTranscriptChunk(
+                        chunk_id=chunk_data["chunk_id"],
+                        text=chunk_data["text"],
+                        timestamp=chunk_data["timestamp"],
+                        is_final=chunk_data.get("is_final", False),
+                    )
+            except Exception:
+                pass
+            
+            return None
         except Exception as e:
-            print(f"[ERROR] Error transcribing chunk: {e}")
-            import traceback
-            traceback.print_exc()
-
-    def _transcribe_chunk_sync(self, session_id: str, chunk_id: int, audio_chunk: np.ndarray, timestamp: float) -> None:
-        """Synchronously transcribe audio chunk (used for final buffer flush)."""
-        try:
-            import tempfile
-            import soundfile as sf
-
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-                sf.write(f.name, audio_chunk, self.sample_rate)
-
-                segments, info = self.model.transcribe(f.name, language="en")
-                segments_list = list(segments)
-                text = " ".join([segment.text for segment in segments_list])
-                
-                print(f"[DEBUG] Final chunk {chunk_id}: text='{text}', segments={len(segments_list)}")
-
-                if session_id in self.sessions:
-                    self.sessions[session_id]["results"].append({
-                        "chunk_id": chunk_id,
-                        "text": text,
-                        "timestamp": timestamp,
-                        "is_final": True,
-                    })
-                    print(f"[DEBUG] Added final chunk to results")
-                else:
-                    print(f"[ERROR] Session {session_id} not found when adding final chunk!")
-
-        except Exception as e:
-            print(f"[ERROR] Error transcribing final chunk: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"[ERROR] Failed to add audio chunk: {e}")
+            raise
 
     def get_completed_results(self, session_id: str) -> list[dict]:
-        """Get completed transcription results without clearing."""
-        with self.lock:
-            if session_id not in self.sessions:
-                return []
-            
-            session = self.sessions[session_id]
-            return session["results"].copy()
+        """Get completed transcription results from Whisper API."""
+        try:
+            client = self._get_client()
+            response = client.get(f"/sessions/{session_id}/partial")
+            response.raise_for_status()
+            data = response.json()
+            return [{"text": data.get("partial_text", "")}]
+        except Exception as e:
+            print(f"[ERROR] Failed to get completed results: {e}")
+            return []
 
     def finalize_session(self, session_id: str) -> TranscriptResult:
-        """End streaming and combine all results."""
-        with self.lock:
-            if session_id not in self.sessions:
-                raise ValueError(f"Session {session_id} not found")
+        """End streaming and retrieve final transcription from Whisper API."""
+        try:
+            client = self._get_client()
+            response = client.post(f"/sessions/{session_id}/complete")
+            response.raise_for_status()
+            data = response.json()
 
-            session = self.sessions[session_id]
-            
-            # Flush any remaining audio in buffer
-            if session["buffer"]:
-                audio_chunk = np.concatenate(list(session["buffer"]))
-                session["buffer"].clear()
-                
-                chunk_id = session["chunk_count"]
-                timestamp = session["timestamp"]
-                
-                print(f"[DEBUG] Flushing buffer: chunk_id={chunk_id}, audio_samples={len(audio_chunk)}, duration={(len(audio_chunk)/self.sample_rate):.2f}s")
-                
-                # Transcribe remaining audio synchronously before finalizing
-                self._transcribe_chunk_sync(session_id, chunk_id, audio_chunk, timestamp)
-            
-            session = self.sessions.pop(session_id)
-            results = session["results"]
-            texts = [r["text"] if isinstance(r, dict) else r for r in results]
-            full_text = " ".join(texts)
-            
-            print(f"[DEBUG] Session finalized: {len(results)} chunks, full_text='{full_text}'")
-
-        return TranscriptResult(
-            consultation_id=session["consultation_id"],
-            file_path="",
-            full_text=full_text,
-        )
+            return TranscriptResult(
+                consultation_id=data["consultation_id"],
+                file_path="",
+                full_text=data["full_text"],
+            )
+        except Exception as e:
+            print(f"[ERROR] Failed to finalize session: {e}")
+            raise
 
     def get_current_text(self, session_id: str) -> str:
-        """Get transcription accumulated so far."""
-        with self.lock:
-            if session_id not in self.sessions:
-                return ""
-            results = self.sessions[session_id]["results"]
-            # Extract text from result dicts
-            texts = [r["text"] if isinstance(r, dict) else r for r in results]
-            return " ".join(texts)
+        """Get transcription accumulated so far from Whisper API."""
+        try:
+            client = self._get_client()
+            response = client.get(f"/sessions/{session_id}/partial")
+            response.raise_for_status()
+            data = response.json()
+            return data.get("partial_text", "")
+        except Exception:
+            return ""
+
+

@@ -15,6 +15,19 @@ services:
     depends_on:
       - mysql
       - mongo
+      - whisper
+
+  whisper:
+    build:
+      context: .
+      dockerfile: whisper_api/Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - whisper-models:/whisper-api/models
+      - ./whisper_api:/whisper-api/whisper_api
+    environment:
+      HF_HOME: /whisper-api/models
 
   mysql:
     image: mysql:8.4
@@ -39,3 +52,4 @@ volumes:
   mysql-data:
   mongo-data:
   model-cache:
+  whisper-models:
