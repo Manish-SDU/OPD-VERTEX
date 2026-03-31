@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, WebSocket, HTTPException, Depends, Body
+from fastapi import APIRouter, WebSocket, HTTPException, Depends
 from pydantic import BaseModel
-from datetime import datetime
 
 from app.api.deps import (
     get_transcription_service, 
@@ -85,7 +84,7 @@ async def transcription_websocket(
         print(f"[WS] WebSocket error for session {session_id}: {e}")
         try:
             await websocket.send_json({"error": str(e)})
-        except:
+        except Exception:
             pass
 
 @router.get("/session/{session_id}/results")

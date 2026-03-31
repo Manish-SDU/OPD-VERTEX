@@ -20,7 +20,7 @@ def download_models():
         print(f"Downloading Faster-Whisper {size} model...")
         try:
             # Don't pass cache_dir - use HF_HOME env var instead
-            model = WhisperModel(size)
+            WhisperModel(size)
             print(f"✅ {size} model downloaded successfully to {models_dir}")
         except Exception as e:
             print(f"❌ Failed to download {size}: {e}")
