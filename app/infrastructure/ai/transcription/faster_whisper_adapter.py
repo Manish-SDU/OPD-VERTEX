@@ -148,3 +148,14 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
             return data.get("partial_text", "")
         except Exception:
             return ""
+        
+    def get_session_consultation_id(self, session_id: str) -> int:
+        """Get consultation_id for a session from Whisper API."""
+        try:
+            client = self._get_client()
+            response = client.get(f"/sessions/{session_id}/consultation-id")
+            response.raise_for_status()
+            return response.json()["consultation_id"]
+        except Exception as e:
+            print(f"[ERROR] Could not get consultation_id for {session_id}: {e}")
+            return 0

@@ -37,6 +37,7 @@ from app.infrastructure.db.mongo.repositories.mongo_repos import (
     MongoGeneratedDocumentRepository,
     MongoPrescriptionArtifactRepository,
     MongoPromptRepository,
+    MongoTemporaryTranscriptChunkRepository,
 )
 from fastapi import Request, HTTPException
 from jose import jwt, JWTError
@@ -166,6 +167,10 @@ def get_audit_app_service() -> AuditApplicationService:
 
 
 @lru_cache
+def temp_transcript_chunk_repository() -> MongoTemporaryTranscriptChunkRepository:
+    return MongoTemporaryTranscriptChunkRepository(get_database())
+
+
 @lru_cache
 def get_transcription_service() -> TranscriptionApplicationService:
     """Provide transcription service instance."""
@@ -174,4 +179,7 @@ def get_transcription_service() -> TranscriptionApplicationService:
         device="cpu",
         chunk_duration=2.0,
     )
-    return TranscriptionApplicationService(streaming_service=streaming_service)
+    return TranscriptionApplicationService(
+        streaming_service=streaming_service,
+        temp_chunk_repo=temp_transcript_chunk_repository(),
+    )

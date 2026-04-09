@@ -181,3 +181,11 @@ def get_current_text(session_id: str) -> str:
         non_empty = [r.strip() for r in results if r and r.strip()]
         combined = " ".join(non_empty)
         return combined
+    
+def get_session_consultation_id(session_id: str) -> int:
+    """Get consultation_id for a session."""
+    global _sessions
+    with _lock:
+        if session_id not in _sessions:
+            return 0
+        return _sessions[session_id]["consultation_id"]

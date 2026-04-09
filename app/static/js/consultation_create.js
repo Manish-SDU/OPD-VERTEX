@@ -44,6 +44,7 @@ if (form) {
       let match = url.match(/consultations\/(\d+)/);
       if (!match) throw new Error('Could not determine consultation ID');
       consultationId = match[1];
+      sessionId = null;  // Reset session for new consultation
       successDiv.textContent = 'Consultation created! Starting transcription...';
       transcriptionUI.style.display = '';
       startBtn.disabled = false;
@@ -78,14 +79,19 @@ if (startBtn) {
     chunksList.innerHTML = '';
     transcriptionSaved.textContent = '';
     try {
-      const resp = await fetch('/transcriptions/session/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ consultation_id: consultationId })
-      });
-      const data = await resp.json();
-      sessionId = data.session_id;
-      console.log(`[Session] Started new session: ${sessionId}`);
+      // Only create new session if one doesn't exist (allows reuse across stop/start)
+      if (!sessionId) {
+        const resp = await fetch('/transcriptions/session/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ consultation_id: consultationId })
+        });
+        const data = await resp.json();
+        sessionId = data.session_id;
+        console.log(`[Session] Created new session: ${sessionId}`);
+      } else {
+        console.log(`[Session] Reusing existing session: ${sessionId}`);
+      }
       ws = new WebSocket(`ws://${window.location.host}/transcriptions/ws/${sessionId}`);
       ws.binaryType = 'arraybuffer';
       ws.onmessage = (event) => {
@@ -265,9 +271,13 @@ if (saveBtn) {
     transcriptionSaved.textContent = 'Saving transcription...';
     transcriptionError.textContent = '';
     try {
-      const resp = await fetch(`/transcriptions/session/${sessionId}/complete`, {
+      const resp = await fetch(`/transcriptions/save-transcription`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consultation_id: parseInt(consultationId),
+          session_id: sessionId
+        })
       });
       
       // Get the response text first to see what we actually received

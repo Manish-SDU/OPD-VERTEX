@@ -44,3 +44,34 @@ class StreamingTranscriptionService(ABC):
     @abstractmethod
     def finalize_session(self, session_id: str) -> TranscriptResult:
         """End streaming and return combined transcript."""
+
+
+class TemporaryTranscriptChunk(BaseModel):
+    """Temporary storage for streaming transcript chunks during recording."""
+    
+    id: str | None = None
+    consultation_id: int
+    session_id: str
+    chunk_id: int
+    text: str
+    timestamp: float
+    is_final: bool = False
+    created_at: datetime | None = None
+
+
+class TemporaryTranscriptChunkRepository(ABC):
+    @abstractmethod
+    def save_chunk(self, chunk: TemporaryTranscriptChunk) -> TemporaryTranscriptChunk:
+        """Save a partial transcript chunk temporarily."""
+
+    @abstractmethod
+    def get_chunks_by_consultation(self, consultation_id: int) -> list[TemporaryTranscriptChunk]:
+        """Retrieve all chunks for a consultation."""
+
+    @abstractmethod
+    def delete_chunks_by_consultation(self, consultation_id: int) -> None:
+        """Clear chunks after they're saved to main database."""
+
+    @abstractmethod
+    def delete_chunks_by_session(self, session_id: str) -> None:  
+        """Delete all chunks for a specific session."""

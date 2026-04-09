@@ -13,7 +13,7 @@ from .models import (
     PartialTranscript,
 )
 from . import service
-from .service import init_model, start_streaming_session, add_audio_chunk, finalize_session, get_current_text
+from .service import init_model, start_streaming_session, add_audio_chunk, finalize_session, get_current_text, get_session_consultation_id
 
 # Initialize model and store in service module
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -74,6 +74,13 @@ async def get_partial(session_id: str):
         return PartialTranscript(partial_text=text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+    
+@app.get("/sessions/{session_id}/consultation-id")
+async def get_consultation_id(session_id: str):
+    """Get consultation_id for a session."""
+    consultation_id = get_session_consultation_id(session_id)
+    return {"consultation_id": consultation_id}
 
 
 @app.get("/health")

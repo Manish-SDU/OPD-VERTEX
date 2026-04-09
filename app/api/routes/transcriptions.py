@@ -146,3 +146,26 @@ async def complete_transcription(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+class SaveTranscriptionRequest(BaseModel):
+    consultation_id: int
+    session_id: str
+
+@router.post("/save-transcription")
+async def save_transcription(
+    request: SaveTranscriptionRequest,
+    service: TranscriptionApplicationService = Depends(get_transcription_service),
+    doc_repo = Depends(consultation_doc_repository)
+):
+    """Save partial chunks from temp storage to main database."""
+    result = service.save_final_transcript(request.consultation_id, request.session_id)
+    
+    # Save to ConsultationDocument
+    consultation_doc = ConsultationDocument(
+        consultation_id=request.consultation_id,
+        transcript=TranscriptDocument(full_text=result.full_text)
+    )
+    doc_repo.save(consultation_doc)
+    
+    return {"status": "saved", "consultation_id": request.consultation_id}

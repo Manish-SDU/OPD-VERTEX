@@ -31,6 +31,7 @@ from app.domain.clinical_notes.models import (
     PromptRepository,
 )
 from app.domain.email.models import EmailTemplate, EmailTemplateRepository
+from app.domain.transcriptions.models import TemporaryTranscriptChunk, TemporaryTranscriptChunkRepository
 
 
 # ── Example pattern (repeat for each repository) ───────────────────────
@@ -53,6 +54,7 @@ from app.infrastructure.db.mongo.collections import names
 from bson import ObjectId
 from app.infrastructure.logging import apply_logging_aspect
 
+TemporaryTranscriptChunk.model_rebuild()
 
 @apply_logging_aspect("repository", "email_templates")
 class MongoEmailTemplateRepository(EmailTemplateRepository):
@@ -227,3 +229,32 @@ class MongoPrescriptionArtifactRepository(PrescriptionArtifactRepository):
         return PrescriptionArtifact(
             id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}
         )
+    
+
+@apply_logging_aspect("repository", "temporary_transcript_chunks")
+class MongoTemporaryTranscriptChunkRepository(TemporaryTranscriptChunkRepository):
+    def __init__(self, db):
+        self.collection = db["temporary_transcript_chunks"]
+
+    def save_chunk(self, chunk: TemporaryTranscriptChunk) -> TemporaryTranscriptChunk:
+        """Save incoming chunk immediately."""
+        doc = chunk.model_dump(exclude={"id"})
+        result = self.collection.insert_one(doc)
+        chunk.id = str(result.inserted_id)
+        return chunk
+
+    def get_chunks_by_consultation(self, consultation_id: int) -> list[TemporaryTranscriptChunk]:
+        """Fetch all partial chunks when save button is pressed."""
+        chunks = self.collection.find(
+            {"consultation_id": consultation_id},
+            sort=[("chunk_id", 1)]
+        )
+        return [TemporaryTranscriptChunk(**doc) for doc in chunks]
+
+    def delete_chunks_by_consultation(self, consultation_id: int) -> None:
+        """Clean up after successful save."""
+        self.collection.delete_many({"consultation_id": consultation_id})
+
+    def delete_chunks_by_session(self, session_id: str):
+        """Delete all chunks for a specific session."""
+        self.collection.delete_many({"session_id": session_id})
