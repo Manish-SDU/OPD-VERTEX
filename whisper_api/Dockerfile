@@ -2,8 +2,16 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /whisper-api
 
+
 COPY whisper_api/pyproject.toml ./
 COPY whisper_api/ ./whisper_api/
+
+# Install build tools for webrtcvad
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	build-essential \
+	gcc \
+	python3-dev \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 RUN pip install --no-cache-dir -e .
@@ -21,8 +29,16 @@ FROM python:3.12-slim
 
 WORKDIR /whisper-api
 
+
 COPY whisper_api/pyproject.toml ./
 COPY whisper_api/ ./whisper_api/
+
+# Install build tools for webrtcvad
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	build-essential \
+	gcc \
+	python3-dev \
+	&& rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir -e .
 

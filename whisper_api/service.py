@@ -16,7 +16,7 @@ _sessions: dict[str, dict] = {}
 _lock = threading.Lock()
 
 
-def init_model(model_size: str = "base", device: str = "cuda"):
+def init_model(model_size: str = "large-v3", device: str = "cuda"):
     """Initialize Whisper model."""
     models_dir = Path(__file__).parent.parent / "models"
     os.environ['HF_HOME'] = str(models_dir)
@@ -90,17 +90,49 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
         if model is None:
             print(f"[ERROR] Model not initialized for session {session_id}")
             return
-            
+
         import tempfile
         import soundfile as sf
+        import webrtcvad
+        import scipy.signal
 
         print(f"[Whisper] Transcribing chunk for session {session_id}: {len(audio_chunk)} samples, duration ~{len(audio_chunk) / 16000:.2f}s")
 
+        # --- Preprocessing: normalize audio ---
+        norm_audio = audio_chunk / (np.max(np.abs(audio_chunk)) + 1e-8)
+
+        # --- Preprocessing: remove silence using VAD ---
+        vad = webrtcvad.Vad(3)  # Aggressiveness: 0-3
+        sample_rate = _sessions[session_id]["sample_rate"]
+        frame_duration = 30  # ms
+        frame_size = int(sample_rate * frame_duration / 1000)
+        voiced_audio = []
+        for start in range(0, len(norm_audio), frame_size):
+            frame = norm_audio[start:start+frame_size]
+            if len(frame) < frame_size:
+                break
+            # Convert to 16-bit PCM for VAD
+            pcm = (frame * 32767).astype(np.int16).tobytes()
+            if vad.is_speech(pcm, sample_rate):
+                voiced_audio.append(frame)
+        if voiced_audio:
+            processed_audio = np.concatenate(voiced_audio)
+        else:
+            processed_audio = norm_audio  # fallback if VAD removes everything
+
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-            sf.write(f.name, audio_chunk, _sessions[session_id]["sample_rate"])
+            sf.write(f.name, processed_audio, sample_rate)
             print(f"[Whisper] Wrote audio to {f.name}, size: {os.path.getsize(f.name)} bytes")
 
-            segments, info = model.transcribe(f.name, language="en")
+            # --- Decoding: beam search, temperature=0, disable context carryover ---
+            segments, info = model.transcribe(
+                f.name,
+                language="en",
+                beam_size=5,  # beam search
+                temperature=0.0,
+                without_timestamps=False,
+                condition_on_previous_text=False,  # disables context carryover
+            )
             text = " ".join([segment.text for segment in segments])
             print(f"[Whisper] Transcribed: '{text}' (detected lang: {info.language})")
 
