@@ -31,7 +31,10 @@ from app.domain.clinical_notes.models import (
     PromptRepository,
 )
 from app.domain.email.models import EmailTemplate, EmailTemplateRepository
-from app.domain.transcriptions.models import TemporaryTranscriptChunk, TemporaryTranscriptChunkRepository
+from app.domain.transcriptions.models import (
+    TemporaryTranscriptChunk,
+    TemporaryTranscriptChunkRepository,
+)
 
 
 # ── Example pattern (repeat for each repository) ───────────────────────
@@ -55,6 +58,7 @@ from bson import ObjectId
 from app.infrastructure.logging import apply_logging_aspect
 
 TemporaryTranscriptChunk.model_rebuild()
+
 
 @apply_logging_aspect("repository", "email_templates")
 class MongoEmailTemplateRepository(EmailTemplateRepository):
@@ -229,7 +233,7 @@ class MongoPrescriptionArtifactRepository(PrescriptionArtifactRepository):
         return PrescriptionArtifact(
             id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}
         )
-    
+
 
 @apply_logging_aspect("repository", "temporary_transcript_chunks")
 class MongoTemporaryTranscriptChunkRepository(TemporaryTranscriptChunkRepository):
@@ -243,11 +247,12 @@ class MongoTemporaryTranscriptChunkRepository(TemporaryTranscriptChunkRepository
         chunk.id = str(result.inserted_id)
         return chunk
 
-    def get_chunks_by_consultation(self, consultation_id: int) -> list[TemporaryTranscriptChunk]:
+    def get_chunks_by_consultation(
+        self, consultation_id: int
+    ) -> list[TemporaryTranscriptChunk]:
         """Fetch all partial chunks when save button is pressed."""
         chunks = self.collection.find(
-            {"consultation_id": consultation_id},
-            sort=[("chunk_id", 1)]
+            {"consultation_id": consultation_id}, sort=[("chunk_id", 1)]
         )
         return [TemporaryTranscriptChunk(**doc) for doc in chunks]
 

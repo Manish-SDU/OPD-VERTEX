@@ -50,7 +50,7 @@ class StreamingTranscriptionService(ABC):
 
 class TemporaryTranscriptChunk(BaseModel):
     """Temporary storage for streaming transcript chunks during recording."""
-    
+
     id: str | None = None
     consultation_id: int
     session_id: str
@@ -67,7 +67,9 @@ class TemporaryTranscriptChunkRepository(ABC):
         """Save a partial transcript chunk temporarily."""
 
     @abstractmethod
-    def get_chunks_by_consultation(self, consultation_id: int) -> list[TemporaryTranscriptChunk]:
+    def get_chunks_by_consultation(
+        self, consultation_id: int
+    ) -> list[TemporaryTranscriptChunk]:
         """Retrieve all chunks for a consultation."""
 
     @abstractmethod
@@ -75,5 +77,5 @@ class TemporaryTranscriptChunkRepository(ABC):
         """Clear chunks after they're saved to main database."""
 
     @abstractmethod
-    def delete_chunks_by_session(self, session_id: str) -> None:  
+    def delete_chunks_by_session(self, session_id: str) -> None:
         """Delete all chunks for a specific session."""

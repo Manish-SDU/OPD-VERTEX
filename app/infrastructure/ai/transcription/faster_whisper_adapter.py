@@ -148,7 +148,7 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
             return data.get("partial_text", "")
         except Exception:
             return ""
-        
+
     def get_session_consultation_id(self, session_id: str) -> int:
         """Get consultation_id for a session from Whisper API."""
         try:
