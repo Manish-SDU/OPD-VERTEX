@@ -83,85 +83,130 @@ def _in_memory_audit_repo() -> InMemoryAuditLogRepository:
 def staff_repository():
     if _use_mock():
         return _in_memory_staff_repo()
-    from app.infrastructure.db.sql.repositories.sql_repos import SqlStaffRepository
     from app.infrastructure.db.sql.connection import get_session
+    from app.infrastructure.db.sql.repositories.sql_repos import (
+        SqlStaffRepository,
+    )
+
     return SqlStaffRepository(get_session())
 
 
 def patient_repository():
     if _use_mock():
         return _in_memory_patient_repo()
-    from app.infrastructure.db.sql.repositories.sql_repos import SqlPatientRepository
     from app.infrastructure.db.sql.connection import get_session
+    from app.infrastructure.db.sql.repositories.sql_repos import (
+        SqlPatientRepository,
+    )
+
     return SqlPatientRepository(get_session())
 
 
 def consultation_repository():
     if _use_mock():
         return _in_memory_consultation_repo()
-    from app.infrastructure.db.sql.repositories.sql_repos import SqlConsultationRepository
     from app.infrastructure.db.sql.connection import get_session
+    from app.infrastructure.db.sql.repositories.sql_repos import (
+        SqlConsultationRepository,
+    )
+
     return SqlConsultationRepository(get_session())
 
 
 def prescription_repository():
     if _use_mock():
         return _in_memory_prescription_repo()
-    from app.infrastructure.db.sql.repositories.sql_repos import SqlPrescriptionRepository
     from app.infrastructure.db.sql.connection import get_session
+    from app.infrastructure.db.sql.repositories.sql_repos import (
+        SqlPrescriptionRepository,
+    )
+
     return SqlPrescriptionRepository(get_session())
 
 
 def audit_repository():
     if _use_mock():
         return _in_memory_audit_repo()
-    from app.infrastructure.db.sql.repositories.sql_repos import SqlAuditLogRepository
     from app.infrastructure.db.sql.connection import get_session
+    from app.infrastructure.db.sql.repositories.sql_repos import (
+        SqlAuditLogRepository,
+    )
+
     return SqlAuditLogRepository(get_session())
 
 
 def consultation_doc_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import InMemoryConsultationDocumentRepository
+        from app.infrastructure.persistence.in_memory.repositories import (
+            InMemoryConsultationDocumentRepository,
+        )
+
         return InMemoryConsultationDocumentRepository()
     from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoConsultationDocumentRepository
+    from app.infrastructure.db.mongo.repositories.mongo_repos import (
+        MongoConsultationDocumentRepository,
+    )
+
     return MongoConsultationDocumentRepository(get_database())
 
 
 def generated_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import InMemoryGeneratedDocumentRepository
+        from app.infrastructure.persistence.in_memory.repositories import (
+            InMemoryGeneratedDocumentRepository,
+        )
+
         return InMemoryGeneratedDocumentRepository()
     from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoGeneratedDocumentRepository
+    from app.infrastructure.db.mongo.repositories.mongo_repos import (
+        MongoGeneratedDocumentRepository,
+    )
+
     return MongoGeneratedDocumentRepository(get_database())
 
 
 def prompt_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import InMemoryPromptRepository
+        from app.infrastructure.persistence.in_memory.repositories import (
+            InMemoryPromptRepository,
+        )
+
         return InMemoryPromptRepository()
     from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoPromptRepository
+    from app.infrastructure.db.mongo.repositories.mongo_repos import (
+        MongoPromptRepository,
+    )
+
     return MongoPromptRepository(get_database())
 
 
 def email_template_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import InMemoryEmailTemplateRepository
+        from app.infrastructure.persistence.in_memory.repositories import (
+            InMemoryEmailTemplateRepository,
+        )
+
         return InMemoryEmailTemplateRepository()
     from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoEmailTemplateRepository
+    from app.infrastructure.db.mongo.repositories.mongo_repos import (
+        MongoEmailTemplateRepository,
+    )
+
     return MongoEmailTemplateRepository(get_database())
 
 
 def prescription_artifact_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import InMemoryPrescriptionArtifactRepository
+        from app.infrastructure.persistence.in_memory.repositories import (
+            InMemoryPrescriptionArtifactRepository,
+        )
+
         return InMemoryPrescriptionArtifactRepository()
     from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoPrescriptionArtifactRepository
+    from app.infrastructure.db.mongo.repositories.mongo_repos import (
+        MongoPrescriptionArtifactRepository,
+    )
+
     return MongoPrescriptionArtifactRepository(get_database())
 
 
@@ -229,10 +274,16 @@ def get_audit_app_service() -> AuditApplicationService:
 
 def temp_transcript_chunk_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import InMemoryTemporaryTranscriptChunkRepository
+        from app.infrastructure.persistence.in_memory.repositories import (
+            InMemoryTemporaryTranscriptChunkRepository,
+        )
+
         return InMemoryTemporaryTranscriptChunkRepository()
     from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoTemporaryTranscriptChunkRepository
+    from app.infrastructure.db.mongo.repositories.mongo_repos import (
+        MongoTemporaryTranscriptChunkRepository,
+    )
+
     return MongoTemporaryTranscriptChunkRepository(get_database())
 
 

@@ -22,13 +22,6 @@ class TestLoginPage:
         assert "text/html" in response.headers["content-type"]
 
 
-class TestRegisterPage:
-    def test_register_page_renders(self):
-        response = client.get("/register")
-        assert response.status_code == 200
-        assert "Register" in response.text
-
-
 class TestLogout:
     def test_logout_redirects_to_login(self):
         response = client.get("/logout", follow_redirects=False)

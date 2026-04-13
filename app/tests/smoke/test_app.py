@@ -13,7 +13,7 @@ client = TestClient(app)
 
 def test_app_boots() -> None:
     """The app should instantiate without errors."""
-    assert app.title == "OPD-Vertex"
+    assert app.title == "MedFlow"
 
 
 def test_health_reachable() -> None:
@@ -23,11 +23,6 @@ def test_health_reachable() -> None:
 
 def test_login_page_reachable() -> None:
     response = client.get("/login")
-    assert response.status_code == 200
-
-
-def test_register_page_reachable() -> None:
-    response = client.get("/register")
     assert response.status_code == 200
 
 
@@ -47,5 +42,5 @@ def test_openapi_schema_available() -> None:
     response = client.get("/openapi.json")
     assert response.status_code == 200
     schema = response.json()
-    assert schema["info"]["title"] == "OPD-Vertex"
+    assert schema["info"]["title"] == "MedFlow"
     assert "/health" in schema["paths"]
