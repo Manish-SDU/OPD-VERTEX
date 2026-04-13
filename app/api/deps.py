@@ -53,6 +53,7 @@ def get_current_user(request: Request):
 
 # ── In-memory singletons (mock mode) ──────────────────────────────────
 
+
 @lru_cache
 def _in_memory_staff_repo() -> InMemoryStaffRepository:
     return InMemoryStaffRepository()
@@ -79,6 +80,7 @@ def _in_memory_audit_repo() -> InMemoryAuditLogRepository:
 
 
 # ── Repository accessors (switch on mock flag) ────────────────────────
+
 
 def staff_repository():
     if _use_mock():
@@ -212,6 +214,7 @@ def prescription_artifact_repository():
 
 # ── Services ──────────────────────────────────────────────────────────
 
+
 @lru_cache
 def auth_service() -> MockAuthService:
     return MockAuthService(staff_repository(), patient_repository())
@@ -293,6 +296,7 @@ def get_transcription_service() -> TranscriptionApplicationService:
     from app.infrastructure.ai.transcription.faster_whisper_adapter import (
         StreamingFasterWhisperService,
     )
+
     streaming_service = StreamingFasterWhisperService(
         model_size="base",
         device="cpu",
