@@ -1,6 +1,6 @@
 """Integration tests for authentication endpoints.
 
-Tests the login/register pages (GET returns HTML forms) and
+Tests the login page (GET returns HTML form) and
 the logout redirect behaviour.
 """
 

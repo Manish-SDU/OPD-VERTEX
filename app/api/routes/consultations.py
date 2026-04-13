@@ -1,6 +1,6 @@
 """Consultation routes."""
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -9,6 +9,13 @@ from app.domain.consultations.models import ConsultationCreateRequest
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
+
+
+def _require_doctor(user=Depends(get_current_user)):
+    """Only doctors may start or manage consultations."""
+    if user.get("role") != "doctor":
+        raise HTTPException(status_code=403, detail="Only doctors can manage consultations")
+    return user
 
 
 @router.get("", response_class=HTMLResponse)
@@ -22,7 +29,7 @@ def consultation_list(request: Request, user=Depends(get_current_user)) -> HTMLR
 
 
 @router.get("/new", response_class=HTMLResponse)
-def consultation_new(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
+def consultation_new(request: Request, user=Depends(_require_doctor)) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "consultations/create.html",
@@ -32,11 +39,13 @@ def consultation_new(request: Request, user=Depends(get_current_user)) -> HTMLRe
 
 @router.post("")
 def consultation_create(
-    patient_id: int = Form(...), chief_complaint: str = Form(...)
+    patient_id: int = Form(...),
+    chief_complaint: str = Form(...),
+    user=Depends(_require_doctor),
 ) -> RedirectResponse:
     consultation = get_consultation_app_service().create_consultation(
         ConsultationCreateRequest(patient_id=patient_id),
-        doctor_id=1,  # TODO: get from session
+        doctor_id=user.get("sub", 1),
     )
     return RedirectResponse(url=f"/consultations/{consultation.id}", status_code=303)
 

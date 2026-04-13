@@ -1,29 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card narrow">
-  <h2>Start Consultation</h2>
-  <form id="create-consultation-form">
-    <label>Patient ID <input type="number" name="patient_id" value="1"></label>
-    <label>Chief complaint <input type="text" name="chief_complaint" value="Routine follow-up"></label>
-    <button type="submit">Create mock consultation</button>
-  </form>
-  <div id="consultation-success" style="color:green;"></div>
-  <div id="consultation-error" style="color:red;"></div>
-  <div id="transcription-ui" style="display:none; margin-top:2em;">
-    <h3>Transcription</h3>
-    <button id="start-transcription" disabled>Start Transcription</button>
-    <button id="stop-transcription" disabled>Stop</button>
-    <button id="save-transcription" disabled>Save Transcription</button>
-    <div>
-      <strong>Partial:</strong> <span id="partial-text"></span>
-    </div>
-    <div>
-      <strong>Final chunks:</strong>
-      <ul id="transcription-chunks"></ul>
-    </div>
-    <div id="transcription-error" style="color:red;"></div>
-    <div id="transcription-saved" style="color:green;"></div>
+<div class="nc-page">
+  <div class="nc-card">
+    <h2 class="nc-card__title">New Consultation</h2>
+
+    <form id="create-consultation-form" class="nc-form">
+      {# ── Patient lookup ── #}
+      <div class="nc-row">
+        <div class="nc-group nc-group--id">
+          <label class="nc-group__label" for="patient-id-input">Patient ID</label>
+          <input class="nc-group__input" type="text" id="patient-id-input" placeholder="e.g. 102" autocomplete="off">
+        </div>
+        <div class="nc-group nc-group--name">
+          <label class="nc-group__label" for="patient-name">Full Name</label>
+          <div class="nc-ac-wrap">
+            <input class="nc-group__input" type="text" id="patient-name" placeholder="Search by name…" autocomplete="off">
+            <ul id="patient-suggestions" class="nc-ac-list"></ul>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" name="patient_id" id="patient-id-field">
+      <p id="patient-selected" class="nc-msg nc-msg--ok"></p>
+      <p id="patient-error" class="nc-msg nc-msg--err"></p>
+
+      {# ── Chief complaint ── #}
+      <div class="nc-group">
+        <label class="nc-group__label" for="chief-complaint">Chief Complaint</label>
+        <input class="nc-group__input" type="text" id="chief-complaint" name="chief_complaint" placeholder="Reason for visit…">
+      </div>
+
+      <button type="submit" class="nc-btn">Start Consultation</button>
+    </form>
+
+    <div id="consultation-success" class="nc-alert nc-alert--ok" style="display:none;"></div>
+    <div id="consultation-error" class="nc-alert nc-alert--err" style="display:none;"></div>
   </div>
-  <script src="/static/js/consultation_create.js"></script>
-</section>
+</div>
+
+<div id="transcription-ui" style="display:none; margin-top:2em;">
+  <h3>Transcription</h3>
+  <button id="start-transcription" disabled>Start Transcription</button>
+  <button id="stop-transcription" disabled>Stop</button>
+  <button id="save-transcription" disabled>Save Transcription</button>
+  <div><strong>Partial:</strong> <span id="partial-text"></span></div>
+  <div><strong>Final chunks:</strong><ul id="transcription-chunks"></ul></div>
+  <div id="transcription-error" style="color:red;"></div>
+  <div id="transcription-saved" style="color:green;"></div>
+</div>
+<script src="/static/js/consultation_create.js"></script>
 {% endblock %}

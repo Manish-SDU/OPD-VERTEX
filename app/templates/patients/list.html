@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="card">
-  <div class="split">
-    <h2>Patients</h2>
-    <a href="/patients/new">Create patient</a>
+  <h2>Patients</h2>
+  <div class="search-bar">
+    <input type="text" id="patient-filter" placeholder="Search by name or email…" autocomplete="off">
   </div>
   <table>
-    <thead><tr><th>ID</th><th>Name</th><th>Email</th></tr></thead>
-    <tbody>
+    <thead><tr><th>ID</th><th>Full Name</th><th>Email</th></tr></thead>
+    <tbody id="patient-table-body">
       {% for patient in patients %}
       <tr>
         <td><a href="/patients/{{ patient.id }}">{{ patient.id }}</a></td>
@@ -17,5 +17,26 @@
       {% endfor %}
     </tbody>
   </table>
+  <p id="no-results" style="display:none;color:var(--muted);font-size:.9rem;margin-top:.5rem;">No patients match your search.</p>
 </section>
+<script>
+(function() {
+  const input = document.getElementById('patient-filter');
+  const tbody = document.getElementById('patient-table-body');
+  const noResults = document.getElementById('no-results');
+  if (!input || !tbody) return;
+  input.addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    const rows = tbody.querySelectorAll('tr');
+    let visible = 0;
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      const show = text.includes(q);
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    noResults.style.display = visible === 0 ? '' : 'none';
+  });
+})();
+</script>
 {% endblock %}

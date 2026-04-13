@@ -1,13 +1,10 @@
 """Patient routes."""
 
-from datetime import date
-
-from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from app.api.deps import get_patient_app_service, get_current_user
-from app.domain.patients.models import PatientCreateRequest
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
@@ -23,31 +20,24 @@ def patient_list(request: Request, user=Depends(get_current_user)) -> HTMLRespon
     )
 
 
-@router.get("/new", response_class=HTMLResponse)
-def patient_new(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request, "patients/create.html", {"page_title": "New Patient", "user": user}
+@router.get("/search", response_class=JSONResponse)
+def patient_search(
+    q: str = Query("", min_length=0),
+    _user=Depends(get_current_user),
+) -> JSONResponse:
+    """Return patients matching a name query (for autocomplete)."""
+    patients = get_patient_app_service().search_patients(q)
+    return JSONResponse(
+        [
+            {
+                "id": p.id,
+                "first_name": p.first_name,
+                "last_name": p.last_name,
+                "email": p.email,
+            }
+            for p in patients
+        ]
     )
-
-
-@router.post("")
-def patient_create(
-    first_name: str = Form(...),
-    last_name: str = Form(...),
-    email: str = Form(...),
-    date_of_birth: date = Form(...),
-    gender: str | None = Form(default=None),
-) -> RedirectResponse:
-    get_patient_app_service().create_patient(
-        PatientCreateRequest(
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            date_of_birth=date_of_birth,
-            gender=gender,
-        )
-    )
-    return RedirectResponse(url="/patients", status_code=303)
 
 
 @router.get("/{patient_id}", response_class=HTMLResponse)

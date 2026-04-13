@@ -778,3 +778,195 @@ a:hover {
   .dashboard-hero { justify-content: center; }
   .hero-body { text-align: center; align-items: center; }
 }
+
+/* ── Patient search bar ── */
+.search-bar {
+  margin-bottom: 1rem;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: .65rem .85rem .65rem 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: .9375rem;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%239ca3af'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat .65rem center;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.search-bar input:focus {
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+}
+
+/* ── New Consultation page ── */
+/* ── New Consultation Page ── */
+.nc-page {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.nc-card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.nc-card__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 1.5rem;
+}
+
+.nc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Two-column row (ID + Name) ── */
+.nc-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+}
+
+/* ── Field group ── */
+.nc-group {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.nc-group__label {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.nc-group__input {
+  padding: .55rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: .9rem;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.nc-group__input:focus {
+  border-color: var(--blue-400);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+}
+
+.nc-group__input::placeholder { color: #b8c0cc; }
+
+.nc-group__input--err {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.08) !important;
+}
+
+.nc-group__input--ok {
+  border-color: var(--success) !important;
+  box-shadow: 0 0 0 3px rgba(34,197,94,.08) !important;
+}
+
+/* ── Autocomplete ── */
+.nc-ac-wrap {
+  position: relative;
+}
+
+.nc-ac-list {
+  list-style: none;
+  margin: 0;
+  padding: .25rem 0;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 80;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+}
+
+.nc-ac-list .ac-item {
+  padding: .5rem .75rem;
+  cursor: pointer;
+  font-size: .85rem;
+  transition: background .08s;
+}
+
+.nc-ac-list .ac-item:hover { background: var(--blue-50); }
+
+.nc-ac-list .ac-meta {
+  font-size: .72rem;
+  color: var(--muted);
+  display: block;
+}
+
+.nc-ac-list .ac-empty {
+  padding: .5rem .75rem;
+  font-size: .82rem;
+  color: var(--muted);
+}
+
+/* ── Feedback messages ── */
+.nc-msg {
+  display: none;
+  font-size: .8rem;
+  margin: -.5rem 0 0;
+}
+
+.nc-msg--ok { color: #059669; font-weight: 500; }
+.nc-msg--err { color: #dc2626; }
+
+/* ── Submit ── */
+.nc-btn {
+  padding: .6rem 1.25rem;
+  font-size: .9rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--blue-600);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.nc-btn:hover { background: var(--blue-700); }
+
+/* ── Alert boxes ── */
+.nc-alert {
+  padding: .6rem .85rem;
+  border-radius: 8px;
+  font-size: .84rem;
+  margin-top: .75rem;
+  font-weight: 500;
+}
+
+.nc-alert--err {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.nc-alert--ok {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}

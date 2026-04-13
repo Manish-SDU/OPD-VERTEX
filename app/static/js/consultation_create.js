@@ -1,6 +1,136 @@
 // consultation_create.js
 // Handles AJAX consultation creation and transcription UI logic for the create consultation page
 
+// ── Patient lookup (two fields: name ↔ ID) ───────────────────────────
+const nameInput = document.getElementById('patient-name');
+const idInput = document.getElementById('patient-id-input');
+const idField = document.getElementById('patient-id-field');
+const suggestionsList = document.getElementById('patient-suggestions');
+const selectedHint = document.getElementById('patient-selected');
+const patientError = document.getElementById('patient-error');
+let debounceTimer = null;
+
+function clearPatientState() {
+  idField.value = '';
+  selectedHint.textContent = '';
+  selectedHint.style.display = 'none';
+  patientError.textContent = '';
+  patientError.style.display = 'none';
+  idInput.classList.remove('nc-group__input--err', 'nc-group__input--ok');
+  nameInput.classList.remove('nc-group__input--err', 'nc-group__input--ok');
+}
+
+function showPatientError(msg) {
+  patientError.textContent = msg;
+  patientError.style.display = '';
+  selectedHint.style.display = 'none';
+  idInput.classList.add('nc-group__input--err');
+  nameInput.classList.add('nc-group__input--err');
+  idInput.classList.remove('nc-group__input--ok');
+  nameInput.classList.remove('nc-group__input--ok');
+}
+
+function showPatientSuccess(msg) {
+  selectedHint.textContent = msg;
+  selectedHint.style.display = '';
+  patientError.style.display = 'none';
+  idInput.classList.add('nc-group__input--ok');
+  nameInput.classList.add('nc-group__input--ok');
+  idInput.classList.remove('nc-group__input--err');
+  nameInput.classList.remove('nc-group__input--err');
+}
+
+// ── Name field: type name → dropdown → auto-fill ID ──────────────────
+if (nameInput) {
+  nameInput.addEventListener('input', function () {
+    clearPatientState();
+    idInput.value = '';
+    clearTimeout(debounceTimer);
+    const q = this.value.trim();
+    if (q.length === 0) {
+      suggestionsList.innerHTML = '';
+      suggestionsList.style.display = 'none';
+      return;
+    }
+    debounceTimer = setTimeout(async () => {
+      try {
+        const resp = await fetch(`/patients/search?q=${encodeURIComponent(q)}`);
+        if (!resp.ok) return;
+        const patients = await resp.json();
+        suggestionsList.innerHTML = '';
+        if (patients.length === 0) {
+          const li = document.createElement('li');
+          li.className = 'ac-empty';
+          li.textContent = 'No patients found — check the spelling';
+          suggestionsList.appendChild(li);
+          showPatientError('No matching patient. Check the name.');
+        } else {
+          if (patients.length === 1) {
+            const p = patients[0];
+            idField.value = p.id;
+            idInput.value = p.id;
+            showPatientSuccess(`\u2713 ${p.first_name} ${p.last_name} (ID ${p.id})`);
+          }
+          patients.forEach(p => {
+            const li = document.createElement('li');
+            li.className = 'ac-item';
+            li.innerHTML = `<strong>${p.first_name} ${p.last_name}</strong> <span class="ac-meta">ID ${p.id} \u00b7 ${p.email}</span>`;
+            li.addEventListener('click', () => {
+              idField.value = p.id;
+              nameInput.value = `${p.first_name} ${p.last_name}`;
+              idInput.value = p.id;
+              showPatientSuccess(`\u2713 ${p.first_name} ${p.last_name} (ID ${p.id})`);
+              suggestionsList.innerHTML = '';
+              suggestionsList.style.display = 'none';
+            });
+            suggestionsList.appendChild(li);
+          });
+        }
+        suggestionsList.style.display = '';
+      } catch (e) { /* ignore */ }
+    }, 250);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!nameInput.contains(e.target) && !suggestionsList.contains(e.target)) {
+      suggestionsList.style.display = 'none';
+    }
+  });
+}
+
+// ── ID field: type ID → auto-fill name ───────────────────────────────
+if (idInput) {
+  idInput.addEventListener('input', function () {
+    clearPatientState();
+    nameInput.value = '';
+    suggestionsList.style.display = 'none';
+    clearTimeout(debounceTimer);
+    const q = this.value.trim();
+    if (q.length === 0) return;
+    if (!/^\d+$/.test(q)) {
+      showPatientError('ID must be a number.');
+      return;
+    }
+    debounceTimer = setTimeout(async () => {
+      try {
+        const resp = await fetch(`/patients/search?q=${encodeURIComponent(q)}`);
+        if (!resp.ok) return;
+        const patients = await resp.json();
+        const exact = patients.find(p => String(p.id) === q);
+        if (exact) {
+          idField.value = exact.id;
+          nameInput.value = `${exact.first_name} ${exact.last_name}`;
+          showPatientSuccess(`\u2713 ${exact.first_name} ${exact.last_name} (ID ${exact.id})`);
+        } else {
+          showPatientError(`No patient found with ID ${q}.`);
+        }
+      } catch (e) { /* ignore */ }
+    }, 300);
+  });
+}
+
+// ── Consultation creation + transcription ─────────────────────────────
+
 let ws = null;
 let mediaRecorder = null;
 let audioStream = null;
@@ -24,8 +154,16 @@ if (form) {
   form.onsubmit = async function(e) {
     e.preventDefault();
     successDiv.textContent = '';
+    successDiv.style.display = 'none';
     errorDiv.textContent = '';
+    errorDiv.style.display = 'none';
     transcriptionUI.style.display = 'none';
+    // Validate patient selection
+    if (!idField.value) {
+      showPatientError('Please select a patient or enter a valid ID.');
+      nameInput.focus();
+      return;
+    }
     const formData = new FormData(form);
     const payload = {
       patient_id: formData.get('patient_id'),
@@ -46,12 +184,14 @@ if (form) {
       consultationId = match[1];
       sessionId = null;  // Reset session for new consultation
       successDiv.textContent = 'Consultation created! Starting transcription...';
+      successDiv.style.display = '';
       transcriptionUI.style.display = '';
       startBtn.disabled = false;
       // Auto-start transcription
       setTimeout(() => startBtn.click(), 500);
     } catch (err) {
       errorDiv.textContent = err.message || err;
+      errorDiv.style.display = '';
     }
   };
 }

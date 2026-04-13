@@ -28,14 +28,23 @@ app/
 alembic/         → SQL migration scripts
 ```
 
-## Run Locally
+## Quick Start
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate        # Windows
 pip install -e .[dev]
 uvicorn app.main:app --reload
 ```
+
+Open http://localhost:8000
+
+## Demo Credentials
+
+| Role | Email | Password |
+|---|---|---|
+| Doctor | `doctor@example.local` | `password` |
+| Admin | `admin@example.local` | `password` |
+| Patient | `giulia@example.local` | `password` |
+| Patient | `marco@example.local` | `password` |
 
 ## Run with Docker
 

@@ -3,7 +3,9 @@
 <section class="card">
   <div class="split">
     <h2>Consultations</h2>
+    {% if user.role == "doctor" %}
     <a href="/consultations/new">Start consultation</a>
+    {% endif %}
   </div>
   <table>
     <thead><tr><th>ID</th><th>Patient</th><th>Status</th><th>Complaint</th></tr></thead>
