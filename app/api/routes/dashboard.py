@@ -14,7 +14,7 @@ router = APIRouter()
 def root(request: Request) -> HTMLResponse:
     user = get_auth_app_service().auth_service.get_current_user()
     return templates.TemplateResponse(
-        request, "dashboard/index.html", {"user": user, "page_title": "Home"}
+        request, "dashboard/index.html", {"user": user, "page_title": "MedFlow"}
     )
 
 

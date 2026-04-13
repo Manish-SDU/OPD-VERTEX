@@ -15,7 +15,7 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
-    app_name: str = Field(default="OPD-Vertex", alias="APP_NAME")
+    app_name: str = Field(default="MedFlow", alias="APP_NAME")
     app_env: str = Field(default="development", alias="APP_ENV")
     debug: bool = Field(default=True, alias="DEBUG")
     secret_key: str = Field(default="change-me", alias="SECRET_KEY")

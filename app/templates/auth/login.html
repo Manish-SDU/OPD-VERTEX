@@ -1,15 +1,37 @@
 {% extends "base.html" %}
-{% block content %}
-<section class="card narrow">
-  <h2>Mock Login</h2>
-  <p>Placeholder authentication only. No real session security yet.</p>
-  {% if message %}<p>{{ message }}</p>{% endif %}
-  {% if staff %}<p>Authenticated as {{ user.email }}.</p>{% endif %}
-  <form method="post" action="/login">
-    <label>Username <input type="email" name="email" value="john@example.com"></label>
-    <label>Password <input type="password" name="password" value="password"></label>
-    <button type="submit">Login</button>
-  </form>
-  <p>New user?</p><a href="/register">Register here</a>
-</section>
+{% block body %}
+<div class="login-page">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 64 64"><polyline points="8,34 20,34 25,20 32,46 39,28 44,34 56,34" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1>MedFlow</h1>
+      <p>Smart Clinical Workflow Platform</p>
+    </div>
+
+    {% if message %}
+    <div class="alert alert-info">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="alert alert-info" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;">{{ error }}</div>
+    {% endif %}
+
+    <h2>Sign in to your account</h2>
+
+    <form method="post" action="/login">
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+      </div>
+      <button type="submit" class="btn-primary">Sign in</button>
+    </form>
+
+
+  </div>
+</div>
 {% endblock %}

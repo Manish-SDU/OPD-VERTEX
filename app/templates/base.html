@@ -3,27 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ page_title or "OPD-Vertex" }}</title>
+  <title>{{ page_title or "MedFlow" }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
+  {% block body %}
   <header class="site-header">
-    <div>
-      <h1>OPD-Vertex</h1>
-      <p>Local-first outpatient workflow scaffold</p>
+    <div class="site-header-inner">
+      <a href="/dashboard" class="brand-link">
+        <span class="brand-mark">
+          <svg viewBox="0 0 64 64"><polyline points="8,34 20,34 25,20 32,46 39,28 44,34 56,34" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="brand-text">MedFlow</span>
+      </a>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/patients">Patients</a>
+        <a href="/consultations">Consultations</a>
+        <a href="/prescriptions">Prescriptions</a>
+        <a href="/admin/config">Admin</a>
+        <a href="/logout" class="btn-logout">Logout</a>
+      </nav>
     </div>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/dashboard">Dashboard</a>
-      <a href="/patients">Patients</a>
-      <a href="/consultations">Consultations</a>
-      <a href="/prescriptions">Prescriptions</a>
-      <a href="/admin/config">Admin</a>
-      <a href="/login">Login</a>
-    </nav>
   </header>
   <main class="layout">
     {% block content %}{% endblock %}
   </main>
+  {% endblock %}
 </body>
 </html>

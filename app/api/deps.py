@@ -16,37 +16,27 @@ from app.application.prescriptions.services import PrescriptionApplicationServic
 from app.application.review.services import ReviewApplicationService
 from app.infrastructure.auth.mock import MockAuthService
 from app.infrastructure.persistence.in_memory.repositories import (
+    InMemoryStaffRepository,
+    InMemoryPatientRepository,
+    InMemoryConsultationRepository,
+    InMemoryPrescriptionRepository,
+    InMemoryAuditLogRepository,
     MockClinicalNoteGenerator,
     MockEmailService,
     MockPdfGenerator,
     MockSuggestiveModeService,
     MockTranscriptionService,
 )
-from app.infrastructure.db.sql.repositories.sql_repos import (
-    SqlStaffRepository,
-    SqlPatientRepository,
-    SqlConsultationRepository,
-    SqlPrescriptionRepository,
-    SqlAuditLogRepository,
-)
-from app.infrastructure.db.sql.connection import get_session
-from app.infrastructure.db.mongo.connection import get_database
-from app.infrastructure.db.mongo.repositories.mongo_repos import (
-    MongoConsultationDocumentRepository,
-    MongoEmailTemplateRepository,
-    MongoGeneratedDocumentRepository,
-    MongoPrescriptionArtifactRepository,
-    MongoPromptRepository,
-    MongoTemporaryTranscriptChunkRepository,
-)
+from app.core.config import get_settings
 from fastapi import Request, HTTPException
 from jose import jwt, JWTError
 from app.core.security import SECRET_KEY, ALGORITHM
 
 from app.application.transcriptions.services import TranscriptionApplicationService
-from app.infrastructure.ai.transcription.faster_whisper_adapter import (
-    StreamingFasterWhisperService,
-)
+
+
+def _use_mock() -> bool:
+    return get_settings().use_mock_adapters
 
 
 def get_current_user(request: Request):
@@ -61,50 +51,121 @@ def get_current_user(request: Request):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-def staff_repository() -> SqlStaffRepository:
+# ── In-memory singletons (mock mode) ──────────────────────────────────
+
+@lru_cache
+def _in_memory_staff_repo() -> InMemoryStaffRepository:
+    return InMemoryStaffRepository()
+
+
+@lru_cache
+def _in_memory_patient_repo() -> InMemoryPatientRepository:
+    return InMemoryPatientRepository()
+
+
+@lru_cache
+def _in_memory_consultation_repo() -> InMemoryConsultationRepository:
+    return InMemoryConsultationRepository()
+
+
+@lru_cache
+def _in_memory_prescription_repo() -> InMemoryPrescriptionRepository:
+    return InMemoryPrescriptionRepository()
+
+
+@lru_cache
+def _in_memory_audit_repo() -> InMemoryAuditLogRepository:
+    return InMemoryAuditLogRepository()
+
+
+# ── Repository accessors (switch on mock flag) ────────────────────────
+
+def staff_repository():
+    if _use_mock():
+        return _in_memory_staff_repo()
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlStaffRepository
+    from app.infrastructure.db.sql.connection import get_session
     return SqlStaffRepository(get_session())
 
 
-def patient_repository() -> SqlPatientRepository:
+def patient_repository():
+    if _use_mock():
+        return _in_memory_patient_repo()
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlPatientRepository
+    from app.infrastructure.db.sql.connection import get_session
     return SqlPatientRepository(get_session())
 
 
-def consultation_repository() -> SqlConsultationRepository:
+def consultation_repository():
+    if _use_mock():
+        return _in_memory_consultation_repo()
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlConsultationRepository
+    from app.infrastructure.db.sql.connection import get_session
     return SqlConsultationRepository(get_session())
 
 
-@lru_cache
-def consultation_doc_repository() -> MongoConsultationDocumentRepository:
-    return MongoConsultationDocumentRepository(get_database())
-
-
-@lru_cache
-def generated_repository() -> MongoGeneratedDocumentRepository:
-    return MongoGeneratedDocumentRepository(get_database())
-
-
-def prescription_repository() -> SqlPrescriptionRepository:
+def prescription_repository():
+    if _use_mock():
+        return _in_memory_prescription_repo()
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlPrescriptionRepository
+    from app.infrastructure.db.sql.connection import get_session
     return SqlPrescriptionRepository(get_session())
 
 
-def audit_repository() -> SqlAuditLogRepository:
+def audit_repository():
+    if _use_mock():
+        return _in_memory_audit_repo()
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlAuditLogRepository
+    from app.infrastructure.db.sql.connection import get_session
     return SqlAuditLogRepository(get_session())
 
 
-@lru_cache
-def prompt_repository() -> MongoPromptRepository:
+def consultation_doc_repository():
+    if _use_mock():
+        from app.infrastructure.persistence.in_memory.repositories import InMemoryConsultationDocumentRepository
+        return InMemoryConsultationDocumentRepository()
+    from app.infrastructure.db.mongo.connection import get_database
+    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoConsultationDocumentRepository
+    return MongoConsultationDocumentRepository(get_database())
+
+
+def generated_repository():
+    if _use_mock():
+        from app.infrastructure.persistence.in_memory.repositories import InMemoryGeneratedDocumentRepository
+        return InMemoryGeneratedDocumentRepository()
+    from app.infrastructure.db.mongo.connection import get_database
+    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoGeneratedDocumentRepository
+    return MongoGeneratedDocumentRepository(get_database())
+
+
+def prompt_repository():
+    if _use_mock():
+        from app.infrastructure.persistence.in_memory.repositories import InMemoryPromptRepository
+        return InMemoryPromptRepository()
+    from app.infrastructure.db.mongo.connection import get_database
+    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoPromptRepository
     return MongoPromptRepository(get_database())
 
 
-@lru_cache
-def email_template_repository() -> MongoEmailTemplateRepository:
+def email_template_repository():
+    if _use_mock():
+        from app.infrastructure.persistence.in_memory.repositories import InMemoryEmailTemplateRepository
+        return InMemoryEmailTemplateRepository()
+    from app.infrastructure.db.mongo.connection import get_database
+    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoEmailTemplateRepository
     return MongoEmailTemplateRepository(get_database())
 
 
-@lru_cache
-def prescription_artifact_repository() -> MongoPrescriptionArtifactRepository:
+def prescription_artifact_repository():
+    if _use_mock():
+        from app.infrastructure.persistence.in_memory.repositories import InMemoryPrescriptionArtifactRepository
+        return InMemoryPrescriptionArtifactRepository()
+    from app.infrastructure.db.mongo.connection import get_database
+    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoPrescriptionArtifactRepository
     return MongoPrescriptionArtifactRepository(get_database())
 
+
+# ── Services ──────────────────────────────────────────────────────────
 
 @lru_cache
 def auth_service() -> MockAuthService:
@@ -166,14 +227,21 @@ def get_audit_app_service() -> AuditApplicationService:
     return AuditApplicationService(audit_repository())
 
 
-@lru_cache
-def temp_transcript_chunk_repository() -> MongoTemporaryTranscriptChunkRepository:
+def temp_transcript_chunk_repository():
+    if _use_mock():
+        from app.infrastructure.persistence.in_memory.repositories import InMemoryTemporaryTranscriptChunkRepository
+        return InMemoryTemporaryTranscriptChunkRepository()
+    from app.infrastructure.db.mongo.connection import get_database
+    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoTemporaryTranscriptChunkRepository
     return MongoTemporaryTranscriptChunkRepository(get_database())
 
 
 @lru_cache
 def get_transcription_service() -> TranscriptionApplicationService:
     """Provide transcription service instance."""
+    from app.infrastructure.ai.transcription.faster_whisper_adapter import (
+        StreamingFasterWhisperService,
+    )
     streaming_service = StreamingFasterWhisperService(
         model_size="base",
         device="cpu",

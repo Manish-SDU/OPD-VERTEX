@@ -51,13 +51,16 @@ from app.domain.transcriptions.models import TranscriptResult, TranscriptionServ
 
 class InMemoryStaffRepository(StaffRepository):
     def __init__(self) -> None:
+        from app.core.security import hash_password
+
+        _pw = hash_password("password")
         self._staff = [
             Staff(
                 id=1,
                 first_name="Ada",
                 last_name="Demo",
                 email="doctor@example.local",
-                password_hash="",
+                password_hash=_pw,
                 specialization="General Medicine",
                 license_number="LIC001",
                 role="doctor",
@@ -67,7 +70,7 @@ class InMemoryStaffRepository(StaffRepository):
                 first_name="Alex",
                 last_name="Admin",
                 email="admin@example.local",
-                password_hash="",
+                password_hash=_pw,
                 role="admin",
             ),
         ]
@@ -99,6 +102,9 @@ class InMemoryStaffRepository(StaffRepository):
 
 class InMemoryPatientRepository(PatientRepository):
     def __init__(self) -> None:
+        from app.core.security import hash_password
+
+        _pw = hash_password("password")
         self._patients = [
             Patient(
                 id=1,
@@ -106,6 +112,7 @@ class InMemoryPatientRepository(PatientRepository):
                 last_name="Rossi",
                 date_of_birth=date(1990, 4, 12),
                 email="giulia@example.local",
+                password_hash=_pw,
                 gender="F",
                 phone="+39 0001",
             ),
@@ -115,6 +122,7 @@ class InMemoryPatientRepository(PatientRepository):
                 last_name="Bianchi",
                 date_of_birth=date(1984, 8, 19),
                 email="marco@example.local",
+                password_hash=_pw,
                 gender="M",
                 phone="+39 0002",
             ),

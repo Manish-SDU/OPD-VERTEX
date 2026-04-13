@@ -1,19 +1,170 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card">
-  <h2>{{ user.full_name if staff else "Clinical Workspace" }}</h2>
-  <p>Role: {{ user.role}}</p>
-  <p>This scaffold boots with mock repositories and placeholder adapters only.</p>
-  <p><a href="/logout" class="button">Logout</a></p>
-</section>
-<section class="card">
-  <h3>Recent Audit Events</h3>
-  <ul>
-    {% for entry in audit_entries or [] %}
-    <li>{{ entry.action }} on {{ entry.entity_type }} ({{ entry.entity_id }})</li>
+
+{# ── Welcome banner ── #}
+<div class="dashboard-welcome">
+  <h2>Welcome back, {{ user.first_name }} {{ user.last_name }}</h2>
+  <p>
+    {% if user.role == "doctor" %}
+      Here&rsquo;s your clinical overview for today.
+    {% elif user.role == "patient" %}
+      Manage your appointments and health records.
     {% else %}
-    <li>No audit entries yet.</li>
+      System administration overview.
+    {% endif %}
+  </p>
+</div>
+
+{# ── Doctor Dashboard ── #}
+{% if user.role == "doctor" %}
+<div class="dashboard-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    </div>
+    <div class="stat-body">
+      <h3>Patients</h3>
+      <span class="stat-value">{{ patient_count if patient_count is defined else "—" }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon green">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
+    </div>
+    <div class="stat-body">
+      <h3>Consultations</h3>
+      <span class="stat-value">{{ consultation_count if consultation_count is defined else "—" }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon amber">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    </div>
+    <div class="stat-body">
+      <h3>Prescriptions</h3>
+      <span class="stat-value">{{ prescription_count if prescription_count is defined else "—" }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon purple">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+    </div>
+    <div class="stat-body">
+      <h3>Pending Reviews</h3>
+      <span class="stat-value">{{ pending_reviews if pending_reviews is defined else "—" }}</span>
+    </div>
+  </div>
+</div>
+
+<h3 style="font-size:1rem;font-weight:600;margin:0 0 .75rem;color:var(--muted);">Quick Actions</h3>
+<div class="quick-actions">
+  <a href="/consultations/new" class="quick-action">
+    <span class="qa-icon">
+      <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    </span>
+    Start Consultation
+  </a>
+  <a href="/patients/new" class="quick-action">
+    <span class="qa-icon">
+      <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    </span>
+    Register Patient
+  </a>
+  <a href="/patients" class="quick-action">
+    <span class="qa-icon">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    </span>
+    Search Patients
+  </a>
+  <a href="/prescriptions" class="quick-action">
+    <span class="qa-icon">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    </span>
+    View Prescriptions
+  </a>
+</div>
+
+{# ── Patient Dashboard ── #}
+{% elif user.role == "patient" %}
+<div class="dashboard-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
+    </div>
+    <div class="stat-body">
+      <h3>Appointments</h3>
+      <span class="stat-value">{{ appointment_count if appointment_count is defined else "—" }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon green">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    </div>
+    <div class="stat-body">
+      <h3>Prescriptions</h3>
+      <span class="stat-value">{{ prescription_count if prescription_count is defined else "—" }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon amber">
+      <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+    </div>
+    <div class="stat-body">
+      <h3>Medical Records</h3>
+      <span class="stat-value">{{ record_count if record_count is defined else "—" }}</span>
+    </div>
+  </div>
+</div>
+
+<h3 style="font-size:1rem;font-weight:600;margin:0 0 .75rem;color:var(--muted);">Quick Actions</h3>
+<div class="quick-actions">
+  <a href="/consultations" class="quick-action">
+    <span class="qa-icon">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
+    </span>
+    My Consultations
+  </a>
+  <a href="/prescriptions" class="quick-action">
+    <span class="qa-icon">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    </span>
+    My Prescriptions
+  </a>
+</div>
+
+{# ── Admin fallback ── #}
+{% else %}
+<div class="dashboard-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    </div>
+    <div class="stat-body">
+      <h3>System Status</h3>
+      <span class="stat-value">OK</span>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Recent Activity (all roles) ── #}
+<div class="card">
+  <h3>Recent Activity</h3>
+  <ul class="activity-list">
+    {% for entry in audit_entries or [] %}
+    <li>
+      <span class="activity-dot"></span>
+      {{ entry.action }} on <strong>{{ entry.entity_type }}</strong> ({{ entry.entity_id }})
+    </li>
+    {% else %}
+    <li><span class="activity-dot"></span> No recent activity.</li>
     {% endfor %}
   </ul>
-</section>
+</div>
+
 {% endblock %}
