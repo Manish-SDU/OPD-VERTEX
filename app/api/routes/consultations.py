@@ -14,7 +14,9 @@ router = APIRouter()
 def _require_doctor(user=Depends(get_current_user)):
     """Only doctors may start or manage consultations."""
     if user.get("role") != "doctor":
-        raise HTTPException(status_code=403, detail="Only doctors can manage consultations")
+        raise HTTPException(
+            status_code=403, detail="Only doctors can manage consultations"
+        )
     return user
 
 

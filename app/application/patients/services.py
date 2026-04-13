@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.domain.patients.models import Patient, PatientRepository
+from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
 from app.infrastructure.logging import apply_logging_aspect
 
 
@@ -30,3 +30,6 @@ class PatientApplicationService:
 
     def get_patient(self, patient_id: str) -> Patient | None:
         return self.repository.get_by_id(patient_id)
+
+    def create_patient(self, req: PatientCreateRequest) -> Patient:
+        return self.repository.create(req)
