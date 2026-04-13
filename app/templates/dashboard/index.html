@@ -2,18 +2,40 @@
 {% block content %}
 
 {# ── Welcome banner ── #}
+{% if user.role == "doctor" %}
+<div class="dashboard-hero">
+  <div class="hero-visual hero-visual--left">
+    <img src="/static/images/doctor_left.png" alt="">
+  </div>
+  <div class="hero-body">
+    <span class="hero-badge">Doctor Dashboard</span>
+    <h2>Welcome back, Dr. {{ user.last_name }}</h2>
+    <p>Here&rsquo;s your clinical overview for today. Stay on top of your patients, consultations, and pending reviews.</p>
+  </div>
+  <div class="hero-visual hero-visual--right">
+    <img src="/static/images/doctor_right.png" alt="">
+  </div>
+</div>
+{% elif user.role == "patient" %}
+<div class="dashboard-hero">
+  <div class="hero-visual hero-visual--left">
+    <img src="/static/images/patient_left.png" alt="">
+  </div>
+  <div class="hero-body">
+    <span class="hero-badge">Patient Portal</span>
+    <h2>Welcome back, {{ user.first_name }} {{ user.last_name }}</h2>
+    <p>Manage your appointments, view prescriptions, and keep track of your health records all in one place.</p>
+  </div>
+  <div class="hero-visual hero-visual--right">
+    <img src="/static/images/patient_right.png" alt="">
+  </div>
+</div>
+{% else %}
 <div class="dashboard-welcome">
   <h2>Welcome back, {{ user.first_name }} {{ user.last_name }}</h2>
-  <p>
-    {% if user.role == "doctor" %}
-      Here&rsquo;s your clinical overview for today.
-    {% elif user.role == "patient" %}
-      Manage your appointments and health records.
-    {% else %}
-      System administration overview.
-    {% endif %}
-  </p>
+  <p>System administration overview.</p>
 </div>
+{% endif %}
 
 {# ── Doctor Dashboard ── #}
 {% if user.role == "doctor" %}

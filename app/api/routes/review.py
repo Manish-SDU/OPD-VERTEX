@@ -1,17 +1,17 @@
 """Doctor review workflow routes."""
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from app.api.deps import get_review_app_service
+from app.api.deps import get_review_app_service, get_current_user
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
 
 
 @router.get("/{consultation_id}", response_class=HTMLResponse)
-def review_page(consultation_id: int, request: Request) -> HTMLResponse:
+def review_page(consultation_id: int, request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     con_doc, gen_doc, suggestive_review = get_review_app_service().build_review_context(
         consultation_id
     )
@@ -24,6 +24,7 @@ def review_page(consultation_id: int, request: Request) -> HTMLResponse:
             "generated_document": gen_doc,
             "suggestive_review": suggestive_review,
             "page_title": "Review Workflow",
+            "user": user,
         },
     )
 

@@ -2,11 +2,11 @@
 
 from datetime import date
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.api.deps import get_patient_app_service
+from app.api.deps import get_patient_app_service, get_current_user
 from app.domain.patients.models import PatientCreateRequest
 
 templates = Jinja2Templates(directory="app/templates")
@@ -14,17 +14,17 @@ router = APIRouter()
 
 
 @router.get("", response_class=HTMLResponse)
-def patient_list(request: Request) -> HTMLResponse:
+def patient_list(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     patients = get_patient_app_service().list_patients()
     return templates.TemplateResponse(
-        request, "patients/list.html", {"patients": patients, "page_title": "Patients"}
+        request, "patients/list.html", {"patients": patients, "page_title": "Patients", "user": user}
     )
 
 
 @router.get("/new", response_class=HTMLResponse)
-def patient_new(request: Request) -> HTMLResponse:
+def patient_new(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     return templates.TemplateResponse(
-        request, "patients/create.html", {"page_title": "New Patient"}
+        request, "patients/create.html", {"page_title": "New Patient", "user": user}
     )
 
 
@@ -49,10 +49,10 @@ def patient_create(
 
 
 @router.get("/{patient_id}", response_class=HTMLResponse)
-def patient_detail(patient_id: int, request: Request) -> HTMLResponse:
+def patient_detail(patient_id: int, request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     patient = get_patient_app_service().get_patient(patient_id)
     return templates.TemplateResponse(
         request,
         "patients/detail.html",
-        {"patient": patient, "page_title": "Patient Detail"},
+        {"patient": patient, "page_title": "Patient Detail", "user": user},
     )
