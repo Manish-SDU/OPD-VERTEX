@@ -17,7 +17,9 @@ router = APIRouter()
 def patient_list(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     patients = get_patient_app_service().list_patients()
     return templates.TemplateResponse(
-        request, "patients/list.html", {"patients": patients, "page_title": "Patients", "user": user}
+        request,
+        "patients/list.html",
+        {"patients": patients, "page_title": "Patients", "user": user},
     )
 
 
@@ -49,7 +51,9 @@ def patient_create(
 
 
 @router.get("/{patient_id}", response_class=HTMLResponse)
-def patient_detail(patient_id: int, request: Request, user=Depends(get_current_user)) -> HTMLResponse:
+def patient_detail(
+    patient_id: int, request: Request, user=Depends(get_current_user)
+) -> HTMLResponse:
     patient = get_patient_app_service().get_patient(patient_id)
     return templates.TemplateResponse(
         request,

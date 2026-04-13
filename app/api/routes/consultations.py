@@ -24,7 +24,9 @@ def consultation_list(request: Request, user=Depends(get_current_user)) -> HTMLR
 @router.get("/new", response_class=HTMLResponse)
 def consultation_new(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     return templates.TemplateResponse(
-        request, "consultations/create.html", {"page_title": "Start Consultation", "user": user}
+        request,
+        "consultations/create.html",
+        {"page_title": "Start Consultation", "user": user},
     )
 
 
@@ -40,10 +42,16 @@ def consultation_create(
 
 
 @router.get("/{consultation_id}", response_class=HTMLResponse)
-def consultation_detail(consultation_id: int, request: Request, user=Depends(get_current_user)) -> HTMLResponse:
+def consultation_detail(
+    consultation_id: int, request: Request, user=Depends(get_current_user)
+) -> HTMLResponse:
     consultation = get_consultation_app_service().get_consultation(consultation_id)
     return templates.TemplateResponse(
         request,
         "consultations/detail.html",
-        {"consultation": consultation, "page_title": "Consultation Detail", "user": user},
+        {
+            "consultation": consultation,
+            "page_title": "Consultation Detail",
+            "user": user,
+        },
     )

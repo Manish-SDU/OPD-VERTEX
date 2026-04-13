@@ -11,7 +11,9 @@ router = APIRouter()
 
 
 @router.get("/{consultation_id}", response_class=HTMLResponse)
-def review_page(consultation_id: int, request: Request, user=Depends(get_current_user)) -> HTMLResponse:
+def review_page(
+    consultation_id: int, request: Request, user=Depends(get_current_user)
+) -> HTMLResponse:
     con_doc, gen_doc, suggestive_review = get_review_app_service().build_review_context(
         consultation_id
     )
