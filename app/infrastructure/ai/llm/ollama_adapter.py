@@ -33,7 +33,9 @@ class OllamaTranscriptNormalizer(TranscriptNormalizer):
     def __init__(self, client: OllamaClient) -> None:
         self.client = client
 
-    def normalize(self, request: TranscriptNormalizationRequest) -> NormalizedTranscript:
+    def normalize(
+        self, request: TranscriptNormalizationRequest
+    ) -> NormalizedTranscript:
         user_prompt = _render_prompt(
             request.prompt.user_prompt_template,
             consultation_id=str(request.consultation_id),

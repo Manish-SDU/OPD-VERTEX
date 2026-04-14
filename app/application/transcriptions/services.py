@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from app.domain.clinical_notes.models import ConsultationDocument, ConsultationDocumentRepository, TranscriptDocument
+from app.domain.clinical_notes.models import (
+    ConsultationDocument,
+    ConsultationDocumentRepository,
+    TranscriptDocument,
+)
 from app.domain.consultations.models import ConsultationRepository, ConsultationStatus
 from app.domain.transcriptions.models import (
     StreamingTranscriptionService,

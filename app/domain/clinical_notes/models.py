@@ -381,7 +381,9 @@ class ClinicalNoteGenerator(ABC):
 
 class TranscriptNormalizer(ABC):
     @abstractmethod
-    def normalize(self, request: TranscriptNormalizationRequest) -> NormalizedTranscript:
+    def normalize(
+        self, request: TranscriptNormalizationRequest
+    ) -> NormalizedTranscript:
         """Clean and reorder transcript text without inventing facts."""
 
 

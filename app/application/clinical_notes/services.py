@@ -179,7 +179,9 @@ class ClinicalNotesApplicationService:
             consultation_doc.created_at = now
         self.consultation_doc_repository.save(consultation_doc)
 
-        self.consultation_repository.update_status(consultation_id, ConsultationStatus.REVIEW)
+        self.consultation_repository.update_status(
+            consultation_id, ConsultationStatus.REVIEW
+        )
         return saved_document
 
 

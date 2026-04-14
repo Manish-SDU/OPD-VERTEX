@@ -59,7 +59,9 @@ class TestMockSuggestiveModeService:
                 consultation_id=1,
                 doctor_id=1,
                 patient_id=1,
-                generated_report=GeneratedClinicalNotes(diagnosis="Mock diagnosis").model_dump(),
+                generated_report=GeneratedClinicalNotes(
+                    diagnosis="Mock diagnosis"
+                ).model_dump(),
                 system_prompt="system",
                 user_prompt_template="template",
             )

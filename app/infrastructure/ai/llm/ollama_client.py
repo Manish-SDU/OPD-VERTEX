@@ -27,7 +27,9 @@ class OllamaClient:
         self.model_name = model_name
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
-        self._client = httpx.Client(base_url=self.base_url, timeout=self.timeout_seconds)
+        self._client = httpx.Client(
+            base_url=self.base_url, timeout=self.timeout_seconds
+        )
 
     def check_status(self) -> LlmHealthStatus:
         detail = ""

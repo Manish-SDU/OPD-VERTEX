@@ -67,10 +67,15 @@ class ReviewApplicationService:
         existing_prescription = self._find_latest_prescription_for_consultation(
             consultation_id
         )
-        if generated_document.status == GeneratedDocumentStatus.APPROVED and existing_prescription:
+        if (
+            generated_document.status == GeneratedDocumentStatus.APPROVED
+            and existing_prescription
+        ):
             return existing_prescription
 
-        version = 1 if existing_prescription is None else existing_prescription.version + 1
+        version = (
+            1 if existing_prescription is None else existing_prescription.version + 1
+        )
         prescription = Prescription(
             consultation_id=consultation_id,
             doctor_id=generated_document.doctor_id,
@@ -131,7 +136,11 @@ class ReviewApplicationService:
 
     def _parse_follow_up_date(self, value: str) -> date | None:
         cleaned = value.strip()
-        if not cleaned or cleaned.lower() in {"not specified", "not recorded", "unknown"}:
+        if not cleaned or cleaned.lower() in {
+            "not specified",
+            "not recorded",
+            "unknown",
+        }:
             return None
         try:
             return date.fromisoformat(cleaned)

@@ -37,9 +37,7 @@ class Settings(BaseSettings):
     llm_max_tokens: int = Field(default=2200, alias="LLM_MAX_TOKENS")
     ollama_timeout_seconds: float = Field(default=120.0, alias="OLLAMA_TIMEOUT_SECONDS")
     ollama_max_retries: int = Field(default=2, alias="OLLAMA_MAX_RETRIES")
-    seed_prompts_on_startup: bool = Field(
-        default=True, alias="SEED_PROMPTS_ON_STARTUP"
-    )
+    seed_prompts_on_startup: bool = Field(default=True, alias="SEED_PROMPTS_ON_STARTUP")
     seed_mock_consultations_on_startup: bool = Field(
         default=False, alias="SEED_MOCK_CONSULTATIONS_ON_STARTUP"
     )

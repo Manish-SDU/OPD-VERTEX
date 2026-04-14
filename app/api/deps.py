@@ -144,7 +144,9 @@ def consultation_repository():
     if _use_mock():
         return _in_memory_consultation_repo()
     from app.infrastructure.db.sql.connection import get_session
-    from app.infrastructure.db.sql.repositories.sql_repos import SqlConsultationRepository
+    from app.infrastructure.db.sql.repositories.sql_repos import (
+        SqlConsultationRepository,
+    )
 
     return SqlConsultationRepository(get_session())
 
@@ -153,7 +155,9 @@ def prescription_repository():
     if _use_mock():
         return _in_memory_prescription_repo()
     from app.infrastructure.db.sql.connection import get_session
-    from app.infrastructure.db.sql.repositories.sql_repos import SqlPrescriptionRepository
+    from app.infrastructure.db.sql.repositories.sql_repos import (
+        SqlPrescriptionRepository,
+    )
 
     return SqlPrescriptionRepository(get_session())
 
@@ -193,7 +197,9 @@ def prompt_repository():
     if _use_mock():
         return _in_memory_prompt_repo()
     from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoPromptRepository
+    from app.infrastructure.db.mongo.repositories.mongo_repos import (
+        MongoPromptRepository,
+    )
 
     return MongoPromptRepository(get_database())
 
@@ -305,7 +311,9 @@ def get_audit_app_service() -> AuditApplicationService:
     return AuditApplicationService(audit_repository())
 
 
-def get_transcript_normalization_app_service() -> TranscriptNormalizationApplicationService:
+def get_transcript_normalization_app_service() -> (
+    TranscriptNormalizationApplicationService
+):
     return TranscriptNormalizationApplicationService(
         consultation_doc_repository(),
         prompt_repository(),

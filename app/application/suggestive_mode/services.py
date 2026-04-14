@@ -99,5 +99,7 @@ class SuggestiveReviewApplicationService:
             consultation_document.updated_at = now
             self.consultation_doc_repository.save(consultation_document)
 
-        self.consultation_repository.update_status(consultation_id, ConsultationStatus.REVIEW)
+        self.consultation_repository.update_status(
+            consultation_id, ConsultationStatus.REVIEW
+        )
         return review

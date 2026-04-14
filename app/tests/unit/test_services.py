@@ -5,7 +5,10 @@ from datetime import date
 import pytest
 
 from app.domain.clinical_notes.models import ConsultationDocument, TranscriptDocument
-from app.domain.consultations.models import ConsultationCreateRequest, ConsultationStatus
+from app.domain.consultations.models import (
+    ConsultationCreateRequest,
+    ConsultationStatus,
+)
 from app.domain.patients.models import PatientCreateRequest
 from app.domain.suggestive_mode.models import RiskLevel
 
@@ -88,7 +91,9 @@ class TestReviewApplicationService:
                 transcript=TranscriptDocument(full_text="Stored transcript."),
             )
         )
-        consultation_doc, generated_doc, review = review_app_service.build_review_context(1)
+        consultation_doc, generated_doc, review = (
+            review_app_service.build_review_context(1)
+        )
 
         assert consultation_doc is not None
         assert consultation_doc.consultation_id == 1
@@ -118,7 +123,8 @@ class TestClinicalNotesApplicationService:
         assert document.generated_output.diagnosis == "Mock diagnosis"
         assert generated_doc_repo.get_by_consultation_id(1) is not None
         assert (
-            consultation_doc_repo.get_by_consultation_id(1).ai_clinical_notes is not None
+            consultation_doc_repo.get_by_consultation_id(1).ai_clinical_notes
+            is not None
         )
 
     def test_generate_report_raises_for_missing_consultation(

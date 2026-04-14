@@ -122,5 +122,7 @@ def reject_review(
     return {
         "status": "rejected",
         "consultation_id": consultation_id,
-        "document_status": document.status if document else "missing_generated_document",
+        "document_status": document.status
+        if document
+        else "missing_generated_document",
     }

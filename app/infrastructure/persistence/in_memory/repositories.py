@@ -259,7 +259,9 @@ class InMemoryTemporaryTranscriptChunkRepository(TemporaryTranscriptChunkReposit
     def get_chunks_by_consultation(
         self, consultation_id: int
     ) -> list[TemporaryTranscriptChunk]:
-        return [chunk for chunk in self._chunks if chunk.consultation_id == consultation_id]
+        return [
+            chunk for chunk in self._chunks if chunk.consultation_id == consultation_id
+        ]
 
     def delete_chunks_by_consultation(self, consultation_id: int) -> None:
         self._chunks = [
@@ -267,7 +269,9 @@ class InMemoryTemporaryTranscriptChunkRepository(TemporaryTranscriptChunkReposit
         ]
 
     def delete_chunks_by_session(self, session_id: str) -> None:
-        self._chunks = [chunk for chunk in self._chunks if chunk.session_id != session_id]
+        self._chunks = [
+            chunk for chunk in self._chunks if chunk.session_id != session_id
+        ]
 
 
 # ── generated_documents (NoSQL mock) ───────────────────────────────────

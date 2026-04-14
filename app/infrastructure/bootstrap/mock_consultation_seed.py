@@ -15,7 +15,11 @@ from app.domain.consultations.models import ConsultationStatus
 from app.infrastructure.db.mongo.repositories.mongo_repos import (
     MongoConsultationDocumentRepository,
 )
-from app.infrastructure.db.sql.models.tables import ConsultationRow, PatientRow, StaffRow
+from app.infrastructure.db.sql.models.tables import (
+    ConsultationRow,
+    PatientRow,
+    StaffRow,
+)
 
 logger = getLogger("opd_vertex.infrastructure.bootstrap.mock_consultations")
 
@@ -266,7 +270,9 @@ class MockConsultationBootstrapSeeder:
             consultation_id=scenario.consultation_id,
             transcript=TranscriptDocument(full_text=scenario.transcript_text),
             normalized_transcript=existing.normalized_transcript if existing else None,
-            normalization_metadata=existing.normalization_metadata if existing else None,
+            normalization_metadata=existing.normalization_metadata
+            if existing
+            else None,
             ai_clinical_notes=existing.ai_clinical_notes if existing else None,
             ai_suggestions=existing.ai_suggestions if existing else None,
             doctor_edited_notes=existing.doctor_edited_notes if existing else None,
@@ -278,8 +284,12 @@ class MockConsultationBootstrapSeeder:
             self.mongo_docs.save(document)
             return "inserted"
 
-        comparable_existing = existing.model_dump(exclude={"id", "created_at", "updated_at"})
-        comparable_target = document.model_dump(exclude={"id", "created_at", "updated_at"})
+        comparable_existing = existing.model_dump(
+            exclude={"id", "created_at", "updated_at"}
+        )
+        comparable_target = document.model_dump(
+            exclude={"id", "created_at", "updated_at"}
+        )
         if comparable_existing == comparable_target:
             return "skipped"
 

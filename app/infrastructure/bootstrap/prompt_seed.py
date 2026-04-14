@@ -121,7 +121,9 @@ class PromptBootstrapSeeder:
                 "created_at": existing.get("created_at", now),
                 "updated_at": now,
             }
-            self.collection.replace_one({"_id": prompt_id}, updated_document, upsert=True)
+            self.collection.replace_one(
+                {"_id": prompt_id}, updated_document, upsert=True
+            )
             result.updated += 1
             logger.info("Prompt seed updated: %s", prompt_id)
 
