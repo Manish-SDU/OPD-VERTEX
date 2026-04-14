@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import threading
 import uuid
@@ -14,6 +15,7 @@ from faster_whisper import WhisperModel
 # Session storage for streaming
 _sessions: dict[str, dict] = {}
 _lock = threading.Lock()
+logger = logging.getLogger("opd_vertex.whisper_api.service")
 
 
 def init_model(model_size: str = "large-v3", device: str = "cuda"):
@@ -88,7 +90,7 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
     global _sessions, model
     try:
         if model is None:
-            print(f"[ERROR] Model not initialized for session {session_id}")
+            logger.error("Whisper model not initialized session_id=%s", session_id)
             return
 
         import tempfile
@@ -96,7 +98,12 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
         import webrtcvad
         import scipy.signal
 
-        print(f"[Whisper] Transcribing chunk for session {session_id}: {len(audio_chunk)} samples, duration ~{len(audio_chunk) / 16000:.2f}s")
+        logger.debug(
+            "Transcribing audio chunk session_id=%s samples=%s duration_seconds=%.2f",
+            session_id,
+            len(audio_chunk),
+            len(audio_chunk) / 16000,
+        )
 
         # --- Preprocessing: normalize audio ---
         norm_audio = audio_chunk / (np.max(np.abs(audio_chunk)) + 1e-8)
@@ -122,7 +129,11 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
 
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
             sf.write(f.name, processed_audio, sample_rate)
-            print(f"[Whisper] Wrote audio to {f.name}, size: {os.path.getsize(f.name)} bytes")
+            logger.debug(
+                "Prepared temporary audio file session_id=%s bytes=%s",
+                session_id,
+                os.path.getsize(f.name),
+            )
 
             # --- Decoding: beam search, temperature=0, disable context carryover ---
             segments, info = model.transcribe(
@@ -134,12 +145,21 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
                 condition_on_previous_text=False,  # disables context carryover
             )
             text = " ".join([segment.text for segment in segments])
-            print(f"[Whisper] Transcribed: '{text}' (detected lang: {info.language})")
+            logger.debug(
+                "Whisper transcription completed session_id=%s detected_language=%s characters=%s",
+                session_id,
+                info.language,
+                len(text),
+            )
 
             with _lock:
                 if session_id in _sessions:
                     _sessions[session_id]["results"].append(text)
-                    print(f"[Whisper] Results accumulated: {_sessions[session_id]['results']}")
+                    logger.debug(
+                        "Whisper session updated session_id=%s result_count=%s",
+                        session_id,
+                        len(_sessions[session_id]["results"]),
+                    )
 
             # Clean up temp file
             try:
@@ -147,10 +167,8 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
             except:
                 pass
 
-    except Exception as e:
-        print(f"[ERROR] Transcribing chunk for {session_id}: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception:
+        logger.exception("Whisper transcription failed session_id=%s", session_id)
 
 
 def finalize_session(session_id: str) -> dict:

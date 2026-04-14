@@ -8,6 +8,7 @@ from app.api.routes import (
     consultations,
     dashboard,
     health,
+    llm,
     patients,
     prescriptions,
     review,
@@ -18,6 +19,7 @@ router = APIRouter()
 router.include_router(health.router, tags=["health"])
 router.include_router(auth.router, tags=["auth"])
 router.include_router(dashboard.router, tags=["dashboard"])
+router.include_router(llm.router, prefix="/llm", tags=["llm"])
 router.include_router(patients.router, prefix="/patients", tags=["patients"])
 router.include_router(
     consultations.router, prefix="/consultations", tags=["consultations"]

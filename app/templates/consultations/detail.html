@@ -5,7 +5,6 @@
   <h2>Consultation {{ consultation.id }}</h2>
   <p>Status: {{ consultation.status }}</p>
   <p>Patient: {{ consultation.patient_id }}</p>
-  <p>Chief complaint: {{ consultation.chief_complaint }}</p>
   <p><a href="/review/{{ consultation.id }}">Open review workflow</a></p>
   {% else %}
   <h2>Consultation not found</h2>

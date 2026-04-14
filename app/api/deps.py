@@ -1,38 +1,54 @@
-"""Dependency wiring for placeholder adapters.
-
-When the real DB repositories are ready, swap InMemory* classes
-for Sql*/Mongo* classes here. The rest of the app stays unchanged.
-"""
+"""Dependency wiring for mock and real adapters."""
 
 from __future__ import annotations
 
 from functools import lru_cache
 
+from fastapi import HTTPException, Request
+from jose import JWTError, jwt
+
 from app.application.audit.services import AuditApplicationService
 from app.application.auth.services import AuthApplicationService
+from app.application.clinical_notes.services import (
+    ClinicalNotesApplicationService,
+    LlmHealthApplicationService,
+    TranscriptNormalizationApplicationService,
+)
 from app.application.consultations.services import ConsultationApplicationService
 from app.application.patients.services import PatientApplicationService
 from app.application.prescriptions.services import PrescriptionApplicationService
 from app.application.review.services import ReviewApplicationService
+from app.application.suggestive_mode.services import SuggestiveReviewApplicationService
+from app.application.transcriptions.services import TranscriptionApplicationService
+from app.core.config import get_settings
+from app.core.security import ALGORITHM, SECRET_KEY
+from app.infrastructure.ai.llm.ollama_adapter import (
+    OllamaClinicalNoteGenerator,
+    OllamaHealthService,
+    OllamaSuggestiveModeService,
+    OllamaTranscriptNormalizer,
+)
+from app.infrastructure.ai.llm.ollama_client import OllamaClient
 from app.infrastructure.auth.mock import MockAuthService
 from app.infrastructure.persistence.in_memory.repositories import (
-    InMemoryStaffRepository,
-    InMemoryPatientRepository,
-    InMemoryConsultationRepository,
-    InMemoryPrescriptionRepository,
     InMemoryAuditLogRepository,
+    InMemoryConsultationDocumentRepository,
+    InMemoryConsultationRepository,
+    InMemoryEmailTemplateRepository,
+    InMemoryGeneratedDocumentRepository,
+    InMemoryPatientRepository,
+    InMemoryPrescriptionArtifactRepository,
+    InMemoryPrescriptionRepository,
+    InMemoryPromptRepository,
+    InMemoryStaffRepository,
+    InMemoryTemporaryTranscriptChunkRepository,
     MockClinicalNoteGenerator,
     MockEmailService,
+    MockLlmHealthService,
     MockPdfGenerator,
     MockSuggestiveModeService,
-    MockTranscriptionService,
+    MockTranscriptNormalizer,
 )
-from app.core.config import get_settings
-from fastapi import Request, HTTPException
-from jose import jwt, JWTError
-from app.core.security import SECRET_KEY, ALGORITHM
-
-from app.application.transcriptions.services import TranscriptionApplicationService
 
 
 def _use_mock() -> bool:
@@ -47,11 +63,8 @@ def get_current_user(request: Request):
         token = token.replace("Bearer ", "")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-
-# ── In-memory singletons (mock mode) ──────────────────────────────────
+    except JWTError as exc:
+        raise HTTPException(status_code=401, detail="Invalid token") from exc
 
 
 @lru_cache
@@ -79,16 +92,41 @@ def _in_memory_audit_repo() -> InMemoryAuditLogRepository:
     return InMemoryAuditLogRepository()
 
 
-# ── Repository accessors (switch on mock flag) ────────────────────────
+@lru_cache
+def _in_memory_consultation_doc_repo() -> InMemoryConsultationDocumentRepository:
+    return InMemoryConsultationDocumentRepository()
+
+
+@lru_cache
+def _in_memory_generated_repo() -> InMemoryGeneratedDocumentRepository:
+    return InMemoryGeneratedDocumentRepository()
+
+
+@lru_cache
+def _in_memory_prompt_repo() -> InMemoryPromptRepository:
+    return InMemoryPromptRepository()
+
+
+@lru_cache
+def _in_memory_email_repo() -> InMemoryEmailTemplateRepository:
+    return InMemoryEmailTemplateRepository()
+
+
+@lru_cache
+def _in_memory_prescription_artifact_repo() -> InMemoryPrescriptionArtifactRepository:
+    return InMemoryPrescriptionArtifactRepository()
+
+
+@lru_cache
+def _in_memory_temp_chunk_repo() -> InMemoryTemporaryTranscriptChunkRepository:
+    return InMemoryTemporaryTranscriptChunkRepository()
 
 
 def staff_repository():
     if _use_mock():
         return _in_memory_staff_repo()
     from app.infrastructure.db.sql.connection import get_session
-    from app.infrastructure.db.sql.repositories.sql_repos import (
-        SqlStaffRepository,
-    )
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlStaffRepository
 
     return SqlStaffRepository(get_session())
 
@@ -97,9 +135,7 @@ def patient_repository():
     if _use_mock():
         return _in_memory_patient_repo()
     from app.infrastructure.db.sql.connection import get_session
-    from app.infrastructure.db.sql.repositories.sql_repos import (
-        SqlPatientRepository,
-    )
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlPatientRepository
 
     return SqlPatientRepository(get_session())
 
@@ -108,9 +144,7 @@ def consultation_repository():
     if _use_mock():
         return _in_memory_consultation_repo()
     from app.infrastructure.db.sql.connection import get_session
-    from app.infrastructure.db.sql.repositories.sql_repos import (
-        SqlConsultationRepository,
-    )
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlConsultationRepository
 
     return SqlConsultationRepository(get_session())
 
@@ -119,9 +153,7 @@ def prescription_repository():
     if _use_mock():
         return _in_memory_prescription_repo()
     from app.infrastructure.db.sql.connection import get_session
-    from app.infrastructure.db.sql.repositories.sql_repos import (
-        SqlPrescriptionRepository,
-    )
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlPrescriptionRepository
 
     return SqlPrescriptionRepository(get_session())
 
@@ -130,20 +162,14 @@ def audit_repository():
     if _use_mock():
         return _in_memory_audit_repo()
     from app.infrastructure.db.sql.connection import get_session
-    from app.infrastructure.db.sql.repositories.sql_repos import (
-        SqlAuditLogRepository,
-    )
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlAuditLogRepository
 
     return SqlAuditLogRepository(get_session())
 
 
 def consultation_doc_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import (
-            InMemoryConsultationDocumentRepository,
-        )
-
-        return InMemoryConsultationDocumentRepository()
+        return _in_memory_consultation_doc_repo()
     from app.infrastructure.db.mongo.connection import get_database
     from app.infrastructure.db.mongo.repositories.mongo_repos import (
         MongoConsultationDocumentRepository,
@@ -154,11 +180,7 @@ def consultation_doc_repository():
 
 def generated_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import (
-            InMemoryGeneratedDocumentRepository,
-        )
-
-        return InMemoryGeneratedDocumentRepository()
+        return _in_memory_generated_repo()
     from app.infrastructure.db.mongo.connection import get_database
     from app.infrastructure.db.mongo.repositories.mongo_repos import (
         MongoGeneratedDocumentRepository,
@@ -169,26 +191,16 @@ def generated_repository():
 
 def prompt_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import (
-            InMemoryPromptRepository,
-        )
-
-        return InMemoryPromptRepository()
+        return _in_memory_prompt_repo()
     from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import (
-        MongoPromptRepository,
-    )
+    from app.infrastructure.db.mongo.repositories.mongo_repos import MongoPromptRepository
 
     return MongoPromptRepository(get_database())
 
 
 def email_template_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import (
-            InMemoryEmailTemplateRepository,
-        )
-
-        return InMemoryEmailTemplateRepository()
+        return _in_memory_email_repo()
     from app.infrastructure.db.mongo.connection import get_database
     from app.infrastructure.db.mongo.repositories.mongo_repos import (
         MongoEmailTemplateRepository,
@@ -199,11 +211,7 @@ def email_template_repository():
 
 def prescription_artifact_repository():
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import (
-            InMemoryPrescriptionArtifactRepository,
-        )
-
-        return InMemoryPrescriptionArtifactRepository()
+        return _in_memory_prescription_artifact_repo()
     from app.infrastructure.db.mongo.connection import get_database
     from app.infrastructure.db.mongo.repositories.mongo_repos import (
         MongoPrescriptionArtifactRepository,
@@ -212,7 +220,15 @@ def prescription_artifact_repository():
     return MongoPrescriptionArtifactRepository(get_database())
 
 
-# ── Services ──────────────────────────────────────────────────────────
+def temp_transcript_chunk_repository():
+    if _use_mock():
+        return _in_memory_temp_chunk_repo()
+    from app.infrastructure.db.mongo.connection import get_database
+    from app.infrastructure.db.mongo.repositories.mongo_repos import (
+        MongoTemporaryTranscriptChunkRepository,
+    )
+
+    return MongoTemporaryTranscriptChunkRepository(get_database())
 
 
 @lru_cache
@@ -221,18 +237,31 @@ def auth_service() -> MockAuthService:
 
 
 @lru_cache
-def transcription_service() -> MockTranscriptionService:
-    return MockTranscriptionService()
+def transcription_normalizer():
+    if _use_mock():
+        return MockTranscriptNormalizer()
+    return OllamaTranscriptNormalizer(ollama_client())
 
 
 @lru_cache
-def note_generator() -> MockClinicalNoteGenerator:
-    return MockClinicalNoteGenerator(generated_repository())
+def note_generator():
+    if _use_mock():
+        return MockClinicalNoteGenerator()
+    return OllamaClinicalNoteGenerator(ollama_client())
 
 
 @lru_cache
-def suggestive_service() -> MockSuggestiveModeService:
-    return MockSuggestiveModeService()
+def suggestive_service():
+    if _use_mock():
+        return MockSuggestiveModeService()
+    return OllamaSuggestiveModeService(ollama_client())
+
+
+@lru_cache
+def llm_health_service():
+    if _use_mock():
+        return MockLlmHealthService()
+    return OllamaHealthService(ollama_client())
 
 
 @lru_cache
@@ -243,6 +272,17 @@ def pdf_generator() -> MockPdfGenerator:
 @lru_cache
 def email_service() -> MockEmailService:
     return MockEmailService()
+
+
+@lru_cache
+def ollama_client() -> OllamaClient:
+    settings = get_settings()
+    return OllamaClient(
+        base_url=settings.local_llm_endpoint,
+        model_name=settings.llm_model_name,
+        timeout_seconds=settings.ollama_timeout_seconds,
+        max_retries=settings.ollama_max_retries,
+    )
 
 
 def get_auth_app_service() -> AuthApplicationService:
@@ -257,16 +297,6 @@ def get_consultation_app_service() -> ConsultationApplicationService:
     return ConsultationApplicationService(consultation_repository())
 
 
-def get_review_app_service() -> ReviewApplicationService:
-    return ReviewApplicationService(
-        consultation_doc_repository(),
-        generated_repository(),
-        transcription_service(),
-        note_generator(),
-        suggestive_service(),
-    )
-
-
 def get_prescription_app_service() -> PrescriptionApplicationService:
     return PrescriptionApplicationService(prescription_repository())
 
@@ -275,34 +305,62 @@ def get_audit_app_service() -> AuditApplicationService:
     return AuditApplicationService(audit_repository())
 
 
-def temp_transcript_chunk_repository():
-    if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import (
-            InMemoryTemporaryTranscriptChunkRepository,
-        )
-
-        return InMemoryTemporaryTranscriptChunkRepository()
-    from app.infrastructure.db.mongo.connection import get_database
-    from app.infrastructure.db.mongo.repositories.mongo_repos import (
-        MongoTemporaryTranscriptChunkRepository,
+def get_transcript_normalization_app_service() -> TranscriptNormalizationApplicationService:
+    return TranscriptNormalizationApplicationService(
+        consultation_doc_repository(),
+        prompt_repository(),
+        transcription_normalizer(),
     )
 
-    return MongoTemporaryTranscriptChunkRepository(get_database())
+
+def get_clinical_notes_app_service() -> ClinicalNotesApplicationService:
+    return ClinicalNotesApplicationService(
+        consultation_repository(),
+        consultation_doc_repository(),
+        generated_repository(),
+        prompt_repository(),
+        get_transcript_normalization_app_service(),
+        note_generator(),
+    )
 
 
-@lru_cache
+def get_suggestive_review_app_service() -> SuggestiveReviewApplicationService:
+    return SuggestiveReviewApplicationService(
+        consultation_repository(),
+        consultation_doc_repository(),
+        generated_repository(),
+        prompt_repository(),
+        suggestive_service(),
+    )
+
+
+def get_review_app_service() -> ReviewApplicationService:
+    return ReviewApplicationService(
+        consultation_repository(),
+        consultation_doc_repository(),
+        generated_repository(),
+        prescription_repository(),
+    )
+
+
+def get_llm_health_app_service() -> LlmHealthApplicationService:
+    return LlmHealthApplicationService(llm_health_service())
+
+
 def get_transcription_service() -> TranscriptionApplicationService:
-    """Provide transcription service instance."""
     from app.infrastructure.ai.transcription.faster_whisper_adapter import (
         StreamingFasterWhisperService,
     )
 
+    settings = get_settings()
     streaming_service = StreamingFasterWhisperService(
-        model_size="base",
+        model_size=settings.whisper_model_name,
         device="cpu",
         chunk_duration=2.0,
     )
     return TranscriptionApplicationService(
         streaming_service=streaming_service,
         temp_chunk_repo=temp_transcript_chunk_repository(),
+        consultation_doc_repository=consultation_doc_repository(),
+        consultation_repository=consultation_repository(),
     )

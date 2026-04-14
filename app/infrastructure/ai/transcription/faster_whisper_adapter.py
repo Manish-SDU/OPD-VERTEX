@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from logging import getLogger
+
 import httpx
 
 from app.domain.transcriptions.models import (
@@ -13,6 +15,7 @@ from app.domain.transcriptions.models import (
 
 # Whisper API service URL
 WHISPER_API_URL = "http://whisper:8001"
+logger = getLogger("opd_vertex.infrastructure.ai.transcription")
 
 
 class FasterWhisperTranscriptionService(TranscriptionService):
@@ -50,7 +53,7 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
     def _get_client(self):
         """Lazy initialize HTTP client."""
         if self.http_client is None:
-            print(f"[DEBUG] Creating httpx client to {WHISPER_API_URL}")
+            logger.debug("Creating Whisper API client base_url=%s", WHISPER_API_URL)
             self.http_client = httpx.Client(base_url=WHISPER_API_URL, timeout=60.0)
         return self.http_client
 
@@ -58,8 +61,9 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
         """Initialize a streaming session via Whisper API."""
         try:
             client = self._get_client()
-            print(
-                f"[DEBUG] Posting to /sessions/start with consultation_id={consultation_id}"
+            logger.debug(
+                "Starting Whisper streaming session consultation_id=%s",
+                consultation_id,
             )
             response = client.post(
                 "/sessions/start",
@@ -69,14 +73,20 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
                     "sample_rate": self.sample_rate,
                 },
             )
-            print(
-                f"[DEBUG] Response status: {response.status_code}, body: {response.text}"
+            logger.debug(
+                "Whisper start response consultation_id=%s status_code=%s",
+                consultation_id,
+                response.status_code,
             )
             response.raise_for_status()
             data = response.json()
             return data["session_id"]
-        except Exception as e:
-            print(f"[ERROR] Failed to start streaming: {e}")
+        except Exception as exc:
+            logger.exception(
+                "Failed to start Whisper streaming consultation_id=%s error=%s",
+                consultation_id,
+                exc,
+            )
             raise
 
     def add_audio_chunk(
@@ -105,8 +115,12 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
                 pass
 
             return None
-        except Exception as e:
-            print(f"[ERROR] Failed to add audio chunk: {e}")
+        except Exception as exc:
+            logger.exception(
+                "Failed to send audio chunk to Whisper session_id=%s error=%s",
+                session_id,
+                exc,
+            )
             raise
 
     def get_completed_results(self, session_id: str) -> list[dict]:
@@ -117,8 +131,12 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
             response.raise_for_status()
             data = response.json()
             return [{"text": data.get("partial_text", "")}]
-        except Exception as e:
-            print(f"[ERROR] Failed to get completed results: {e}")
+        except Exception as exc:
+            logger.warning(
+                "Failed to fetch Whisper partial results session_id=%s error=%s",
+                session_id,
+                exc,
+            )
             return []
 
     def finalize_session(self, session_id: str) -> TranscriptResult:
@@ -134,8 +152,12 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
                 file_path="",
                 full_text=data["full_text"],
             )
-        except Exception as e:
-            print(f"[ERROR] Failed to finalize session: {e}")
+        except Exception as exc:
+            logger.exception(
+                "Failed to finalize Whisper session session_id=%s error=%s",
+                session_id,
+                exc,
+            )
             raise
 
     def get_current_text(self, session_id: str) -> str:
@@ -156,6 +178,10 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
             response = client.get(f"/sessions/{session_id}/consultation-id")
             response.raise_for_status()
             return response.json()["consultation_id"]
-        except Exception as e:
-            print(f"[ERROR] Could not get consultation_id for {session_id}: {e}")
+        except Exception as exc:
+            logger.warning(
+                "Failed to get consultation_id from Whisper session_id=%s error=%s",
+                session_id,
+                exc,
+            )
             return 0

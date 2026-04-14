@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+from app.domain.clinical_notes.models import ConsultationDocument, ConsultationDocumentRepository, TranscriptDocument
+from app.domain.consultations.models import ConsultationRepository, ConsultationStatus
 from app.domain.transcriptions.models import (
     StreamingTranscriptionService,
     StreamingTranscriptChunk,
@@ -21,12 +23,20 @@ class TranscriptionApplicationService:
         self,
         streaming_service: StreamingTranscriptionService,
         temp_chunk_repo: TemporaryTranscriptChunkRepository,
+        consultation_doc_repository: ConsultationDocumentRepository | None = None,
+        consultation_repository: ConsultationRepository | None = None,
     ):
         self.streaming_service = streaming_service
         self.temp_chunk_repo = temp_chunk_repo
+        self.consultation_doc_repository = consultation_doc_repository
+        self.consultation_repository = consultation_repository
 
     def start_transcription_session(self, consultation_id: int) -> str:
         """Start a new transcription session for a consultation."""
+        if self.consultation_repository is not None:
+            self.consultation_repository.update_status(
+                consultation_id, ConsultationStatus.TRANSCRIBING
+            )
         return self.streaming_service.start_streaming(consultation_id)
 
     def process_audio_chunk(
@@ -102,4 +112,45 @@ class TranscriptionApplicationService:
         # Clean up temporary storage for this session
         self.temp_chunk_repo.delete_chunks_by_session(session_id)
 
+        return result
+
+    def finalize_and_persist_transcription(self, session_id: str) -> TranscriptResult:
+        """Finalize a live session and persist the transcript into Mongo-backed docs."""
+        result = self.complete_transcription(session_id)
+        self._persist_transcript(result.consultation_id, result)
+        return result
+
+    def persist_saved_transcription(
+        self, consultation_id: int, session_id: str
+    ) -> TranscriptResult:
+        """Persist the transcript assembled from temporary chunks."""
+        result = self.save_final_transcript(consultation_id, session_id)
+        self._persist_transcript(consultation_id, result)
+        return result
+
+    def _persist_transcript(
+        self, consultation_id: int, result: TranscriptResult
+    ) -> TranscriptResult:
+        if self.consultation_doc_repository is None:
+            raise ValueError("Consultation document repository is not configured.")
+
+        consultation_doc = self.consultation_doc_repository.get_by_consultation_id(
+            consultation_id
+        )
+        if consultation_doc is None:
+            consultation_doc = ConsultationDocument(
+                consultation_id=consultation_id,
+                transcript=TranscriptDocument(full_text=result.full_text),
+            )
+        else:
+            consultation_doc.transcript.full_text = result.full_text
+        consultation_doc.updated_at = datetime.utcnow()
+        if consultation_doc.created_at is None:
+            consultation_doc.created_at = consultation_doc.updated_at
+        self.consultation_doc_repository.save(consultation_doc)
+
+        if self.consultation_repository is not None:
+            self.consultation_repository.update_status(
+                consultation_id, ConsultationStatus.PROCESSING
+            )
         return result

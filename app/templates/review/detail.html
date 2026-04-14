@@ -2,19 +2,36 @@
 {% block content %}
 <section class="card">
   <h2>Review Workflow: {{ consultation_id }}</h2>
-  <p>Transcript: {{ transcript.raw_text }}</p>
+  {% if consultation_document %}
+  <h3>Transcript</h3>
+  <p>{{ consultation_document.transcript.full_text }}</p>
+  {% if consultation_document.normalized_transcript %}
+  <h3>Normalized Transcript</h3>
+  <p>{{ consultation_document.normalized_transcript.normalized_text }}</p>
+  {% endif %}
+  {% else %}
+  <p>No consultation transcript has been saved yet.</p>
+  {% endif %}
+
+  {% if generated_document %}
   <h3>Generated Notes</h3>
-  <p><strong>Subjective:</strong> {{ document.notes.subjective }}</p>
-  <p><strong>Objective:</strong> {{ document.notes.objective }}</p>
-  <p><strong>Assessment:</strong> {{ document.notes.assessment }}</p>
-  <p><strong>Plan:</strong> {{ document.notes.plan }}</p>
+  <p><strong>Chief Complaint:</strong> {{ generated_document.generated_output.chief_complaint }}</p>
+  <p><strong>History of Present Illness:</strong> {{ generated_document.generated_output.history_of_present_illness }}</p>
+  <p><strong>Diagnosis:</strong> {{ generated_document.generated_output.diagnosis }}</p>
+  <p><strong>Patient Instructions:</strong> {{ generated_document.generated_output.patient_instructions }}</p>
+  <p><strong>Status:</strong> {{ generated_document.status }}</p>
+  {% else %}
+  <p>No AI report has been generated yet.</p>
+  {% endif %}
+
   <h3>Suggestive Mode</h3>
   <ul>
     {% for suggestion in suggestive_review.suggestions %}
-    <li>{{ suggestion.severity }} - {{ suggestion.message }}</li>
+    <li>{{ suggestion.severity }} - {{ suggestion.title }} - {{ suggestion.recommendation }}</li>
     {% else %}
     <li>No suggestions.</li>
     {% endfor %}
   </ul>
+  <p><strong>Summary:</strong> {{ suggestive_review.summary }}</p>
 </section>
 {% endblock %}

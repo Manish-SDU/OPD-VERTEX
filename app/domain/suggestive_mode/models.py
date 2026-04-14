@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -46,7 +47,20 @@ class SuggestiveReview(BaseModel):
     summary: str = ""
 
 
+class SuggestiveReviewRequest(BaseModel):
+    consultation_id: int
+    doctor_id: int
+    patient_id: int
+    generated_report: dict[str, object]
+    normalized_transcript: dict[str, object] | None = None
+    system_prompt: str
+    user_prompt_template: str
+    temperature: float = 0.2
+    max_tokens: int = 1500
+    requested_at: datetime | None = None
+
+
 class SuggestiveModeService(ABC):
     @abstractmethod
-    def review(self, consultation_id: int, document_json: str) -> SuggestiveReview:
+    def review(self, request: SuggestiveReviewRequest) -> SuggestiveReview:
         """Review generated notes and flag clinical concerns."""

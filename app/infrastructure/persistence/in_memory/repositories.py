@@ -18,10 +18,14 @@ from app.domain.clinical_notes.models import (
     GeneratedDocument,
     GeneratedDocumentStatus,
     GeneratedDocumentRepository,
+    LlmHealthStatus,
+    LocalLlmHealthService,
     LlmPromptConfig,
+    NormalizedTranscript,
     PrescriptionArtifact,
     PrescriptionArtifactRepository,
     PromptRepository,
+    TranscriptNormalizer,
 )
 from app.domain.common.types import utcnow
 from app.domain.consultations.models import (
@@ -42,8 +46,14 @@ from app.domain.suggestive_mode.models import (
     RiskLevel,
     SuggestiveModeService,
     SuggestiveReview,
+    SuggestiveReviewRequest,
 )
-from app.domain.transcriptions.models import TranscriptResult, TranscriptionService
+from app.domain.transcriptions.models import (
+    TemporaryTranscriptChunk,
+    TemporaryTranscriptChunkRepository,
+    TranscriptResult,
+    TranscriptionService,
+)
 
 
 # ── staff ──────────────────────────────────────────────────────────────
@@ -192,6 +202,8 @@ class InMemoryConsultationRepository(ConsultationRepository):
         c = self.get_by_id(consultation_id)
         if c:
             c.status = status
+            if status == ConsultationStatus.APPROVED:
+                c.approved_at = utcnow()
 
 
 # ── consultation_documents (NoSQL mock) ────────────────────────────────
@@ -231,6 +243,31 @@ class InMemoryPrescriptionArtifactRepository(PrescriptionArtifactRepository):
         self._artifacts.setdefault(stored.prescription_id, []).append(stored)
         self._artifacts[stored.prescription_id].sort(key=lambda item: item.version)
         return stored
+
+
+class InMemoryTemporaryTranscriptChunkRepository(TemporaryTranscriptChunkRepository):
+    def __init__(self) -> None:
+        self._chunks: list[TemporaryTranscriptChunk] = []
+
+    def save_chunk(self, chunk: TemporaryTranscriptChunk) -> TemporaryTranscriptChunk:
+        stored = chunk.model_copy(
+            update={"id": chunk.id or f"chunk_{len(self._chunks) + 1}"}
+        )
+        self._chunks.append(stored)
+        return stored
+
+    def get_chunks_by_consultation(
+        self, consultation_id: int
+    ) -> list[TemporaryTranscriptChunk]:
+        return [chunk for chunk in self._chunks if chunk.consultation_id == consultation_id]
+
+    def delete_chunks_by_consultation(self, consultation_id: int) -> None:
+        self._chunks = [
+            chunk for chunk in self._chunks if chunk.consultation_id != consultation_id
+        ]
+
+    def delete_chunks_by_session(self, session_id: str) -> None:
+        self._chunks = [chunk for chunk in self._chunks if chunk.session_id != session_id]
 
 
 # ── generated_documents (NoSQL mock) ───────────────────────────────────
@@ -278,18 +315,46 @@ class InMemoryPromptRepository(PromptRepository):
     def list_prompts(self) -> list[LlmPromptConfig]:
         return [
             LlmPromptConfig(
-                id="prescription_generation_v1",
-                prompt_name="Prescription & Clinical Notes Generator",
-                model_target="llama3.1-8b",
+                id="transcript_normalization_v1",
+                prompt_name="Transcript Normalization",
+                model_target="qwen3:8b",
                 temperature=0.2,
-                max_tokens=2048,
+                max_tokens=1400,
+                system_prompt="Normalize transcripts into English JSON only.",
+                user_prompt_template=(
+                    "Return JSON with keys raw_text, normalized_text, chronology_notes, "
+                    "removed_noise, unresolved_segments, language. "
+                    "Consultation {consultation_id}. Transcript: {transcript_text}"
+                ),
             ),
             LlmPromptConfig(
-                id="suggestive_mode_v1",
+                id="clinical_report_generation_v2",
+                prompt_name="Clinical Report Generation",
+                model_target="qwen3:8b",
+                temperature=0.2,
+                max_tokens=2200,
+                system_prompt="Generate a structured English medical report in JSON only.",
+                user_prompt_template=(
+                    "Return JSON with keys patient_info, chief_complaint, "
+                    "history_of_present_illness, past_medical_history, allergies, vitals, "
+                    "examination_findings, diagnosis, medications, lab_tests_ordered, "
+                    "follow_up, patient_instructions, clinical_notes_summary. "
+                    "Consultation {consultation_id}. Transcript: {transcript_text}. "
+                    "Normalized transcript: {normalized_transcript}"
+                ),
+            ),
+            LlmPromptConfig(
+                id="suggestive_mode_v2",
                 prompt_name="Suggestive Mode -- Clinical Safety Net",
-                model_target="llama3.1-8b",
+                model_target="qwen3:8b",
                 temperature=0.3,
                 max_tokens=1500,
+                system_prompt="Review clinical reports and return English JSON only.",
+                user_prompt_template=(
+                    "Return JSON with keys consultation_id, suggestions, "
+                    "overall_risk_level, summary. Consultation {consultation_id}. "
+                    "Report: {generated_report}. Normalized transcript: {normalized_transcript}"
+                ),
             ),
         ]
 
@@ -394,29 +459,54 @@ class MockTranscriptionService(TranscriptionService):
 
 
 class MockClinicalNoteGenerator(ClinicalNoteGenerator):
-    def __init__(self, repository: GeneratedDocumentRepository) -> None:
-        self.repository = repository
-
-    def generate(self, consultation_id: int, transcript_text: str) -> GeneratedDocument:
-        document = GeneratedDocument(
-            consultation_id=consultation_id,
-            doctor_id=1,
-            patient_id=1,
-            generated_output=GeneratedClinicalNotes(
-                chief_complaint="Mock complaint",
-                diagnosis="Mock diagnosis",
-                clinical_notes_summary=f"Generated from: {transcript_text[:40]}...",
+    def generate(self, request) -> GeneratedClinicalNotes:
+        return GeneratedClinicalNotes(
+            patient_info={
+                "patient_id": str(request.patient_id),
+                "doctor_id": str(request.doctor_id),
+            },
+            chief_complaint="Mock complaint",
+            diagnosis="Mock diagnosis",
+            follow_up="Not specified",
+            patient_instructions="No additional instructions provided.",
+            clinical_notes_summary=(
+                "Generated from normalized transcript: "
+                f"{request.normalized_transcript.normalized_text[:40]}..."
             ),
         )
-        return self.repository.save(document)
 
 
 class MockSuggestiveModeService(SuggestiveModeService):
-    def review(self, consultation_id: int, document_json: str) -> SuggestiveReview:
+    def review(self, request: SuggestiveReviewRequest) -> SuggestiveReview:
         return SuggestiveReview(
-            consultation_id=consultation_id,
+            consultation_id=request.consultation_id,
             overall_risk_level=RiskLevel.GREEN,
             summary="No issues detected (mock).",
+        )
+
+
+class MockTranscriptNormalizer(TranscriptNormalizer):
+    def normalize(self, request) -> NormalizedTranscript:
+        cleaned = " ".join(request.transcript_text.split())
+        return NormalizedTranscript(
+            raw_text=request.transcript_text,
+            normalized_text=cleaned,
+            chronology_notes=["Mock normalization preserved chronology."],
+            removed_noise=[],
+            unresolved_segments=[],
+            language="en",
+        )
+
+
+class MockLlmHealthService(LocalLlmHealthService):
+    def check_health(self) -> LlmHealthStatus:
+        return LlmHealthStatus(
+            base_url="http://localhost:11434",
+            model_name="qwen3:8b",
+            ollama_reachable=True,
+            model_available=True,
+            healthy=True,
+            detail="Mock LLM health check.",
         )
 
 

@@ -40,7 +40,7 @@ flowchart LR
 
 ## Replaceable AI Adapters
 
-Transcription and note generation are separate ports on purpose. The transcription module can later target Faster-Whisper, while note generation and suggestive mode can each point to a local LLM backend such as Ollama. They do not depend on each other directly.
+Transcription and note generation are separate ports on purpose. The transcription module targets Faster-Whisper, while transcript normalization, report generation, and suggestive mode target a single local Ollama model: `qwen3:8b`. They do not depend on each other directly.
 
 ## SQL / NoSQL Split
 
@@ -65,4 +65,10 @@ Planned Mongo ownership:
 
 `recording -> transcribing -> processing -> review -> approved/rejected/cancelled`
 
-The current scaffold exposes that flow in the data model and route structure, but not in persistent workflow logic yet.
+Implemented workflow:
+
+- Faster-Whisper persists raw transcript text to MongoDB
+- Transcript normalization runs in `processing`
+- Clinical report generation runs in `processing`
+- Suggestive review runs before doctor approval
+- Approved prescription data is projected into SQL only after doctor approval

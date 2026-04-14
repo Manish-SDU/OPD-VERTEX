@@ -1,6 +1,13 @@
 version: "3.9"
 
 services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
   app:
     build: 
       context: .
@@ -9,6 +16,10 @@ services:
       - "8000:8000"
     env_file:
       - .env.example
+      - .env
+    environment:
+      LOCAL_LLM_ENDPOINT: http://ollama:11434
+      LLM_MODEL_NAME: qwen3:8b
     volumes:
       - ./:/workspace
       - model-cache:/workspace/app/models
@@ -16,6 +27,7 @@ services:
       - mysql
       - mongo
       - whisper
+      - ollama
 
   whisper:
     build:
@@ -53,3 +65,4 @@ volumes:
   mongo-data:
   model-cache:
   whisper-models:
+  ollama-data:

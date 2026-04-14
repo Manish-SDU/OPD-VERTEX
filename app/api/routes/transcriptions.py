@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
+from logging import getLogger
+
 from fastapi import APIRouter, WebSocket, HTTPException, Depends
 from pydantic import BaseModel
 
-from app.api.deps import (
-    get_transcription_service,
-    consultation_doc_repository,
-    consultation_repository,
-)
+from app.api.deps import get_transcription_service
 from app.application.transcriptions.services import TranscriptionApplicationService
-from app.domain.clinical_notes.models import ConsultationDocument, TranscriptDocument
-from app.domain.consultations.models import ConsultationStatus
 
 
 class SessionStartRequest(BaseModel):
@@ -20,6 +16,7 @@ class SessionStartRequest(BaseModel):
 
 
 router = APIRouter(tags=["transcriptions"])
+logger = getLogger("opd_vertex.api.transcriptions")
 
 
 @router.post("/session/start")
@@ -40,7 +37,7 @@ async def transcription_websocket(
 ):
     """WebSocket endpoint for streaming transcription."""
     await websocket.accept()
-    print(f"[WS] WebSocket connected for session {session_id}")
+    logger.info("Transcription websocket connected session_id=%s", session_id)
 
     import asyncio
     from starlette.websockets import WebSocketDisconnect
@@ -50,10 +47,19 @@ async def transcription_websocket(
             try:
                 # Wait for audio data with a timeout so we can also check for results
                 data = await asyncio.wait_for(websocket.receive_bytes(), timeout=1.0)
-                print(f"[WS] Received {len(data)} bytes for session {session_id}")
+                logger.debug(
+                    "Received transcription audio chunk session_id=%s bytes=%s",
+                    session_id,
+                    len(data),
+                )
                 chunk_result = service.process_audio_chunk(session_id, data)
                 if chunk_result:
-                    print(f"[WS] Got chunk result: {chunk_result}")
+                    logger.debug(
+                        "Streaming chunk result ready session_id=%s chunk_id=%s is_final=%s",
+                        session_id,
+                        chunk_result.chunk_id,
+                        chunk_result.is_final,
+                    )
                     await websocket.send_json(
                         {
                             "chunk_id": chunk_result.chunk_id,
@@ -69,23 +75,33 @@ async def transcription_websocket(
             # Check for completed results from background threads
             completed = service.get_completed_results(session_id)
             for result in completed:
-                print(f"[WS] Sending completed result: {result}")
+                logger.debug(
+                    "Sending completed transcription result session_id=%s keys=%s",
+                    session_id,
+                    sorted(result.keys()),
+                )
                 await websocket.send_json(result)
 
             # Send current accumulated text
             partial = service.get_partial_transcription(session_id)
             if partial and partial.strip():  # Only send if not empty after stripping
-                print(f"[WS] Sending partial: '{partial}'")
+                logger.debug(
+                    "Sending partial transcription session_id=%s characters=%s",
+                    session_id,
+                    len(partial),
+                )
                 await websocket.send_json({"partial_text": partial})
-            elif partial:
-                print(f"[WS] Skipping empty partial (before strip): '{partial}'")
 
     except WebSocketDisconnect:
-        print(f"[WS] WebSocket disconnected for session {session_id}")
-    except Exception as e:
-        print(f"[WS] WebSocket error for session {session_id}: {e}")
+        logger.info("Transcription websocket disconnected session_id=%s", session_id)
+    except Exception as exc:
+        logger.exception(
+            "Transcription websocket error session_id=%s error=%s",
+            session_id,
+            exc,
+        )
         try:
-            await websocket.send_json({"error": str(e)})
+            await websocket.send_json({"error": str(exc)})
         except Exception:
             pass
 
@@ -108,36 +124,13 @@ async def get_session_results(
 async def complete_transcription(
     session_id: str,
     service: TranscriptionApplicationService = Depends(get_transcription_service),
-    doc_repo=Depends(consultation_doc_repository),
-    cons_repo=Depends(consultation_repository),
 ):
     """Complete and finalize transcription session."""
     try:
-        print(f"[DEBUG] Saving session {session_id}")
-        result = service.complete_transcription(session_id)
-        consultation_id = result.consultation_id
-
-        print(
-            f"[DEBUG] Save result: consultation_id={consultation_id}, full_text='{result.full_text}'"
-        )
-
-        # Save transcription to database
-        consultation_doc = doc_repo.get_by_consultation_id(consultation_id)
-        if not consultation_doc:
-            consultation_doc = ConsultationDocument(
-                consultation_id=consultation_id,
-                transcript=TranscriptDocument(full_text=result.full_text),
-            )
-        else:
-            consultation_doc.transcript.full_text = result.full_text
-
-        doc_repo.save(consultation_doc)
-
-        # Update consultation status to REVIEW (transcription complete)
-        cons_repo.update_status(consultation_id, ConsultationStatus.REVIEW)
+        result = service.finalize_and_persist_transcription(session_id)
 
         return {
-            "consultation_id": consultation_id,
+            "consultation_id": result.consultation_id,
             "full_text": result.full_text,
             "language": result.language,
             "status": "saved",
@@ -157,16 +150,14 @@ class SaveTranscriptionRequest(BaseModel):
 async def save_transcription(
     request: SaveTranscriptionRequest,
     service: TranscriptionApplicationService = Depends(get_transcription_service),
-    doc_repo=Depends(consultation_doc_repository),
 ):
     """Save partial chunks from temp storage to main database."""
-    result = service.save_final_transcript(request.consultation_id, request.session_id)
-
-    # Save to ConsultationDocument
-    consultation_doc = ConsultationDocument(
-        consultation_id=request.consultation_id,
-        transcript=TranscriptDocument(full_text=result.full_text),
+    result = service.persist_saved_transcription(
+        request.consultation_id, request.session_id
     )
-    doc_repo.save(consultation_doc)
 
-    return {"status": "saved", "consultation_id": request.consultation_id}
+    return {
+        "status": "saved",
+        "consultation_id": request.consultation_id,
+        "full_text": result.full_text,
+    }

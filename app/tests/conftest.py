@@ -21,17 +21,24 @@ from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryStaffRepository,
     MockClinicalNoteGenerator,
     MockEmailService,
+    MockLlmHealthService,
     MockPdfGenerator,
     MockSuggestiveModeService,
+    MockTranscriptNormalizer,
     MockTranscriptionService,
 )
 from app.infrastructure.auth.mock import MockAuthService
 from app.application.audit.services import AuditApplicationService
 from app.application.auth.services import AuthApplicationService
+from app.application.clinical_notes.services import (
+    ClinicalNotesApplicationService,
+    TranscriptNormalizationApplicationService,
+)
 from app.application.consultations.services import ConsultationApplicationService
 from app.application.patients.services import PatientApplicationService
 from app.application.prescriptions.services import PrescriptionApplicationService
 from app.application.review.services import ReviewApplicationService
+from app.application.suggestive_mode.services import SuggestiveReviewApplicationService
 
 
 # ── Repository fixtures ────────────────────────────────────────────────
@@ -101,13 +108,23 @@ def transcription_service():
 
 
 @pytest.fixture
-def note_generator(generated_doc_repo):
-    return MockClinicalNoteGenerator(generated_doc_repo)
+def note_generator():
+    return MockClinicalNoteGenerator()
 
 
 @pytest.fixture
 def suggestive_service():
     return MockSuggestiveModeService()
+
+
+@pytest.fixture
+def transcript_normalizer():
+    return MockTranscriptNormalizer()
+
+
+@pytest.fixture
+def llm_health_service():
+    return MockLlmHealthService()
 
 
 @pytest.fixture
@@ -152,14 +169,59 @@ def audit_app_service(audit_repo):
 def review_app_service(
     consultation_doc_repo,
     generated_doc_repo,
-    transcription_service,
-    note_generator,
-    suggestive_service,
+    consultation_repo,
+    prescription_repo,
 ):
     return ReviewApplicationService(
+        consultation_repo,
         consultation_doc_repo,
         generated_doc_repo,
-        transcription_service,
+        prescription_repo,
+    )
+
+
+@pytest.fixture
+def transcript_normalization_app_service(
+    consultation_doc_repo, prompt_repo, transcript_normalizer
+):
+    return TranscriptNormalizationApplicationService(
+        consultation_doc_repo,
+        prompt_repo,
+        transcript_normalizer,
+    )
+
+
+@pytest.fixture
+def clinical_notes_app_service(
+    consultation_repo,
+    consultation_doc_repo,
+    generated_doc_repo,
+    prompt_repo,
+    transcript_normalization_app_service,
+    note_generator,
+):
+    return ClinicalNotesApplicationService(
+        consultation_repo,
+        consultation_doc_repo,
+        generated_doc_repo,
+        prompt_repo,
+        transcript_normalization_app_service,
         note_generator,
+    )
+
+
+@pytest.fixture
+def suggestive_review_app_service(
+    consultation_repo,
+    consultation_doc_repo,
+    generated_doc_repo,
+    prompt_repo,
+    suggestive_service,
+):
+    return SuggestiveReviewApplicationService(
+        consultation_repo,
+        consultation_doc_repo,
+        generated_doc_repo,
+        prompt_repo,
         suggestive_service,
     )

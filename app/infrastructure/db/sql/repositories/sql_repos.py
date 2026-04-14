@@ -205,6 +205,8 @@ class SqlConsultationRepository(ConsultationRepository):
         if not row:
             return
         row.status = status.value
+        if status == ConsultationStatus.APPROVED:
+            row.approved_at = datetime.utcnow()
         self.session.commit()
 
     def _to_domain(self, row: ConsultationRow) -> Consultation:

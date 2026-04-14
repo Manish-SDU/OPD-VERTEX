@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,7 +32,17 @@ class Settings(BaseSettings):
         default="http://localhost:11434", alias="LOCAL_LLM_ENDPOINT"
     )
     whisper_model_name: str = Field(default="base", alias="WHISPER_MODEL_NAME")
-    llm_model_name: str = Field(default="llama3.1", alias="LLM_MODEL_NAME")
+    llm_model_name: str = Field(default="qwen3:8b", alias="LLM_MODEL_NAME")
+    llm_temperature: float = Field(default=0.2, alias="LLM_TEMPERATURE")
+    llm_max_tokens: int = Field(default=2200, alias="LLM_MAX_TOKENS")
+    ollama_timeout_seconds: float = Field(default=120.0, alias="OLLAMA_TIMEOUT_SECONDS")
+    ollama_max_retries: int = Field(default=2, alias="OLLAMA_MAX_RETRIES")
+    seed_prompts_on_startup: bool = Field(
+        default=True, alias="SEED_PROMPTS_ON_STARTUP"
+    )
+    seed_mock_consultations_on_startup: bool = Field(
+        default=False, alias="SEED_MOCK_CONSULTATIONS_ON_STARTUP"
+    )
     smtp_host: str = Field(default="localhost", alias="SMTP_HOST")
     smtp_port: int = Field(default=1025, alias="SMTP_PORT")
     smtp_user: str = Field(default="", alias="SMTP_USER")
@@ -47,6 +57,14 @@ class Settings(BaseSettings):
     )
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     use_mock_adapters: bool = Field(default=True, alias="USE_MOCK_ADAPTERS")
+
+    @field_validator("llm_model_name")
+    @classmethod
+    def validate_qwen_model(cls, value: str) -> str:
+        normalized = value.strip()
+        if normalized != "qwen3:8b":
+            raise ValueError("Only the local model 'qwen3:8b' is supported.")
+        return normalized
 
 
 @lru_cache

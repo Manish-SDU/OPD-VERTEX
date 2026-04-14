@@ -1,4 +1,11 @@
-# SQL Placeholder
+# SQL Persistence
 
-Future MySQL models, repositories, migrations, and seeds belong here.
-The application currently uses in-memory repositories only.
+MySQL owns approved operational records:
+
+- `staff`
+- `patients`
+- `consultations`
+- `prescriptions`
+- `audit_logs`
+
+AI drafts are not stored in SQL. Only approved prescription data is projected here after doctor approval.

@@ -5,13 +5,13 @@
   <h3>Prompt Configs</h3>
   <ul>
     {% for prompt in prompts %}
-    <li>{{ prompt.name }}: {{ prompt.description }}</li>
+    <li>{{ prompt.prompt_name }} ({{ prompt.id }}) - model {{ prompt.model_target }}</li>
     {% endfor %}
   </ul>
   <h3>Email Templates</h3>
   <ul>
     {% for template in email_templates %}
-    <li>{{ template.name }}: {{ template.subject }}</li>
+    <li>{{ template.template_name }}: {{ template.subject_template }}</li>
     {% endfor %}
   </ul>
   <p>TODO: wire editable configs to Mongo-backed repositories and admin forms.</p>

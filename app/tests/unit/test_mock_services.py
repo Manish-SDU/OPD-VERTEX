@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+from app.domain.clinical_notes.models import (
+    ClinicalReportRequest,
+    ConsultationDocument,
+    GeneratedClinicalNotes,
+    LlmPromptConfig,
+    NormalizedTranscript,
+    PrescriptionArtifact,
+    TranscriptNormalizationRequest,
+)
 from app.domain.prescriptions.models import Prescription
-from app.domain.suggestive_mode.models import RiskLevel
+from app.domain.suggestive_mode.models import RiskLevel, SuggestiveReviewRequest
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryConsultationDocumentRepository,
     InMemoryPrescriptionArtifactRepository,
 )
-from app.domain.clinical_notes.models import ConsultationDocument, PrescriptionArtifact
 
 
 class TestMockTranscriptionService:
@@ -23,22 +31,56 @@ class TestMockTranscriptionService:
 
 
 class TestMockClinicalNoteGenerator:
-    def test_generates_document(self, note_generator):
-        doc = note_generator.generate(10, "Patient has headache")
-        assert doc.consultation_id == 10
-        assert doc.generated_output.chief_complaint == "Mock complaint"
-        assert doc.generated_output.diagnosis == "Mock diagnosis"
-
-    def test_saves_to_repository(self, generated_doc_repo, note_generator):
-        note_generator.generate(77, "test transcript")
-        assert generated_doc_repo.get_by_consultation_id(77) is not None
+    def test_generates_structured_notes(self, note_generator):
+        notes = note_generator.generate(
+            ClinicalReportRequest(
+                consultation_id=10,
+                doctor_id=1,
+                patient_id=1,
+                transcript_text="Patient has headache",
+                normalized_transcript=NormalizedTranscript(
+                    raw_text="Patient has headache",
+                    normalized_text="Patient has headache",
+                ),
+                prompt=LlmPromptConfig(
+                    id="clinical_report_generation_v2",
+                    prompt_name="Clinical Report Generation",
+                ),
+            )
+        )
+        assert notes.chief_complaint == "Mock complaint"
+        assert notes.diagnosis == "Mock diagnosis"
 
 
 class TestMockSuggestiveModeService:
     def test_returns_green_risk(self, suggestive_service):
-        review = suggestive_service.review(1, "{}")
+        review = suggestive_service.review(
+            SuggestiveReviewRequest(
+                consultation_id=1,
+                doctor_id=1,
+                patient_id=1,
+                generated_report=GeneratedClinicalNotes(diagnosis="Mock diagnosis").model_dump(),
+                system_prompt="system",
+                user_prompt_template="template",
+            )
+        )
         assert review.overall_risk_level == RiskLevel.GREEN
         assert review.consultation_id == 1
+
+
+class TestMockTranscriptNormalizer:
+    def test_returns_normalized_transcript(self, transcript_normalizer):
+        normalized = transcript_normalizer.normalize(
+            TranscriptNormalizationRequest(
+                consultation_id=1,
+                transcript_text="Patient   reports   cough",
+                prompt=LlmPromptConfig(
+                    id="transcript_normalization_v1",
+                    prompt_name="Transcript Normalization",
+                ),
+            )
+        )
+        assert normalized.normalized_text == "Patient reports cough"
 
 
 class TestMockPdfGenerator:
@@ -105,12 +147,12 @@ class TestPrescriptionArtifactRepository:
 class TestPromptRepository:
     def test_list_prompts(self, prompt_repo):
         prompts = prompt_repo.list_prompts()
-        assert len(prompts) >= 2
+        assert len(prompts) >= 3
 
     def test_get_by_id(self, prompt_repo):
-        prompt = prompt_repo.get_by_id("prescription_generation_v1")
+        prompt = prompt_repo.get_by_id("clinical_report_generation_v2")
         assert prompt is not None
-        assert prompt.prompt_name == "Prescription & Clinical Notes Generator"
+        assert prompt.prompt_name == "Clinical Report Generation"
 
     def test_get_by_id_unknown(self, prompt_repo):
         assert prompt_repo.get_by_id("nonexistent") is None
@@ -122,9 +164,9 @@ class TestEmailTemplateRepository:
         assert len(templates) >= 1
 
     def test_get_by_id(self, email_template_repo):
-        t = email_template_repo.get_by_id("prescription_delivery_v1")
-        assert t is not None
-        assert "Prescription" in t.template_name
+        template = email_template_repo.get_by_id("prescription_delivery_v1")
+        assert template is not None
+        assert "Prescription" in template.template_name
 
     def test_get_by_id_unknown(self, email_template_repo):
         assert email_template_repo.get_by_id("nonexistent") is None
