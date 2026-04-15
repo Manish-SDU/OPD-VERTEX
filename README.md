@@ -149,10 +149,19 @@ Start infrastructure first:
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e .[dev]
+uvicorn app.main:app --reload
 docker compose up mysql mongo whisper
 ```
-
+Open http://localhost:8000
 Then run the backend on the host machine:
+
+## Demo Credentials
+| Role | Email | Password |
+|---|---|---|
+| Doctor | `doctor@example.local` | `password` |
+| Admin | `admin@example.local` | `password` |
+| Patient | `giulia@example.local` | `password` |
+| Patient | `marco@example.local` | `password` |
 
 ```bash
 set USE_MOCK_ADAPTERS=false
