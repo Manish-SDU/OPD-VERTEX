@@ -1,20 +1,17 @@
-import sys
-import os
+from __future__ import annotations
 
-sys.path.append(os.getcwd())
+from datetime import date
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from app.core.security import hash_password
+from app.infrastructure.db.sql.connection import get_mysql_url
 from app.infrastructure.db.sql.models.tables import PatientRow, StaffRow
-
-from passlib.hash import bcrypt
-
-
-DATABASE_URL = "mysql+pymysql://opd_user:opd_password@mysql:3306/opd_vertex"
 
 
 def seed():
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(get_mysql_url())
     Session = sessionmaker(bind=engine)
     db = Session()
 
@@ -24,12 +21,12 @@ def seed():
             db.query(PatientRow).filter_by(email="jane@example.com").first()
         )
         if not existing_patient:
-            hashed_pw = bcrypt.hash("password")
+            hashed_pw = hash_password("password")
             new_patient = PatientRow(
                 first_name="Jane",
                 last_name="Smith",
                 email="jane@example.com",
-                date_of_birth="1990-01-01",
+                date_of_birth=date(1990, 1, 1),
                 password_hash=hashed_pw,
                 role="patient",
                 is_active=True,
@@ -38,7 +35,7 @@ def seed():
 
         existing_staff = db.query(StaffRow).filter_by(email="john@example.com").first()
         if not existing_staff:
-            hashed_pw = bcrypt.hash("password")
+            hashed_pw = hash_password("password")
             new_doctor = StaffRow(
                 first_name="John",
                 last_name="Doe",
@@ -53,7 +50,7 @@ def seed():
 
         existing_staff = db.query(StaffRow).filter_by(email="bob@example.com").first()
         if not existing_staff:
-            hashed_pw = bcrypt.hash("password")
+            hashed_pw = hash_password("password")
             new_admin = StaffRow(
                 first_name="Bob",
                 last_name="Jones",
