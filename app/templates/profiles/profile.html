@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card profile-card">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-avatar">👤</div>
+        <div class="profile-info">
+            <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+            <p>{{ user.email }}</p>
+            <div class="profile-role-badge">
+                {% if user.role == "patient" %}
+                    🏥 Patient
+                {% elif user.role == "doctor" %}
+                    👨‍⚕️ Doctor
+                {% elif user.role == "admin" %}
+                    ⚙️ Administrator
+                {% endif %}
+            </div>
+        </div>
+        <div class="profile-actions">
+            <button class="primary">Edit Profile</button>
+        </div>
+    </div>
+
+    <!-- Patient Profile -->
+    {% if user.role == "patient" %}
+    <div class="profile-grid">
+        <div class="profile-section">
+            <h3>👤 Personal Information</h3>
+            <ul class="profile-list">
+                <li><strong>Date of Birth:</strong> <span>{{ user.date_of_birth or "N/A" }}</span></li>
+                <li><strong>Gender:</strong> <span>{{ user.gender or "N/A" }}</span></li>
+                <li><strong>Phone:</strong> <span>{{ user.phone or "N/A" }}</span></li>
+                <li><strong>Address:</strong> <span>{{ user.address or "N/A" }}</span></li>
+                <li><strong>Emergency Contact:</strong> <span>{{ user.emergency_contact or "N/A" }}</span></li>
+                <li><strong>Insurance ID:</strong> <span>{{ user.insurance_id or "N/A" }}</span></li>
+            </ul>
+        </div>
+        <div class="profile-section">
+            <h3>🏥 Medical Information</h3>
+            <ul class="profile-list">
+                <li><strong>Blood Type:</strong> <span>{{ user.blood_type or "N/A" }}</span></li>
+                <li><strong>Allergies:</strong> <span>{{ user.allergies or "N/A" }}</span></li>
+                <li><strong>Medical History:</strong> <span>{{ user.medical_history or "N/A" }}</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Doctor/Admin Profile -->
+    {% elif user.role == "doctor" or user.role == "admin" %}
+    <div class="profile-grid">
+        <div class="profile-section">
+            <h3>👨‍⚕️ Professional Information</h3>
+            <ul class="profile-list">
+                <li><strong>Phone:</strong> <span>{{ user.phone or "N/A" }}</span></li>
+                <li><strong>Specialization:</strong> <span>{{ user.specialization or "N/A" }}</span></li>
+                <li><strong>License Number:</strong> <span>{{ user.license_number or "N/A" }}</span></li>
+            </ul>
+        </div>
+        <div class="profile-section">
+            <h3>ℹ️ Additional Details</h3>
+            <ul class="profile-list">
+                <li><strong>Role:</strong> <span>{{ user.role.title() or "N/A" }}</span></li>
+                <li><strong>Status:</strong> <span>{% if user.is_active %}Active{% else %}Inactive{% endif %}</span></li>
+            </ul>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="profile-grid">
+        <div class="profile-section">
+            <h3>Profile Information</h3>
+            <p>No additional profile data available for this role.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
