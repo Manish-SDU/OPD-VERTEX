@@ -155,13 +155,47 @@ docker compose up mysql mongo whisper
 Open http://localhost:8000
 Then run the backend on the host machine:
 
-## Demo Credentials
+## Credentials
+
+This app supports two modes:
+
+- **Mock mode** (`USE_MOCK_ADAPTERS=true`, default): authentication uses in-memory repositories (no MySQL/Mongo required).
+- **Real mode** (`USE_MOCK_ADAPTERS=false`): authentication uses MySQL (users + password hashes stored in SQL).
+
+### Mock credentials (in-memory)
+
 | Role | Email | Password |
 |---|---|---|
 | Doctor | `doctor@example.local` | `password` |
 | Admin | `admin@example.local` | `password` |
 | Patient | `giulia@example.local` | `password` |
 | Patient | `marco@example.local` | `password` |
+
+### Real credentials (DB-backed)
+
+These are created only when running against MySQL (`USE_MOCK_ADAPTERS=false`).
+
+**A) Startup seed (recommended for demo flows)**
+
+When `SEED_MOCK_CONSULTATIONS_ON_STARTUP=true`, the startup bootstrap seeds one demo doctor + 4 demo patients (password: `password` for all):
+
+| Role | Email | Password |
+|---|---|---|
+| Doctor | `harper.cole@example.local` | `password` |
+| Patient | `ava.miller@example.local` | `password` |
+| Patient | `noah.perez@example.local` | `password` |
+| Patient | `mia.nguyen@example.local` | `password` |
+| Patient | `luca.reed@example.local` | `password` |
+
+**B) Manual seed script (legacy/demo accounts)**
+
+Running `python app/scripts/seed_mysql_db.py` inserts additional demo accounts in MySQL (password: `password` for all):
+
+| Role | Email | Password |
+|---|---|---|
+| Doctor | `john@example.com` | `password` |
+| Admin | `bob@example.com` | `password` |
+| Patient | `jane@example.com` | `password` |
 
 ```bash
 set USE_MOCK_ADAPTERS=false
