@@ -1,42 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card">
-  <h2>Patients</h2>
-  <div class="search-bar">
-    <input type="text" id="patient-filter" placeholder="Search by name or email…" autocomplete="off">
+
+<link rel="stylesheet" href="/static/css/patients_list.css">
+
+<div class="patients-page">
+  {# ── Page Header ── #}
+  <div class="patients-header">
+    <div class="header-content">
+      <h1 class="page-title">Patients List</h1>
+      <p class="page-subtitle">Manage and view your patients' information</p>
+    </div>
+    <div class="header-actions">
+      <div class="search-bar">
+        <input type="text" id="patientSearch" placeholder="Search by name...">
+      </div>
+    </div>
   </div>
-  <table>
-    <thead><tr><th>ID</th><th>Full Name</th><th>Email</th></tr></thead>
-    <tbody id="patient-table-body">
+
+  {# ── Patients Container ── #}
+  <div class="patients-container">
+    {% if patients|length > 0 %}
+    <div class="patients-list">
       {% for patient in patients %}
-      <tr>
-        <td><a href="/patients/{{ patient.id }}">{{ patient.id }}</a></td>
-        <td>{{ patient.first_name }} {{ patient.last_name }}</td>
-        <td>{{ patient.email or "-" }}</td>
-      </tr>
+      <div class="patient-card">
+        <div class="patient-info">
+          <div class="patient-avatar">
+            {{ patient.first_name[0] }}{{ patient.last_name[0] }}
+          </div>
+          <div class="patient-details">
+            <h3 class="patient-name">{{ patient.first_name }} {{ patient.last_name }}</h3>
+            <p class="patient-meta">Patient ID: {{ patient.id }}</p>
+          </div>
+        </div>
+        <div class="patient-actions">
+          <a href="/patients/{{ patient.id }}" class="btn-check-history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            Check History
+          </a>
+        </div>
+      </div>
       {% endfor %}
-    </tbody>
-  </table>
-  <p id="no-results" style="display:none;color:var(--muted);font-size:.9rem;margin-top:.5rem;">No patients match your search.</p>
-</section>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="8.5" cy="7" r="4"></circle>
+          <path d="M20 8v6"></path>
+          <path d="M23 11h-6"></path>
+        </svg>
+      </div>
+      <h3>No Patients Found</h3>
+      <p>You don't have any patients yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
 <script>
-(function() {
-  const input = document.getElementById('patient-filter');
-  const tbody = document.getElementById('patient-table-body');
-  const noResults = document.getElementById('no-results');
-  if (!input || !tbody) return;
-  input.addEventListener('input', function() {
-    const q = this.value.toLowerCase();
-    const rows = tbody.querySelectorAll('tr');
-    let visible = 0;
-    rows.forEach(row => {
-      const text = row.textContent.toLowerCase();
-      const show = text.includes(q);
-      row.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-    noResults.style.display = visible === 0 ? '' : 'none';
+document.getElementById('patientSearch').addEventListener('input', function(e) {
+  const searchTerm = e.target.value.toLowerCase();
+  const patientCards = document.querySelectorAll('.patient-card');
+  
+  patientCards.forEach(card => {
+    const patientName = card.querySelector('.patient-name').textContent.toLowerCase();
+    if (patientName.includes(searchTerm)) {
+      card.style.display = 'flex';
+    } else {
+      card.style.display = 'none';
+    }
   });
-})();
+});
 </script>
+
 {% endblock %}

@@ -1,14 +1,137 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card">
+
+<link rel="stylesheet" href="/static/css/patient_history.css">
+
+<div class="patient-history-page">
   {% if patient %}
-  <h2>{{ patient.first_name }} {{ patient.last_name }}</h2>
-  <p>Patient ID: {{ patient.id }}</p>
-  <p>Email: {{ patient.email or "Not provided" }}</p>
-  <p>Phone: {{ patient.phone or "Not provided" }}</p>
-  <p>TODO: attach consultation timeline and approved prescriptions.</p>
+  
+  {# ── Back Button ── #}
+  <a href="/patients" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    Back to Patients
+  </a>
+
+  <div class="patient-header">
+    <div class="patient-header-avatar">
+      {{ patient.first_name[0] }}{{ patient.last_name[0] }}
+    </div>
+    <div class="patient-header-info">
+      <h1>{{ patient.first_name }} {{ patient.last_name }}</h1>
+      <p class="patient-id">Patient ID: {{ patient.id }}</p>
+    </div>
+  </div>
+
+  <div class="patient-content">
+    {# ── Personal Information ── #}
+    <div class="info-section">
+      <h2 class="section-title">Personal Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Full Name</label>
+          <p>{{ patient.first_name }} {{ patient.last_name }}</p>
+        </div>
+        <div class="info-item">
+          <label>Surname</label>
+          <p>{{ patient.last_name }}</p>
+        </div>
+        <div class="info-item">
+          <label>Email Address</label>
+          <p>{{ patient.email or "N/A" }}</p>
+        </div>
+        <div class="info-item">
+          <label>Phone Number</label>
+          <p>{{ patient.phone or "N/A" }}</p>
+        </div>
+        <div class="info-item">
+          <label>Birthday</label>
+          <p>{{ patient.date_of_birth or "N/A" }}</p>
+        </div>
+        <div class="info-item">
+          <label>Age</label>
+          <p>N/A</p>
+        </div>
+        <div class="info-item">
+          <label>Sex</label>
+          <p>{{ patient.gender or "N/A" }}</p>
+        </div>
+        <div class="info-item">
+          <label>Allergies</label>
+          <p>{{ patient.allergies or "None reported" }}</p>
+        </div>
+        <div class="info-item">
+          <label>Height</label>
+          <p>N/A</p>
+        </div>
+        <div class="info-item">
+          <label>Weight</label>
+          <p>N/A</p>
+        </div>
+      </div>
+    </div>
+
+    {# ── Medical History Section ── #}
+    <div class="medical-history">
+      
+      {# ── Past Consultations ── #}
+      <div class="history-card">
+        <h3 class="history-title">Past Consultations</h3>
+        {% if consultations|length > 0 %}
+        <div class="history-list">
+          {% for consultation in consultations %}
+          <div class="history-item">
+            <div class="history-date">
+              <span class="date">{{ consultation.started_at.strftime('%m/%d/%Y') if consultation.started_at else "—" }}</span>
+              <span class="time">{{ consultation.started_at.strftime('%H:%M') if consultation.started_at else "—" }}</span>
+            </div>
+            <div class="history-details">
+              <p class="history-label">Doctor ID: <strong>{{ consultation.doctor_id }}</strong></p>
+              <p class="history-description">Status: {{ consultation.status }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-message">No consultations recorded.</div>
+        {% endif %}
+      </div>
+
+      {# ── Past Prescriptions ── #}
+      <div class="history-card">
+        <h3 class="history-title">Patient Prescriptions</h3>
+        {% if prescriptions|length > 0 %}
+        <div class="history-list">
+          {% for prescription in prescriptions %}
+          {% for medication in prescription.medications %}
+          <div class="history-item">
+            <div class="history-date">
+              <span class="status-badge">{{ medication.name }}</span>
+            </div>
+            <div class="history-details">
+              <p class="history-label">Duration: <strong>{{ prescription.created_at.strftime('%m/%d/%Y') if prescription.created_at else "—" }}</strong></p>
+              <p class="history-description">Dosage: {{ medication.dosage }} | Frequency: {{ medication.frequency }} | Duration: {{ medication.duration }}</p>
+            </div>
+          </div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-message">No prescriptions recorded.</div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
   {% else %}
-  <h2>Patient not found</h2>
+  <div class="error-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    <h2>Patient Not Found</h2>
+    <p>The patient you're looking for doesn't exist or has been removed.</p>
+    <a href="/patients" class="btn-primary">Back to Patients</a>
+  </div>
   {% endif %}
-</section>
+
+</div>
+
 {% endblock %}

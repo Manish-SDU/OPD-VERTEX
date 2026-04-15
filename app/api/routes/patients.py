@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from app.api.deps import get_patient_app_service, get_current_user
+from app.api.deps import (
+    get_patient_app_service,
+    get_current_user,
+    get_consultation_app_service,
+    get_prescription_app_service,
+)
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
@@ -45,8 +50,23 @@ def patient_detail(
     patient_id: int, request: Request, user=Depends(get_current_user)
 ) -> HTMLResponse:
     patient = get_patient_app_service().get_patient(patient_id)
+
+    # Fetch consultations and prescriptions for this patient
+    all_consultations = get_consultation_app_service().list_consultations()
+    all_prescriptions = get_prescription_app_service().list_prescriptions()
+
+    # Filter by patient_id
+    consultations = [c for c in all_consultations if c.patient_id == patient_id]
+    prescriptions = [p for p in all_prescriptions if p.patient_id == patient_id]
+
     return templates.TemplateResponse(
         request,
         "patients/detail.html",
-        {"patient": patient, "page_title": "Patient Detail", "user": user},
+        {
+            "patient": patient,
+            "consultations": consultations,
+            "prescriptions": prescriptions,
+            "page_title": "Patient Detail",
+            "user": user,
+        },
     )
