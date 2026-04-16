@@ -1,0 +1,148 @@
+@startuml use_case_diagram
+
+' ══════════════════════════════════════════════════════════════
+'  OPD-VERTEX (Outpatient Department Vertex)
+'  AI-Assisted Clinical Documentation System
+'  Use-Case Diagram  -  UML 2.5
+' ══════════════════════════════════════════════════════════════
+
+top to bottom direction
+skinparam actorStyle awesome
+
+skinparam backgroundColor       #FEFEFE
+skinparam shadowing             false
+skinparam defaultFontName       "Segoe UI"
+skinparam defaultFontSize       12
+
+skinparam usecase {
+    BackgroundColor             #F0F9FF
+    BorderColor                 #1E3A5F
+    FontColor                   #1E293B
+}
+
+skinparam rectangle {
+    BorderColor                 #334155
+    FontColor                   #0F172A
+    BorderThickness             2
+    RoundCorner                 6
+}
+
+skinparam database {
+    BackgroundColor             #EDE9FE
+    BorderColor                 #7C3AED
+    FontColor                   #1E293B
+}
+
+skinparam cloud {
+    BackgroundColor             #FEF3C7
+    BorderColor                 #D97706
+    FontColor                   #1E293B
+}
+
+skinparam component {
+    BackgroundColor             #E0F2FE
+    BorderColor                 #0284C7
+    FontColor                   #1E293B
+}
+
+skinparam actor {
+    BorderColor                 #1E40AF
+    FontColor                   #1E293B
+}
+
+' ══════════════════════════════════════════════════════════════
+'  Primary Actors (left side)
+' ══════════════════════════════════════════════════════════════
+
+actor "Patient" as Patient #DBEAFE
+actor "Doctor"  as Doctor  #D1FAE5
+actor "Admin"   as Admin   #FEE2E2
+
+' ══════════════════════════════════════════════════════════════
+'  System Boundary
+' ══════════════════════════════════════════════════════════════
+
+title OPD-VERTEX  (MedFlow)
+
+rectangle "Authentication" as AuthCol #F1F5F9 {
+    usecase "Log In"  as UC_Login
+    usecase "Log Out" as UC_Logout
+}
+
+rectangle "Patient Features" as PatCol #EFF6FF {
+    usecase "View Own Profile"       as UC_Profile
+    usecase "View Own Prescriptions" as UC_ViewRx
+}
+
+rectangle "Doctor - Clinical Workflow" as DocCol #ECFDF5 {
+    usecase "Browse & Search Patients"  as UC_Patients
+    usecase "Create Consultation"       as UC_CreateCon
+    usecase "View Consultations"        as UC_ViewCon
+    usecase "Record & Transcribe Audio" as UC_Transcribe
+    usecase "Generate Clinical Report"  as UC_Report
+    usecase "Suggestive Safety Review"  as UC_Safety
+    usecase "Review Draft Notes"        as UC_Review
+    usecase "Approve / Reject Draft"    as UC_Approve
+    usecase "Generate Prescription PDF" as UC_PDF
+    usecase "Email Prescription"        as UC_Email
+}
+
+rectangle "Admin" as AdmCol #FEF2F2 {
+    usecase "Manage Prompt Templates" as UC_Prompts
+    usecase "Manage Email Templates"  as UC_EmailTpl
+    usecase "View System Health"      as UC_Health
+}
+
+' ══════════════════════════════════════════════════════════════
+'  External Systems (right side)
+' ══════════════════════════════════════════════════════════════
+
+database  "MySQL"                          as MySQL
+cloud     "Whisper API\n(Speech-to-Text)"  as Whisper
+cloud     "Ollama LLM\n(Report Gen)"       as LLM
+component "ReportLab\n(PDF)"               as PDFGen
+component "SMTP\n(Email)"                  as SMTP
+database  "MongoDB"                        as Mongo
+
+' ══════════════════════════════════════════════════════════════
+'  Actor --> Rectangle associations
+' ══════════════════════════════════════════════════════════════
+
+Patient -down- AuthCol
+Patient -down- PatCol
+
+Doctor  -down- AuthCol
+Doctor  -down- DocCol
+
+Admin   -down- AuthCol
+Admin   -down- AdmCol
+
+' ══════════════════════════════════════════════════════════════
+'  Use Case --> External System associations
+' ══════════════════════════════════════════════════════════════
+
+UC_Patients   -down- MySQL
+UC_CreateCon  -down- MySQL
+UC_Transcribe -down- Whisper
+UC_Report     -down- LLM
+UC_Safety     -down- LLM
+UC_PDF        -down- PDFGen
+UC_Email      -down- SMTP
+UC_Prompts    -down- Mongo
+UC_EmailTpl   -down- Mongo
+
+' ══════════════════════════════════════════════════════════════
+'  Legend
+' ══════════════════════════════════════════════════════════════
+
+legend bottom right
+  |<#DBEAFE>  **Stick Figure**  | Primary Actor (end user) |
+  |<#F0F9FF>  **Oval**          | Use Case (system function) |
+  |<#F1F5F9>  **Rectangle**     | Functional Module (grouping) |
+  |<#EDE9FE>  **Cylinder**      | Database (MySQL / MongoDB) |
+  |<#FEF3C7>  **Cloud**         | External AI / API Service |
+  |<#E0F2FE>  **Box**           | Infrastructure Component |
+  |           **Solid Line**    | Association (actor uses module / use case calls system) |
+endlegend
+
+@enduml

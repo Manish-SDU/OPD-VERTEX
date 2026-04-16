@@ -13,6 +13,7 @@ from app.api.routes import (
     prescriptions,
     review,
     transcriptions,
+    profile,
 )
 
 router = APIRouter()
@@ -33,3 +34,4 @@ router.include_router(admin.router, prefix="/admin", tags=["admin"])
 router.include_router(
     transcriptions.router, prefix="/transcriptions", tags=["transcriptions"]
 )
+router.include_router(profile.router, tags=["profile"])

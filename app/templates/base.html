@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="/static/css/profile.css">
 </head>
 <body>
   {% block body %}
@@ -26,9 +27,11 @@
         <a href="/patients">Patients</a>
         <a href="/consultations">Consultations</a>
         <a href="/prescriptions">Prescriptions</a>
+        <a href="/profile"> Profile</a>
         {% elif user is defined and user.role == 'patient' %}
         <a href="/consultations">My Consultations</a>
         <a href="/prescriptions">My Prescriptions</a>
+        <a href="/profile"> Profile</a>
         {% endif %}
         {% if user is defined and user.role == 'admin' %}
         <a href="/admin/config">Admin</a>
