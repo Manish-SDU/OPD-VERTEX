@@ -34,7 +34,7 @@ def login_submit(
             status_code=401,
         )
 
-    token_data = {"sub": user.email, "role": user.role}
+    token_data = {"sub": str(user.id), "role": user.role}
     access_token = create_access_token(data=token_data)
 
     response = RedirectResponse(url="/dashboard", status_code=303)

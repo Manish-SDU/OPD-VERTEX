@@ -47,7 +47,7 @@ def consultation_create(
 ) -> RedirectResponse:
     consultation = get_consultation_app_service().create_consultation(
         ConsultationCreateRequest(patient_id=patient_id),
-        doctor_id=user.get("sub", 1),
+        doctor_id=int(user.get("sub", 1)),
     )
     return RedirectResponse(url=f"/consultations/{consultation.id}", status_code=303)
 
