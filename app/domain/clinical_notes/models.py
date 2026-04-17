@@ -271,7 +271,9 @@ class GeneratedClinicalNotes(BaseModel):
             cleaned = value.strip()
             return [cleaned] if cleaned else []
         if isinstance(value, list):
-            return [str(item) for item in value if item is not None and str(item).strip()]
+            return [
+                str(item) for item in value if item is not None and str(item).strip()
+            ]
         return value
 
     @field_validator("medications", mode="before")

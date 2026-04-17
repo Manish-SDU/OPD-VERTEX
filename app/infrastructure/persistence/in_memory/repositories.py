@@ -722,9 +722,7 @@ class MockClinicalNoteGenerator(ClinicalNoteGenerator):
                 blood_pressure=parsed.get("vitals_blood_pressure", "Not recorded"),
                 heart_rate=parsed.get("vitals_heart_rate", "Not recorded"),
                 temperature=parsed.get("vitals_temperature", "Not recorded"),
-                respiratory_rate=parsed.get(
-                    "vitals_respiratory_rate", "Not recorded"
-                ),
+                respiratory_rate=parsed.get("vitals_respiratory_rate", "Not recorded"),
                 spo2=parsed.get("vitals_spo2", "Not recorded"),
                 weight=parsed.get("vitals_weight", "Not recorded"),
                 height=parsed.get("vitals_height", "Not recorded"),
@@ -817,9 +815,9 @@ class MockSuggestiveModeService(SuggestiveModeService):
                 )
             )
 
-        if self._contains_text(transcript_blob, "orthostatic") and not self._contains_text(
-            generated_report.get("follow_up", ""), "48"
-        ):
+        if self._contains_text(
+            transcript_blob, "orthostatic"
+        ) and not self._contains_text(generated_report.get("follow_up", ""), "48"):
             suggestions.append(
                 Suggestion(
                     type=SuggestionType.FOLLOW_UP,
@@ -877,7 +875,9 @@ class MockSuggestiveModeService(SuggestiveModeService):
             )
 
         if suggestions:
-            if any(item.severity == SuggestionSeverity.CRITICAL for item in suggestions):
+            if any(
+                item.severity == SuggestionSeverity.CRITICAL for item in suggestions
+            ):
                 risk_level = RiskLevel.RED
             elif any(
                 item.severity in (SuggestionSeverity.HIGH, SuggestionSeverity.MEDIUM)
@@ -886,9 +886,7 @@ class MockSuggestiveModeService(SuggestiveModeService):
                 risk_level = RiskLevel.YELLOW
             else:
                 risk_level = RiskLevel.GREEN
-            summary = (
-                f"{len(suggestions)} issue(s) flagged for clinician review before approval."
-            )
+            summary = f"{len(suggestions)} issue(s) flagged for clinician review before approval."
         else:
             risk_level = RiskLevel.GREEN
             summary = "No significant clinical issues detected by the mock second-pass review."

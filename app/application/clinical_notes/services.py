@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 
 from app.core.config import get_settings
 from app.domain.auth.models import StaffRepository
@@ -344,7 +344,9 @@ class ClinicalNotesApplicationService:
         return value.strftime("%d-%b-%Y %H:%M UTC")
 
     @staticmethod
-    def _render_bullets(items: list[str], *, empty_line: str = "- Not mentioned") -> list[str]:
+    def _render_bullets(
+        items: list[str], *, empty_line: str = "- Not mentioned"
+    ) -> list[str]:
         cleaned = [item.strip() for item in items if item and item.strip()]
         if not cleaned:
             return [empty_line]
@@ -420,7 +422,9 @@ class ClinicalNotesApplicationService:
         lines.append("MEDICAL OUTPATIENT CLINICAL REPORT")
         lines.append("")
         lines.append(f"Facility Name: {self._nm(facility_name)}")
-        lines.append(f"Department: {self._nm(department, default='Outpatient Department (OPD)')}")
+        lines.append(
+            f"Department: {self._nm(department, default='Outpatient Department (OPD)')}"
+        )
         lines.append(f"Encounter ID: {consultation_id}")
         lines.append(f"Date of Visit: {date_of_visit}")
         lines.append(f"Time of Visit: {time_of_visit}")
@@ -494,7 +498,14 @@ class ClinicalNotesApplicationService:
                 "content": lambda: (
                     ["Current Medications Mentioned:"]
                     + self._render_bullets(notes.current_medications_mentioned)
-                    + ["", "Recent Over-the-Counter / Home Remedies:", "- Not mentioned", "", "Medication Adherence Notes:", "Not mentioned"]
+                    + [
+                        "",
+                        "Recent Over-the-Counter / Home Remedies:",
+                        "- Not mentioned",
+                        "",
+                        "Medication Adherence Notes:",
+                        "Not mentioned",
+                    ]
                 ),
                 "is_empty": lambda: len(notes.current_medications_mentioned) == 0,
             },
@@ -519,8 +530,10 @@ class ClinicalNotesApplicationService:
                     "Pregnancy / Lactation Status: Not mentioned",
                     "Other Social Factors: Not mentioned",
                 ],
-                "is_empty": lambda: self._is_section_empty(notes.social_history)
-                and self._is_value_empty(notes.family_history),
+                "is_empty": lambda: (
+                    self._is_section_empty(notes.social_history)
+                    and self._is_value_empty(notes.family_history)
+                ),
             },
             {
                 "title": "VITAL SIGNS",
@@ -539,8 +552,17 @@ class ClinicalNotesApplicationService:
             {
                 "title": "PHYSICAL EXAMINATION / EXAMINATION FINDINGS",
                 "content": lambda: (
-                    ["General Appearance:", "Not mentioned", "", "Systemic Examination:"]
-                    + ([self._nm(notes.examination_findings)] if notes.examination_findings else ["Not mentioned"])
+                    [
+                        "General Appearance:",
+                        "Not mentioned",
+                        "",
+                        "Systemic Examination:",
+                    ]
+                    + (
+                        [self._nm(notes.examination_findings)]
+                        if notes.examination_findings
+                        else ["Not mentioned"]
+                    )
                 ),
                 "is_empty": lambda: self._is_value_empty(notes.examination_findings),
             },
@@ -554,9 +576,14 @@ class ClinicalNotesApplicationService:
                         "Differential Diagnoses:",
                     ]
                     + self._render_bullets(
-                        notes.assessment.differential_diagnoses, empty_line="- Not mentioned"
+                        notes.assessment.differential_diagnoses,
+                        empty_line="- Not mentioned",
                     )
-                    + ["", "Clinical Impression:", self._nm(notes.assessment.clinical_impression)]
+                    + [
+                        "",
+                        "Clinical Impression:",
+                        self._nm(notes.assessment.clinical_impression),
+                    ]
                 ),
                 "always_show": True,
             },
@@ -565,15 +592,19 @@ class ClinicalNotesApplicationService:
                 "content": lambda: (
                     ["A. Medications Prescribed"]
                     + (
-                        [item for med in notes.medications for item in [
-                            f"- Medication Name: {self._nm(med.name)}",
-                            f"  Dose: {self._nm(med.dosage)}",
-                            f"  Route: {self._nm(med.route)}",
-                            f"  Frequency: {self._nm(med.frequency)}",
-                            f"  Duration: {self._nm(med.duration)}",
-                            f"  Special Instructions: {self._nm(med.special_instructions or '')}",
-                            "",
-                        ]]
+                        [
+                            item
+                            for med in notes.medications
+                            for item in [
+                                f"- Medication Name: {self._nm(med.name)}",
+                                f"  Dose: {self._nm(med.dosage)}",
+                                f"  Route: {self._nm(med.route)}",
+                                f"  Frequency: {self._nm(med.frequency)}",
+                                f"  Duration: {self._nm(med.duration)}",
+                                f"  Special Instructions: {self._nm(med.special_instructions or '')}",
+                                "",
+                            ]
+                        ]
                         if notes.medications
                         else ["- Not mentioned", ""]
                     )
@@ -601,8 +632,12 @@ class ClinicalNotesApplicationService:
             {
                 "title": "SAFETY-NET / RETURN PRECAUTIONS",
                 "content": lambda: (
-                    ["The patient was advised to seek urgent medical attention if any of the following occur:"]
-                    + self._render_bullets(notes.return_precautions, empty_line="- Not mentioned")
+                    [
+                        "The patient was advised to seek urgent medical attention if any of the following occur:"
+                    ]
+                    + self._render_bullets(
+                        notes.return_precautions, empty_line="- Not mentioned"
+                    )
                 ),
                 "is_empty": lambda: len(notes.return_precautions) == 0,
             },
@@ -672,7 +707,6 @@ class ClinicalNotesApplicationService:
             section_num += 1
 
         return "\n".join(lines)
-
 
 
 @apply_logging_aspect("service", "llm_health")

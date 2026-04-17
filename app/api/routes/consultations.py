@@ -5,11 +5,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.api.deps import (
-    consultation_doc_repository,
     get_consultation_app_service,
     get_current_user,
 )
-from app.domain.clinical_notes.models import ConsultationDocument, TranscriptDocument
 from app.domain.consultations.models import ConsultationCreateRequest
 
 templates = Jinja2Templates(directory="app/templates")

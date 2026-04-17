@@ -86,32 +86,32 @@ PROMPT_DOCUMENTS: tuple[dict[str, Any], ...] = (
             "OUTPUT\n"
             "Return exactly one valid JSON object with these keys (no extra text):\n"
             "{\n"
-            "  \"patient_info\": {\"name\": \"\", \"age\": \"\", \"gender\": \"\", \"date_of_birth\": \"\", \"patient_id\": \"\", \"phone\": \"\", \"address\": \"\"},\n"
-            "  \"encounter_info\": {\"encounter_id\": \"\", \"date\": \"\", \"time\": \"\", \"visit_type\": \"\", \"clinician_name\": \"\", \"consultation_mode\": \"\", \"accompanied_by\": \"\", \"primary_language\": \"\", \"information_reliability\": \"\"},\n"
-            "  \"chief_complaint\": \"\",\n"
-            "  \"history_of_present_illness\": \"\",\n"
-            "  \"review_of_systems\": {\"general\": \"\", \"respiratory\": \"\", \"cardiovascular\": \"\", \"gastrointestinal\": \"\", \"neurological\": \"\", \"genitourinary\": \"\", \"musculoskeletal\": \"\", \"other\": \"\"},\n"
-            "  \"past_medical_history\": \"\",\n"
-            "  \"current_medications_mentioned\": [],\n"
-            "  \"allergies\": \"\",\n"
-            "  \"family_history\": \"\",\n"
-            "  \"social_history\": {\"smoking\": \"\", \"alcohol\": \"\", \"substance_use\": \"\", \"occupation\": \"\"},\n"
-            "  \"vitals\": {\"blood_pressure\": \"\", \"heart_rate\": \"\", \"temperature\": \"\", \"respiratory_rate\": \"\", \"spo2\": \"\", \"weight\": \"\", \"height\": \"\", \"bmi\": \"\"},\n"
-            "  \"examination_findings\": \"\",\n"
-            "  \"assessment\": {\"primary_diagnosis\": \"\", \"differential_diagnoses\": [], \"clinical_impression\": \"\"},\n"
-            "  \"diagnosis\": \"\",\n"
-            "  \"medications\": [{\"name\": \"\", \"dosage\": \"\", \"frequency\": \"\", \"duration\": \"\", \"route\": \"\", \"special_instructions\": \"\"}],\n"
-            "  \"plan\": {\"medications\": [], \"lab_tests_ordered\": [], \"imaging_ordered\": [], \"referrals\": [], \"follow_up\": \"\", \"patient_instructions\": \"\"},\n"
-            "  \"lab_tests_ordered\": [],\n"
-            "  \"follow_up\": \"\",\n"
-            "  \"patient_instructions\": \"\",\n"
-            "  \"return_precautions\": [],\n"
-            "  \"clinical_notes_summary\": \"\",\n"
-            "  \"missing_but_relevant_information\": [],\n"
-            "  \"clinician_approval\": {\"status\": \"\", \"reviewed_by\": \"\", \"reviewed_at\": \"\"},\n"
-            "  \"report_markdown\": \"\"\n"
+            '  "patient_info": {"name": "", "age": "", "gender": "", "date_of_birth": "", "patient_id": "", "phone": "", "address": ""},\n'
+            '  "encounter_info": {"encounter_id": "", "date": "", "time": "", "visit_type": "", "clinician_name": "", "consultation_mode": "", "accompanied_by": "", "primary_language": "", "information_reliability": ""},\n'
+            '  "chief_complaint": "",\n'
+            '  "history_of_present_illness": "",\n'
+            '  "review_of_systems": {"general": "", "respiratory": "", "cardiovascular": "", "gastrointestinal": "", "neurological": "", "genitourinary": "", "musculoskeletal": "", "other": ""},\n'
+            '  "past_medical_history": "",\n'
+            '  "current_medications_mentioned": [],\n'
+            '  "allergies": "",\n'
+            '  "family_history": "",\n'
+            '  "social_history": {"smoking": "", "alcohol": "", "substance_use": "", "occupation": ""},\n'
+            '  "vitals": {"blood_pressure": "", "heart_rate": "", "temperature": "", "respiratory_rate": "", "spo2": "", "weight": "", "height": "", "bmi": ""},\n'
+            '  "examination_findings": "",\n'
+            '  "assessment": {"primary_diagnosis": "", "differential_diagnoses": [], "clinical_impression": ""},\n'
+            '  "diagnosis": "",\n'
+            '  "medications": [{"name": "", "dosage": "", "frequency": "", "duration": "", "route": "", "special_instructions": ""}],\n'
+            '  "plan": {"medications": [], "lab_tests_ordered": [], "imaging_ordered": [], "referrals": [], "follow_up": "", "patient_instructions": ""},\n'
+            '  "lab_tests_ordered": [],\n'
+            '  "follow_up": "",\n'
+            '  "patient_instructions": "",\n'
+            '  "return_precautions": [],\n'
+            '  "clinical_notes_summary": "",\n'
+            '  "missing_but_relevant_information": [],\n'
+            '  "clinician_approval": {"status": "", "reviewed_by": "", "reviewed_at": ""},\n'
+            '  "report_markdown": ""\n'
             "}\n"
-            "Set report_markdown to an empty string. The system will render the final report." 
+            "Set report_markdown to an empty string. The system will render the final report."
         ),
         "temperature": 0.2,
         "max_tokens": 2600,

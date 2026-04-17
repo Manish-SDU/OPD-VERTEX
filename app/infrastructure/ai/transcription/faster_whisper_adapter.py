@@ -13,6 +13,7 @@ from app.domain.transcriptions.models import (
     TranscriptResult,
     TranscriptionService,
 )
+
 logger = getLogger("opd_vertex.infrastructure.ai.transcription")
 
 

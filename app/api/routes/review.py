@@ -194,7 +194,9 @@ def edit_report(
 ) -> HTMLResponse:
     """Edit and approve the clinical report (doctor/admin only)."""
     if user.get("role") not in ("doctor", "admin"):
-        raise HTTPException(status_code=403, detail="Only doctors and admins can edit reports")
+        raise HTTPException(
+            status_code=403, detail="Only doctors and admins can edit reports"
+        )
 
     consultation_document, generated_document, suggestive_review = (
         review_service.build_review_context(consultation_id)
@@ -222,7 +224,9 @@ def update_report_markdown(
 ) -> dict:
     """Update the markdown content of the clinical report."""
     if user.get("role") not in ("doctor", "admin"):
-        raise HTTPException(status_code=403, detail="Only doctors and admins can edit reports")
+        raise HTTPException(
+            status_code=403, detail="Only doctors and admins can edit reports"
+        )
 
     try:
         review_service.update_report_markdown(consultation_id, payload.report_markdown)

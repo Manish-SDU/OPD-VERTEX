@@ -4,6 +4,8 @@ Provides in-memory repositories and service instances so that tests
 run without MySQL/MongoDB connections.
 """
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import os

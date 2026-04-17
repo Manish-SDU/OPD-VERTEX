@@ -90,7 +90,9 @@ class TestMockSuggestiveModeService:
                         }
                     ],
                 ).model_dump(),
-                normalized_transcript={"normalized_text": "Penicillin allergy causing rash"},
+                normalized_transcript={
+                    "normalized_text": "Penicillin allergy causing rash"
+                },
                 system_prompt="system",
                 user_prompt_template="template",
             )
