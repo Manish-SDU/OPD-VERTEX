@@ -51,6 +51,37 @@ Return exactly one valid JSON object with these keys:
     "patient_instructions": ""
   },
   "clinical_notes_summary": "",
+  "encounter_info": {
+    "encounter_id": "",
+    "date": "",
+    "time": "",
+    "visit_type": "",
+    "clinician_name": "",
+    "consultation_mode": ""
+  },
+  "review_of_systems": {
+    "general": "",
+    "respiratory": "",
+    "cardiovascular": "",
+    "gastrointestinal": "",
+    "neurological": "",
+    "genitourinary": "",
+    "musculoskeletal": "",
+    "other": ""
+  },
+  "family_history": "",
+  "social_history": {
+    "smoking": "",
+    "alcohol": "",
+    "substance_use": "",
+    "occupation": ""
+  },
+  "return_precautions": [],
+  "clinician_approval": {
+    "status": "",
+    "reviewed_by": "",
+    "reviewed_at": ""
+  },
   "missing_but_relevant_information": []
 }
 

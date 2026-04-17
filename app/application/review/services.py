@@ -122,6 +122,18 @@ class ReviewApplicationService:
         )
         return saved_document
 
+    def update_report_markdown(self, consultation_id: int, markdown: str) -> GeneratedDocument:
+        """Update the report_markdown field of a generated document."""
+        generated_document = self.generated_repository.get_by_consultation_id(
+            consultation_id
+        )
+        if generated_document is None:
+            raise ValueError(f"Consultation {consultation_id} does not have a generated document.")
+
+        generated_document.generated_output.report_markdown = markdown
+        generated_document.updated_at = utcnow()
+        return self.generated_repository.save(generated_document)
+
     def _find_latest_prescription_for_consultation(
         self, consultation_id: int
     ) -> Prescription | None:

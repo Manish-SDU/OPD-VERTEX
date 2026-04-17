@@ -4,7 +4,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.api.deps import get_auth_app_service
+from app.api.deps import get_auth_app_service, get_optional_current_user
 from app.domain.auth.models import LoginRequest
 from app.core.security import create_access_token
 
@@ -14,6 +14,8 @@ router = APIRouter()
 
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request) -> HTMLResponse:
+    if get_optional_current_user(request):
+        return RedirectResponse(url="/dashboard", status_code=303)
     return templates.TemplateResponse(
         request, "auth/login.html", {"page_title": "Login"}
     )

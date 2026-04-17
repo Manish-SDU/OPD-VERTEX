@@ -56,6 +56,67 @@ PROMPT_DOCUMENTS: tuple[dict[str, Any], ...] = (
         "max_tokens": 2200,
     },
     {
+        "_id": "clinical_report_generation_v3",
+        "prompt_name": "Clinical Report Generation (Template Output)",
+        "version": 3,
+        "model_target": "qwen3:8b",
+        "system_prompt": (
+            "You generate an English outpatient clinical report from a cleaned transcript. "
+            "Return JSON only. Do not invent clinical facts. If data is missing, use 'Not mentioned' "
+            "for strings and [] for lists. Keep medication details exactly as stated."
+        ),
+        "user_prompt_template": (
+            "Consultation {consultation_id}\n"
+            "Facility: {facility_name} | Department: {department}\n"
+            "Encounter date: {encounter_date} | time: {encounter_time}\n"
+            "Clinician: {clinician_name}\n\n"
+            "PATIENT METADATA\n"
+            "- Name: {patient_name}\n"
+            "- Age: {patient_age}\n"
+            "- Gender: {patient_gender}\n"
+            "- DOB: {patient_date_of_birth}\n"
+            "- Phone: {patient_phone}\n"
+            "- Address: {patient_address}\n"
+            "- Known Allergies: {patient_allergies}\n"
+            "- Medical History: {patient_medical_history}\n\n"
+            "RAW TRANSCRIPT (verbatim)\n"
+            "{transcript_text}\n\n"
+            "NORMALIZED TRANSCRIPT JSON\n"
+            "{normalized_transcript}\n\n"
+            "OUTPUT\n"
+            "Return exactly one valid JSON object with these keys (no extra text):\n"
+            "{\n"
+            "  \"patient_info\": {\"name\": \"\", \"age\": \"\", \"gender\": \"\", \"date_of_birth\": \"\", \"patient_id\": \"\", \"phone\": \"\", \"address\": \"\"},\n"
+            "  \"encounter_info\": {\"encounter_id\": \"\", \"date\": \"\", \"time\": \"\", \"visit_type\": \"\", \"clinician_name\": \"\", \"consultation_mode\": \"\", \"accompanied_by\": \"\", \"primary_language\": \"\", \"information_reliability\": \"\"},\n"
+            "  \"chief_complaint\": \"\",\n"
+            "  \"history_of_present_illness\": \"\",\n"
+            "  \"review_of_systems\": {\"general\": \"\", \"respiratory\": \"\", \"cardiovascular\": \"\", \"gastrointestinal\": \"\", \"neurological\": \"\", \"genitourinary\": \"\", \"musculoskeletal\": \"\", \"other\": \"\"},\n"
+            "  \"past_medical_history\": \"\",\n"
+            "  \"current_medications_mentioned\": [],\n"
+            "  \"allergies\": \"\",\n"
+            "  \"family_history\": \"\",\n"
+            "  \"social_history\": {\"smoking\": \"\", \"alcohol\": \"\", \"substance_use\": \"\", \"occupation\": \"\"},\n"
+            "  \"vitals\": {\"blood_pressure\": \"\", \"heart_rate\": \"\", \"temperature\": \"\", \"respiratory_rate\": \"\", \"spo2\": \"\", \"weight\": \"\", \"height\": \"\", \"bmi\": \"\"},\n"
+            "  \"examination_findings\": \"\",\n"
+            "  \"assessment\": {\"primary_diagnosis\": \"\", \"differential_diagnoses\": [], \"clinical_impression\": \"\"},\n"
+            "  \"diagnosis\": \"\",\n"
+            "  \"medications\": [{\"name\": \"\", \"dosage\": \"\", \"frequency\": \"\", \"duration\": \"\", \"route\": \"\", \"special_instructions\": \"\"}],\n"
+            "  \"plan\": {\"medications\": [], \"lab_tests_ordered\": [], \"imaging_ordered\": [], \"referrals\": [], \"follow_up\": \"\", \"patient_instructions\": \"\"},\n"
+            "  \"lab_tests_ordered\": [],\n"
+            "  \"follow_up\": \"\",\n"
+            "  \"patient_instructions\": \"\",\n"
+            "  \"return_precautions\": [],\n"
+            "  \"clinical_notes_summary\": \"\",\n"
+            "  \"missing_but_relevant_information\": [],\n"
+            "  \"clinician_approval\": {\"status\": \"\", \"reviewed_by\": \"\", \"reviewed_at\": \"\"},\n"
+            "  \"report_markdown\": \"\"\n"
+            "}\n"
+            "Set report_markdown to an empty string. The system will render the final report." 
+        ),
+        "temperature": 0.2,
+        "max_tokens": 2600,
+    },
+    {
         "_id": "suggestive_mode_v2",
         "prompt_name": "Suggestive Mode -- Clinical Safety Net",
         "version": 2,

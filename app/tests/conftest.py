@@ -6,7 +6,17 @@ run without MySQL/MongoDB connections.
 
 from __future__ import annotations
 
+import os
+
 import pytest
+
+# Ensure tests never pick up a local .env that points at real DBs.
+os.environ["USE_MOCK_ADAPTERS"] = "true"
+os.environ["APP_NAME"] = "MedFlow"
+
+from app.core.config import get_settings
+
+get_settings.cache_clear()
 
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryAuditLogRepository,
@@ -197,6 +207,8 @@ def clinical_notes_app_service(
     consultation_doc_repo,
     generated_doc_repo,
     prompt_repo,
+    patient_repo,
+    staff_repo,
     transcript_normalization_app_service,
     note_generator,
 ):
@@ -205,6 +217,8 @@ def clinical_notes_app_service(
         consultation_doc_repo,
         generated_doc_repo,
         prompt_repo,
+        patient_repo,
+        staff_repo,
         transcript_normalization_app_service,
         note_generator,
     )

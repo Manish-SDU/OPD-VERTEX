@@ -43,8 +43,8 @@ class TestMockClinicalNoteGenerator:
                     normalized_text="Patient has headache",
                 ),
                 prompt=LlmPromptConfig(
-                    id="clinical_report_generation_v2",
-                    prompt_name="Clinical Report Generation",
+                    id="clinical_report_generation_v3",
+                    prompt_name="Clinical Report Generation (Template Output)",
                 ),
             )
         )
@@ -68,6 +68,36 @@ class TestMockSuggestiveModeService:
         )
         assert review.overall_risk_level == RiskLevel.GREEN
         assert review.consultation_id == 1
+
+    def test_flags_allergy_conflict_when_medication_is_contraindicated(
+        self, suggestive_service
+    ):
+        review = suggestive_service.review(
+            SuggestiveReviewRequest(
+                consultation_id=4103,
+                doctor_id=1,
+                patient_id=5103,
+                generated_report=GeneratedClinicalNotes(
+                    diagnosis="Acute bacterial rhinosinusitis",
+                    allergies="Penicillin allergy causing rash",
+                    medications=[
+                        {
+                            "name": "Amoxicillin",
+                            "dosage": "500 mg",
+                            "frequency": "three times daily",
+                            "duration": "7 days",
+                            "route": "oral",
+                        }
+                    ],
+                ).model_dump(),
+                normalized_transcript={"normalized_text": "Penicillin allergy causing rash"},
+                system_prompt="system",
+                user_prompt_template="template",
+            )
+        )
+        assert review.overall_risk_level == RiskLevel.RED
+        assert review.suggestions
+        assert review.suggestions[0].title == "Penicillin allergy conflict"
 
 
 class TestMockTranscriptNormalizer:
@@ -122,6 +152,12 @@ class TestConsultationDocumentRepository:
         assert retrieved is not None
         assert retrieved.transcript.full_text == "hello world"
 
+    def test_preloads_demo_transcripts_for_report_generation(self):
+        repo = InMemoryConsultationDocumentRepository()
+        retrieved = repo.get_by_consultation_id(4101)
+        assert retrieved is not None
+        assert "sore throat" in retrieved.transcript.full_text
+
 
 class TestPrescriptionArtifactRepository:
     def test_save_and_get_latest(self, prescription_artifact_repo):
@@ -152,9 +188,9 @@ class TestPromptRepository:
         assert len(prompts) >= 3
 
     def test_get_by_id(self, prompt_repo):
-        prompt = prompt_repo.get_by_id("clinical_report_generation_v2")
+        prompt = prompt_repo.get_by_id("clinical_report_generation_v3")
         assert prompt is not None
-        assert prompt.prompt_name == "Clinical Report Generation"
+        assert prompt.prompt_name == "Clinical Report Generation (Template Output)"
 
     def test_get_by_id_unknown(self, prompt_repo):
         assert prompt_repo.get_by_id("nonexistent") is None

@@ -226,7 +226,22 @@ if (startBtn) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ consultation_id: consultationId })
         });
-        const data = await resp.json();
+        const raw = await resp.text();
+        if (!resp.ok) {
+          throw new Error(`Start session failed (${resp.status}): ${raw.substring(0, 180)}`);
+        }
+
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch (parseErr) {
+          throw new Error(`Start session returned non-JSON response: ${raw.substring(0, 180)}`);
+        }
+
+        if (!data || !data.session_id) {
+          throw new Error('Start session response is missing session_id');
+        }
+
         sessionId = data.session_id;
         console.log(`[Session] Created new session: ${sessionId}`);
       } else {
@@ -236,7 +251,18 @@ if (startBtn) {
       ws.binaryType = 'arraybuffer';
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
+          if (typeof event.data !== 'string') {
+            // Ignore non-text websocket frames.
+            return;
+          }
+
+          const trimmed = event.data.trim();
+          if (!trimmed.startsWith('{')) {
+            // Ignore heartbeat or unexpected plain-text frames.
+            return;
+          }
+
+          const data = JSON.parse(trimmed);
           if (data.chunk_id !== undefined) {
             const li = document.createElement('li');
             li.textContent = `[${data.timestamp}s] ${data.text}`;

@@ -1,9 +1,26 @@
 # Handover TODO
 
-- DB work goes into `app/infrastructure/db/sql` and `app/infrastructure/db/mongo`, with contracts already defined in `app/domain`.
-- AI transcription work goes into `app/infrastructure/ai/transcription`; use `TranscriptionService`.
-- AI note generation and suggestive mode work go into `app/infrastructure/ai/llm`; keep generators separate.
-- PDF generation work goes into `app/infrastructure/pdf`; implement `PdfGenerator`.
-- Auth/session work goes into `app/infrastructure/auth`; keep RBAC checks outside route bodies.
-- Email delivery work goes into `app/infrastructure/email`; implement `EmailService` and migrate template storage to Mongo.
-- Review approval persistence should project finalized prescriptions into SQL after clinician approval.
+## Completed
+
+- Auth/login flow cleaned up
+- Consultation creation fixed
+- Profile lookup fixed
+- Mock demo consultations/transcripts improved
+- Mock report generation made more realistic
+- Mock suggestive review made more realistic
+- Review/report UI improved
+- Clean print view added for report export
+
+## Next
+
+- Implement true server-side PDF export
+  Reference: [server-side-pdf-export.md](/abs/path/c:/Users/gigi/Documents/GitHub/OPD-VERTEX/docs/server-side-pdf-export.md:1)
+
+- Implement a stronger real Suggestive Mode
+  Reference: [suggestive-mode-implementation-guide.md](/abs/path/c:/Users/gigi/Documents/GitHub/OPD-VERTEX/docs/suggestive-mode-implementation-guide.md:1)
+
+## Notes
+
+- Best demo cases: `4101` to `4104`
+- Best safety-review case: `4103`
+- Current `Export PDF` is still print-view based, not true backend PDF generation

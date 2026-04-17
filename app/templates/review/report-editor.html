@@ -1,0 +1,736 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="report-editor-container">
+  <div class="report-header">
+    <h1>Review & Approve Clinical Report</h1>
+    <p class="report-meta">Consultation ID: <strong>#{{ consultation_id }}</strong></p>
+  </div>
+
+  {% if generated_document and generated_document.generated_output.report_markdown %}
+  <form id="report-form" class="report-editor-form">
+    <div class="editor-section">
+      <label for="report-textarea"><strong>Clinical Report Markdown</strong></label>
+      <p class="editor-help">Edit the report below. All changes will be saved before approval.</p>
+      <textarea 
+        id="report-textarea" 
+        name="report_markdown" 
+        class="report-textarea"
+        placeholder="Edit the clinical report...">{{ generated_document.generated_output.report_markdown }}</textarea>
+    </div>
+
+    <div class="editor-preview">
+      <h3>Live Preview</h3>
+      <div id="preview-pane" class="preview-content">
+        <div id="preview-text" class="editor-rendered-report"></div>
+      </div>
+    </div>
+
+    <div class="editor-actions">
+      <div class="action-buttons">
+        <button type="button" class="btn btn-success" onclick="submitApprove()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Approve Report
+        </button>
+        <button type="button" class="btn btn-danger" onclick="submitReject()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          Reject Report
+        </button>
+        <a href="/review/report/{{ consultation_id }}" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Cancel
+        </a>
+      </div>
+    </div>
+
+    <input type="hidden" name="consultation_id" value="{{ consultation_id }}">
+    <input type="hidden" id="action" name="action" value="">
+  </form>
+
+  <div class="editor-status">
+    <p><strong>Current Status:</strong> 
+      <span class="badge badge-{{ generated_document.status|lower }}">
+        {{ generated_document.status }}
+      </span>
+    </p>
+  </div>
+
+  {% else %}
+  <div class="alert alert-error">
+    <p>No clinical report found for this consultation. Please generate a report first.</p>
+  </div>
+  <div class="back-link">
+    <a href="/review/{{ consultation_id }}">&larr; Back to Review</a>
+  </div>
+  {% endif %}
+</section>
+
+<script>
+const textarea = document.getElementById('report-textarea');
+const previewText = document.getElementById('preview-text');
+const actionInput = document.getElementById('action');
+
+function escapeHtml(value) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderReportLines(lines) {
+  const html = [];
+  let listItems = [];
+
+  function flushList() {
+    if (!listItems.length) return;
+    html.push(`<ul class="editor-report-list">${listItems.join('')}</ul>`);
+    listItems = [];
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushList();
+      continue;
+    }
+    if (line.startsWith('- ')) {
+      listItems.push(`<li>${escapeHtml(line.slice(2))}</li>`);
+      continue;
+    }
+    flushList();
+    if (/^[A-Z]\.\s+/.test(line)) {
+      html.push(`<h4 class="editor-report-subsection">${escapeHtml(line)}</h4>`);
+    } else if (line.includes(':')) {
+      const [label, ...rest] = line.split(':');
+      html.push(
+        `<div class="editor-report-field"><span class="editor-report-field-label">${escapeHtml(label)}:</span><span class="editor-report-field-value">${escapeHtml(rest.join(':').trim() || '-')}</span></div>`
+      );
+    } else {
+      html.push(`<p class="editor-report-paragraph">${escapeHtml(line)}</p>`);
+    }
+  }
+
+  flushList();
+  return html.join('');
+}
+
+function renderStructuredReport(rawText) {
+  const lines = rawText.split(/\r?\n/).map((line) => line.trimEnd());
+  const nonEmptyLines = lines.filter((line) => line.trim() !== '');
+  if (!nonEmptyLines.length) {
+    return '<p class="editor-report-empty">No report content available.</p>';
+  }
+
+  const title = nonEmptyLines[0];
+  const separatorIndex = lines.findIndex((line) => /^-+$/.test(line.trim()));
+  const metadataLines = separatorIndex === -1
+    ? nonEmptyLines.slice(1)
+    : lines.slice(1, separatorIndex).filter((line) => line.trim() !== '');
+
+  const metadataHtml = metadataLines.map((line) => {
+    if (!line.includes(':')) {
+      return `<div class="editor-meta-item editor-meta-item--full">${escapeHtml(line)}</div>`;
+    }
+    const [label, ...rest] = line.split(':');
+    return `
+      <div class="editor-meta-item">
+        <span class="editor-meta-label">${escapeHtml(label)}</span>
+        <span class="editor-meta-value">${escapeHtml(rest.join(':').trim() || '-')}</span>
+      </div>
+    `;
+  }).join('');
+
+  const sectionMatches = [...rawText.matchAll(/(?:^|\n)-+\n(\d+\.\s+.+?)\n-+\n([\s\S]*?)(?=\n-+\n\d+\.\s+.+?\n-+|\s*$)/g)];
+  const sectionsHtml = sectionMatches.map((match) => `
+    <section class="editor-report-section">
+      <h3 class="editor-report-section-title">${escapeHtml(match[1].trim())}</h3>
+      <div class="editor-report-section-body">${renderReportLines(match[2].split(/\r?\n/))}</div>
+    </section>
+  `).join('');
+
+  return `
+    <article class="editor-report-paper">
+      <header class="editor-report-header">
+        <p class="editor-report-eyebrow">Live preview</p>
+        <h2>${escapeHtml(title)}</h2>
+      </header>
+      <section class="editor-meta-grid">${metadataHtml}</section>
+      <div class="editor-report-sections">${sectionsHtml}</div>
+    </article>
+  `;
+}
+
+function updatePreview() {
+  if (!textarea || !previewText) return;
+  previewText.innerHTML = renderStructuredReport(textarea.value);
+}
+
+// Live preview updates
+if (textarea) {
+  textarea.addEventListener('input', function() {
+    updatePreview();
+  });
+}
+updatePreview();
+
+async function submitApprove() {
+  actionInput.value = 'approve';
+  await submitForm();
+}
+
+async function submitReject() {
+  if (!confirm('Are you sure you want to reject this report? This action cannot be undone.')) {
+    return;
+  }
+  actionInput.value = 'reject';
+  await submitForm();
+}
+
+async function submitForm() {
+  const form = document.getElementById('report-form');
+  const consultation_id = form.consultation_id.value;
+  const action = form.action.value;
+  const report_markdown = form.report_markdown.value;
+
+  try {
+    // First, save the markdown updates
+    if (action === 'approve') {
+      const updateRes = await fetch(`/review/report/${consultation_id}/update-markdown`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report_markdown })
+      });
+
+      if (!updateRes.ok) {
+        throw new Error('Failed to save report updates');
+      }
+
+      // Then approve
+      const approveRes = await fetch(`/review/${consultation_id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!approveRes.ok) {
+        throw new Error('Failed to approve report');
+      }
+
+      const result = await approveRes.json();
+      showSuccess('Report approved successfully!');
+      setTimeout(() => {
+        window.location.replace(`/review/report/${consultation_id}`);
+      }, 500);
+
+    } else if (action === 'reject') {
+      const rejectRes = await fetch(`/review/${consultation_id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!rejectRes.ok) {
+        throw new Error('Failed to reject report');
+      }
+
+      showSuccess('Report rejected. You can generate a new one.');
+      setTimeout(() => {
+        window.location.href = `/review/${consultation_id}`;
+      }, 1500);
+    }
+  } catch (error) {
+    showError(`Error: ${error.message}`);
+  }
+}
+
+function showSuccess(message) {
+  const alert = document.createElement('div');
+  alert.className = 'toast toast-success';
+  alert.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span>${message}</span>
+  `;
+  document.body.appendChild(alert);
+  setTimeout(() => alert.remove(), 3000);
+}
+
+function showError(message) {
+  const alert = document.createElement('div');
+  alert.className = 'toast toast-error';
+  alert.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+    <span>${message}</span>
+  `;
+  document.body.appendChild(alert);
+  setTimeout(() => alert.remove(), 4000);
+}
+</script>
+
+<style>
+.report-editor-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.report-header {
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 1.5rem;
+}
+
+.report-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  color: var(--text);
+}
+
+.report-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.report-editor-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.editor-section {
+  grid-column: 1;
+}
+
+.editor-section label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.editor-help {
+  margin: 0.5rem 0 1rem 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.report-textarea {
+  width: 100%;
+  min-height: 600px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: vertical;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.report-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+
+.editor-preview {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-preview h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.preview-content {
+  flex: 1;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 28%),
+    linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 1.5rem;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.editor-report-header {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.editor-report-header h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.editor-report-eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.editor-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.editor-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+}
+
+.editor-meta-item--full {
+  grid-column: 1 / -1;
+}
+
+.editor-meta-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.editor-meta-value {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.editor-report-sections {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.editor-report-section {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.editor-report-section-title {
+  margin: 0 0 0.8rem;
+  color: #0f172a;
+  font-size: 0.98rem;
+}
+
+.editor-report-section-body {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.editor-report-field {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) 1fr;
+  gap: 0.7rem;
+}
+
+.editor-report-field-label {
+  color: #475569;
+  font-weight: 700;
+}
+
+.editor-report-field-value,
+.editor-report-paragraph {
+  color: #0f172a;
+}
+
+.editor-report-paragraph {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.editor-report-subsection {
+  margin: 0.15rem 0 0;
+  font-size: 0.92rem;
+  color: #1d4ed8;
+}
+
+.editor-report-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.editor-report-empty {
+  margin: 0;
+  color: #64748b;
+}
+
+.editor-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.action-buttons .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-width: 190px;
+  min-height: 56px;
+  padding: 0.95rem 1.35rem;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease,
+    background-color 0.16s ease, color 0.16s ease;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.action-buttons .btn:hover {
+  transform: translateY(-1px);
+}
+
+.action-buttons .btn svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  stroke-width: 2.2;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #15803d, #22c55e);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(21, 128, 61, 0.22);
+}
+
+.btn-success:hover {
+  box-shadow: 0 16px 32px rgba(21, 128, 61, 0.28);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #b91c1c, #ef4444);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(185, 28, 28, 0.2);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 16px 32px rgba(185, 28, 28, 0.26);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+}
+
+.btn-secondary:hover {
+  background: #eff6ff;
+  border-color: rgba(37, 99, 235, 0.35);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.14);
+}
+
+.editor-status {
+  background: var(--blue-50);
+  border: 1px solid var(--blue-200);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.editor-status p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-draft {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-pending {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.alert {
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+}
+
+.alert-error {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+.back-link {
+  margin-top: 2rem;
+}
+
+.back-link a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
+}
+
+.back-link a:hover {
+  color: var(--accent-hover);
+}
+
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.3s ease-out;
+  z-index: 9999;
+}
+
+.toast-success {
+  background: var(--success);
+}
+
+.toast-error {
+  background: var(--danger);
+}
+
+.toast svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1024px) {
+  .report-editor-form {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-section {
+    grid-column: 1;
+  }
+
+  .editor-preview {
+    grid-column: 1;
+  }
+
+  .report-textarea {
+    min-height: 400px;
+  }
+
+  .preview-content {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .report-editor-container {
+    padding: 1rem;
+  }
+
+  .report-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .report-textarea {
+    min-height: 300px;
+  }
+
+  .preview-content {
+    min-height: 300px;
+    border-radius: 18px;
+  }
+
+  .editor-report-field {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .action-buttons .btn {
+    width: 100%;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .toast {
+    left: 1rem;
+    right: 1rem;
+  }
+}
+</style>
+{% endblock %}

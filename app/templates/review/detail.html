@@ -2,6 +2,18 @@
 {% block content %}
 <section class="card">
   <h2>Review Workflow: {{ consultation_id }}</h2>
+  {% if user and user.role in ['doctor', 'admin'] %}
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin: 0.75rem 0 1.25rem 0;">
+    {% if not generated_document %}
+    <button type="button" class="btn-primary" onclick="runReviewAction('generate')">Generate Report</button>
+    {% else %}
+    <button type="button" class="btn-secondary" onclick="runReviewAction('regenerate')">Regenerate Report</button>
+    {% endif %}
+    <button type="button" class="btn-secondary" onclick="runReviewAction('suggestive-review')">Run Suggestive Review</button>
+  </div>
+  <p id="review-action-status" style="display:none; margin:0 0 1rem 0; color: var(--muted);"></p>
+  {% endif %}
+
   {% if consultation_document %}
   <h3>Transcript</h3>
   <p>{{ consultation_document.transcript.full_text }}</p>
@@ -20,6 +32,27 @@
   <p><strong>Diagnosis:</strong> {{ generated_document.generated_output.diagnosis }}</p>
   <p><strong>Patient Instructions:</strong> {{ generated_document.generated_output.patient_instructions }}</p>
   <p><strong>Status:</strong> {{ generated_document.status }}</p>
+
+  <h3>Clinical Report (template.md format)</h3>
+  <div style="margin: 0.75rem 0 1.5rem 0; display: flex; gap: 1rem; flex-wrap: wrap;">
+    {% if user and user.role in ['doctor', 'admin'] %}
+    <a href="/review/report/{{ consultation_id }}/edit" style="display: inline-block; padding: 0.6rem 1.15rem; background: var(--blue-600); color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
+      Edit & Approve
+    </a>
+    {% endif %}
+    <a href="/review/report/{{ consultation_id }}" style="display: inline-block; padding: 0.6rem 1.15rem; background: var(--surface); color: var(--blue-600); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
+      View Report
+    </a>
+  </div>
+
+  {% if generated_document.generated_output.report_markdown %}
+  <div class="report-inline-preview">
+    <pre id="detail-report-raw" style="display:none;">{{ generated_document.generated_output.report_markdown }}</pre>
+    <div id="detail-report-rendered"></div>
+  </div>
+  {% else %}
+  <p>No template-style report text is available yet.</p>
+  {% endif %}
   {% else %}
   <p>No AI report has been generated yet.</p>
   {% endif %}
@@ -34,4 +67,89 @@
   </ul>
   <p><strong>Summary:</strong> {{ suggestive_review.summary }}</p>
 </section>
+
+{% if user and user.role in ['doctor', 'admin'] %}
+<script>
+function escapeHtml(value) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderDetailReport(rawText) {
+  const sectionMatches = [...rawText.matchAll(/(?:^|\n)-+\n(\d+\.\s+.+?)\n-+\n([\s\S]*?)(?=\n-+\n\d+\.\s+.+?\n-+|\s*$)/g)];
+  if (!sectionMatches.length) {
+    return `<pre style="white-space: pre-wrap; margin:0;">${escapeHtml(rawText)}</pre>`;
+  }
+  return sectionMatches.map((match) => {
+    const lines = match[2].split(/\r?\n/).filter((line) => line.trim() !== '');
+    const content = lines.map((line) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('- ')) {
+        return `<li>${escapeHtml(trimmed.slice(2))}</li>`;
+      }
+      return `<p>${escapeHtml(trimmed)}</p>`;
+    }).join('');
+    return `
+      <section style="background:#f8fbff;border:1px solid #dbe4f0;border-radius:14px;padding:1rem;margin-bottom:0.75rem;">
+        <h4 style="margin:0 0 0.65rem;color:#0f172a;">${escapeHtml(match[1].trim())}</h4>
+        <div style="display:grid;gap:0.45rem;color:#0f172a;">${content}</div>
+      </section>
+    `;
+  }).join('');
+}
+
+const detailRaw = document.getElementById('detail-report-raw');
+const detailRendered = document.getElementById('detail-report-rendered');
+if (detailRaw && detailRendered) {
+  detailRendered.innerHTML = renderDetailReport(detailRaw.textContent || '');
+}
+
+async function runReviewAction(action) {
+  const statusEl = document.getElementById('review-action-status');
+  const actionPathByAction = {
+    generate: 'generate-report',
+    regenerate: 'regenerate',
+    'suggestive-review': 'suggestive-review',
+  };
+  const actionPath = actionPathByAction[action];
+
+  if (statusEl) {
+    statusEl.style.display = 'block';
+    statusEl.textContent = 'Working...';
+  }
+
+  if (!actionPath) {
+    if (statusEl) {
+      statusEl.textContent = `Error: unsupported action "${action}"`;
+    }
+    return;
+  }
+
+  try {
+    const response = await fetch(`/review/{{ consultation_id }}/${actionPath}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.detail || `Request failed (${response.status})`);
+    }
+
+    if (statusEl) {
+      statusEl.textContent = 'Done. Reloading page...';
+    }
+    window.location.reload();
+  } catch (error) {
+    if (statusEl) {
+      statusEl.textContent = `Error: ${error.message}`;
+    }
+  }
+}
+</script>
+{% endif %}
 {% endblock %}

@@ -24,6 +24,9 @@ class Vitals(BaseModel):
     temperature: str = "Not recorded"
     respiratory_rate: str = "Not recorded"
     spo2: str = "Not recorded"
+    weight: str = "Not recorded"
+    height: str = "Not recorded"
+    bmi: str = "Not recorded"
 
 
 class NormalizedTranscript(BaseModel):
@@ -82,33 +85,132 @@ class LlmHealthStatus(BaseModel):
 # --- Generated clinical notes (LLM output) -----------------------------
 
 
+class Assessment(BaseModel):
+    primary_diagnosis: str = ""
+    differential_diagnoses: list[str] = Field(default_factory=list)
+    clinical_impression: str = ""
+
+    @field_validator("differential_diagnoses", mode="before")
+    @classmethod
+    def _coerce_differentials(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, str):
+            cleaned = value.strip()
+            return [cleaned] if cleaned else []
+        return value
+
+
+class Plan(BaseModel):
+    medications: list[Medication] = Field(default_factory=list)
+    lab_tests_ordered: list[str] = Field(default_factory=list)
+    imaging_ordered: list[str] = Field(default_factory=list)
+    referrals: list[str] = Field(default_factory=list)
+    follow_up: str = ""
+    patient_instructions: str = ""
+
+    @field_validator(
+        "lab_tests_ordered",
+        "imaging_ordered",
+        "referrals",
+        mode="before",
+    )
+    @classmethod
+    def _coerce_string_list_fields(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, str):
+            cleaned = value.strip()
+            return [cleaned] if cleaned else []
+        return value
+
+
+class EncounterInfo(BaseModel):
+    encounter_id: str = ""
+    date: str = ""
+    time: str = ""
+    visit_type: str = ""
+    clinician_name: str = ""
+    consultation_mode: str = ""
+    accompanied_by: str = ""
+    primary_language: str = ""
+    information_reliability: str = ""
+
+
+class ReviewOfSystems(BaseModel):
+    general: str = ""
+    respiratory: str = ""
+    cardiovascular: str = ""
+    gastrointestinal: str = ""
+    neurological: str = ""
+    genitourinary: str = ""
+    musculoskeletal: str = ""
+    other: str = ""
+
+
+class SocialHistory(BaseModel):
+    smoking: str = ""
+    alcohol: str = ""
+    substance_use: str = ""
+    occupation: str = ""
+
+
+class ClinicianApproval(BaseModel):
+    status: str = ""
+    reviewed_by: str = ""
+    reviewed_at: str = ""
+
+
 class GeneratedClinicalNotes(BaseModel):
     """Structure returned by the Prescription & Clinical Notes Generator prompt."""
 
     patient_info: dict[str, str] = Field(default_factory=dict)
+    encounter_info: EncounterInfo = Field(default_factory=EncounterInfo)
+
     chief_complaint: str = ""
     history_of_present_illness: str = ""
+    review_of_systems: ReviewOfSystems = Field(default_factory=ReviewOfSystems)
+
     past_medical_history: str = ""
+    current_medications_mentioned: list[str] = Field(default_factory=list)
+
     allergies: str = ""
+    family_history: str = ""
+    social_history: SocialHistory = Field(default_factory=SocialHistory)
+
     vitals: Vitals = Field(default_factory=Vitals)
     examination_findings: str = ""
+
+    assessment: Assessment = Field(default_factory=Assessment)
     diagnosis: str = ""
+
     medications: list[Medication] = Field(default_factory=list)
+    plan: Plan = Field(default_factory=Plan)
+
     lab_tests_ordered: list[str] = Field(default_factory=list)
     follow_up: str = ""
     patient_instructions: str = ""
+
+    return_precautions: list[str] = Field(default_factory=list)
+    clinician_approval: ClinicianApproval = Field(default_factory=ClinicianApproval)
+
     clinical_notes_summary: str = ""
+    missing_but_relevant_information: list[str] = Field(default_factory=list)
+
+    report_markdown: str = ""
 
     @field_validator(
         "chief_complaint",
         "history_of_present_illness",
         "past_medical_history",
         "allergies",
+        "family_history",
         "examination_findings",
         "diagnosis",
         "follow_up",
         "patient_instructions",
         "clinical_notes_summary",
+        "report_markdown",
         mode="before",
     )
     @classmethod
@@ -139,14 +241,37 @@ class GeneratedClinicalNotes(BaseModel):
             return {}
         return value
 
-    @field_validator("lab_tests_ordered", mode="before")
+    @field_validator(
+        "encounter_info",
+        "review_of_systems",
+        "social_history",
+        "assessment",
+        "plan",
+        "clinician_approval",
+        mode="before",
+    )
     @classmethod
-    def _coerce_lab_tests_ordered(cls, value):
+    def _coerce_nested_models(cls, value):
+        if value is None:
+            return {}
+        return value
+
+    @field_validator(
+        "lab_tests_ordered",
+        "current_medications_mentioned",
+        "return_precautions",
+        "missing_but_relevant_information",
+        mode="before",
+    )
+    @classmethod
+    def _coerce_string_lists(cls, value):
         if value is None:
             return []
         if isinstance(value, str):
             cleaned = value.strip()
             return [cleaned] if cleaned else []
+        if isinstance(value, list):
+            return [str(item) for item in value if item is not None and str(item).strip()]
         return value
 
     @field_validator("medications", mode="before")
@@ -345,6 +470,24 @@ class ClinicalReportRequest(BaseModel):
     consultation_id: int
     doctor_id: int
     patient_id: int
+
+    patient_name: str = ""
+    patient_age: str = ""
+    patient_gender: str = ""
+    patient_date_of_birth: str = ""
+    patient_phone: str = ""
+    patient_address: str = ""
+    patient_allergies: str = ""
+    patient_medical_history: str = ""
+
+    clinician_name: str = ""
+    facility_name: str = ""
+    department: str = ""
+    visit_type: str = ""
+    consultation_mode: str = ""
+    encounter_date: str = ""
+    encounter_time: str = ""
+
     transcript_text: str
     normalized_transcript: NormalizedTranscript
     prompt: LlmPromptConfig

@@ -113,6 +113,7 @@ Note: `docker compose` reads `.env` automatically (and this repo also loads `.en
 Important variables:
 
 - `LOCAL_LLM_ENDPOINT` default: `http://localhost:11434`
+- `WHISPER_API_URL` default: `http://localhost:8001`
 - `LLM_MODEL_NAME` default: `qwen3:8b`
 - `LLM_TEMPERATURE` default: `0.2`
 - `LLM_MAX_TOKENS` default: `2200`
@@ -247,7 +248,7 @@ python -m app.infrastructure.db.mongo.seeds
 Seeded prompt IDs:
 
 - `transcript_normalization_v1`
-- `clinical_report_generation_v2`
+- `clinical_report_generation_v3`
 - `suggestive_mode_v2`
 
 ## Seeded Demo Consultations
@@ -341,6 +342,8 @@ curl http://127.0.0.1:8000/llm/health
   Make sure `ollama serve` is running and `LOCAL_LLM_ENDPOINT` is correct.
 - Docker backend cannot reach Ollama
   Keep Ollama on the host and use `host.docker.internal:11434`.
+- Whisper API cannot be resolved
+  Use `WHISPER_API_URL=http://localhost:8001` on the host, or keep the Docker override that points the app container at `http://whisper:8001`.
 - `Prompt '...' is missing from llm_prompts`
   Enable `SEED_PROMPTS_ON_STARTUP=true` or run `python -m app.infrastructure.db.mongo.seeds`.
 - Demo consultations are missing

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title or "Print Clinical Report" }}</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #d6deea;
+      --panel: #ffffff;
+      --accent: #1d4ed8;
+      --accent-soft: #e8f0ff;
+      --paper-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #eef4fb, #f8fbff);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .print-shell {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    .print-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .print-toolbar__hint {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .print-toolbar__actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .print-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      min-height: 48px;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      text-decoration: none;
+      font: 700 0.95rem/1 "Segoe UI", Tahoma, sans-serif;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+    }
+
+    .print-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .print-btn--primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.24);
+    }
+
+    .print-btn--secondary {
+      background: #fff;
+      color: var(--accent);
+      border-color: rgba(37, 99, 235, 0.22);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+    }
+
+    .print-paper {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 24px;
+      padding: 2.4rem 2.6rem;
+      box-shadow: var(--paper-shadow);
+    }
+
+    .print-header {
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .print-header__eyebrow {
+      margin: 0 0 0.4rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font: 700 0.75rem/1.2 "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .print-header h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.15;
+    }
+
+    .print-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.8rem;
+      margin: 1.4rem 0 1.6rem;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .print-meta__item {
+      padding: 0.85rem 0.95rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fbfdff;
+    }
+
+    .print-meta__label {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .print-meta__value {
+      color: var(--ink);
+      font-size: 0.97rem;
+      font-weight: 600;
+    }
+
+    .print-report {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .print-section {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 1.05rem 1.15rem;
+      break-inside: avoid;
+      background: #fff;
+    }
+
+    .print-section__title {
+      margin: 0 0 0.8rem;
+      color: var(--ink);
+      font: 700 1rem/1.3 "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .print-section__body {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .print-field {
+      display: grid;
+      grid-template-columns: minmax(170px, 230px) 1fr;
+      gap: 0.7rem;
+      align-items: start;
+    }
+
+    .print-field__label {
+      color: var(--muted);
+      font: 700 0.94rem/1.5 "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .print-field__value,
+    .print-text {
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+
+    .print-text {
+      margin: 0;
+    }
+
+    .print-subtitle {
+      margin: 0.2rem 0 0;
+      color: var(--accent);
+      font: 700 0.92rem/1.3 "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .print-list {
+      margin: 0;
+      padding-left: 1.2rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    @page {
+      size: A4;
+      margin: 14mm;
+    }
+
+    @media (max-width: 768px) {
+      .print-shell {
+        padding: 1rem 0.75rem 2rem;
+      }
+
+      .print-paper {
+        padding: 1.2rem;
+        border-radius: 18px;
+      }
+
+      .print-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .print-toolbar__actions {
+        width: 100%;
+      }
+
+      .print-btn {
+        width: 100%;
+      }
+
+      .print-field {
+        grid-template-columns: 1fr;
+        gap: 0.15rem;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .print-shell {
+        max-width: none;
+        padding: 0;
+      }
+
+      .print-toolbar {
+        display: none;
+      }
+
+      .print-paper {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-shell">
+    <div class="print-toolbar">
+      <div class="print-toolbar__hint">Use your browser's <strong>Save as PDF</strong> destination for a clean export.</div>
+      <div class="print-toolbar__actions">
+        <button type="button" class="print-btn print-btn--primary" onclick="window.print()">Save as PDF / Print</button>
+        <a href="/review/report/{{ consultation_id }}" class="print-btn print-btn--secondary">Back to Report</a>
+      </div>
+    </div>
+
+    <div class="print-paper">
+      {% if generated_document and generated_document.generated_output.report_markdown %}
+      <div class="print-header">
+        <p class="print-header__eyebrow">Clinical Document Export</p>
+        <h1>Clinical Report</h1>
+      </div>
+
+      <pre id="print-report-raw" style="display:none;">{{ generated_document.generated_output.report_markdown }}</pre>
+      <div id="print-report-rendered"></div>
+      {% else %}
+      <div class="print-header">
+        <h1>Clinical Report</h1>
+      </div>
+      <p class="print-text">No clinical report has been generated yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    function escapeHtml(value) {
+      return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function renderReportLines(lines) {
+      const html = [];
+      let listItems = [];
+
+      function flushList() {
+        if (!listItems.length) return;
+        html.push(`<ul class="print-list">${listItems.join('')}</ul>`);
+        listItems = [];
+      }
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) {
+          flushList();
+          continue;
+        }
+
+        if (line.startsWith('- ')) {
+          listItems.push(`<li>${escapeHtml(line.slice(2))}</li>`);
+          continue;
+        }
+
+        flushList();
+        if (/^[A-Z]\.\s+/.test(line)) {
+          html.push(`<h4 class="print-subtitle">${escapeHtml(line)}</h4>`);
+        } else if (line.includes(':')) {
+          const [label, ...rest] = line.split(':');
+          html.push(
+            `<div class="print-field"><span class="print-field__label">${escapeHtml(label)}:</span><span class="print-field__value">${escapeHtml(rest.join(':').trim() || '-')}</span></div>`
+          );
+        } else {
+          html.push(`<p class="print-text">${escapeHtml(line)}</p>`);
+        }
+      }
+
+      flushList();
+      return html.join('');
+    }
+
+    function renderStructuredReport(rawText) {
+      const lines = rawText.split(/\r?\n/).map((line) => line.trimEnd());
+      const nonEmptyLines = lines.filter((line) => line.trim() !== '');
+      if (!nonEmptyLines.length) {
+        return '<p class="print-text">No report content available.</p>';
+      }
+
+      const title = nonEmptyLines[0];
+      const separatorIndex = lines.findIndex((line) => /^-+$/.test(line.trim()));
+      const metadataLines = separatorIndex === -1
+        ? nonEmptyLines.slice(1)
+        : lines.slice(1, separatorIndex).filter((line) => line.trim() !== '');
+
+      const metadataHtml = metadataLines.map((line) => {
+        if (!line.includes(':')) {
+          return `<div class="print-meta__item"><span class="print-meta__value">${escapeHtml(line)}</span></div>`;
+        }
+        const [label, ...rest] = line.split(':');
+        return `
+          <div class="print-meta__item">
+            <span class="print-meta__label">${escapeHtml(label)}</span>
+            <span class="print-meta__value">${escapeHtml(rest.join(':').trim() || '-')}</span>
+          </div>
+        `;
+      }).join('');
+
+      const sectionMatches = [...rawText.matchAll(/(?:^|\n)-+\n(\d+\.\s+.+?)\n-+\n([\s\S]*?)(?=\n-+\n\d+\.\s+.+?\n-+|\s*$)/g)];
+      const sectionsHtml = sectionMatches.map((match) => `
+        <section class="print-section">
+          <h3 class="print-section__title">${escapeHtml(match[1].trim())}</h3>
+          <div class="print-section__body">${renderReportLines(match[2].split(/\r?\n/))}</div>
+        </section>
+      `).join('');
+
+      return `
+        <article>
+          <section class="print-meta">
+            <div class="print-meta__item">
+              <span class="print-meta__label">Document</span>
+              <span class="print-meta__value">${escapeHtml(title)}</span>
+            </div>
+            ${metadataHtml}
+          </section>
+          <div class="print-report">${sectionsHtml}</div>
+        </article>
+      `;
+    }
+
+    const rawReportEl = document.getElementById('print-report-raw');
+    const renderedReportEl = document.getElementById('print-report-rendered');
+    if (rawReportEl && renderedReportEl) {
+      renderedReportEl.innerHTML = renderStructuredReport(rawReportEl.textContent || '');
+    }
+  </script>
+</body>
+</html>

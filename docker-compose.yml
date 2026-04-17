@@ -19,6 +19,7 @@ services:
       - .env
     environment:
       LOCAL_LLM_ENDPOINT: http://ollama:11434
+      WHISPER_API_URL: http://whisper:8001
       LLM_MODEL_NAME: qwen3:8b
     volumes:
       - ./:/workspace

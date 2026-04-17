@@ -6,15 +6,13 @@ from logging import getLogger
 
 import httpx
 
+from app.core.config import get_settings
 from app.domain.transcriptions.models import (
     StreamingTranscriptChunk,
     StreamingTranscriptionService,
     TranscriptResult,
     TranscriptionService,
 )
-
-# Whisper API service URL
-WHISPER_API_URL = "http://whisper:8001"
 logger = getLogger("opd_vertex.infrastructure.ai.transcription")
 
 
@@ -23,11 +21,15 @@ class FasterWhisperTranscriptionService(TranscriptionService):
 
     def __init__(self, model_size: str = "base", device: str = "cuda"):
         self.http_client = None
+        self.whisper_api_url = get_settings().whisper_api_url
 
     def _get_client(self):
         """Lazy initialize HTTP client."""
         if self.http_client is None:
-            self.http_client = httpx.Client(base_url=WHISPER_API_URL, timeout=60.0)
+            self.http_client = httpx.Client(
+                base_url=self.whisper_api_url,
+                timeout=60.0,
+            )
         return self.http_client
 
     def transcribe(self, audio_path: str) -> TranscriptResult:
@@ -49,12 +51,18 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
         self.sample_rate = sample_rate
         self.chunk_size = int(chunk_duration * sample_rate)
         self.http_client = None
+        self.whisper_api_url = get_settings().whisper_api_url
 
     def _get_client(self):
         """Lazy initialize HTTP client."""
         if self.http_client is None:
-            logger.debug("Creating Whisper API client base_url=%s", WHISPER_API_URL)
-            self.http_client = httpx.Client(base_url=WHISPER_API_URL, timeout=60.0)
+            logger.debug(
+                "Creating Whisper API client base_url=%s", self.whisper_api_url
+            )
+            self.http_client = httpx.Client(
+                base_url=self.whisper_api_url,
+                timeout=60.0,
+            )
         return self.http_client
 
     def start_streaming(self, consultation_id: int) -> str:

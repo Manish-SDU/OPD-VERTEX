@@ -55,16 +55,27 @@ def _use_mock() -> bool:
     return get_settings().use_mock_adapters
 
 
-def get_current_user(request: Request):
-    token = request.cookies.get("access_token")
+def _decode_access_token(token: str | None) -> dict | None:
     if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        return None
     try:
         token = token.replace("Bearer ", "")
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError as exc:
-        raise HTTPException(status_code=401, detail="Invalid token") from exc
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return None
+
+
+def get_optional_current_user(request: Request):
+    return _decode_access_token(request.cookies.get("access_token"))
+
+
+def get_current_user(request: Request):
+    token = request.cookies.get("access_token")
+    payload = _decode_access_token(token)
+    if payload is None:
+        detail = "Not authenticated" if not token else "Invalid token"
+        raise HTTPException(status_code=401, detail=detail)
+    return payload
 
 
 @lru_cache
@@ -237,7 +248,6 @@ def temp_transcript_chunk_repository():
     return MongoTemporaryTranscriptChunkRepository(get_database())
 
 
-@lru_cache
 def auth_service() -> MockAuthService:
     return MockAuthService(staff_repository(), patient_repository())
 
@@ -327,6 +337,8 @@ def get_clinical_notes_app_service() -> ClinicalNotesApplicationService:
         consultation_doc_repository(),
         generated_repository(),
         prompt_repository(),
+        patient_repository(),
+        staff_repository(),
         get_transcript_normalization_app_service(),
         note_generator(),
     )

@@ -9,20 +9,30 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/profile", response_class=HTMLResponse)
 async def profile(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
-    # Get email (from sub) and role from JWT
-    email = user.get("sub")
+    subject = user.get("sub")
     role = user.get("role")
 
-    if not email:
+    if not subject:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    # Fetch full user object from repositories based on role
     auth_service = get_auth_app_service().auth_service
+    try:
+        user_id = int(subject)
+    except (TypeError, ValueError):
+        user_id = None
 
     if role == "patient":
-        full_user = auth_service.patient_repository.get_by_email(email)
+        full_user = (
+            auth_service.patient_repository.get_by_id(user_id)
+            if user_id is not None
+            else auth_service.patient_repository.get_by_email(subject)
+        )
     elif role == "doctor" or role == "admin":
-        full_user = auth_service.staff_repository.get_by_email(email)
+        full_user = (
+            auth_service.staff_repository.get_by_id(user_id)
+            if user_id is not None
+            else auth_service.staff_repository.get_by_email(subject)
+        )
     else:
         raise HTTPException(status_code=401, detail="Unknown role")
 

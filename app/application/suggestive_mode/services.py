@@ -66,7 +66,9 @@ class SuggestiveReviewApplicationService:
                 consultation_id=consultation_id,
                 doctor_id=consultation.doctor_id,
                 patient_id=consultation.patient_id,
-                generated_report=generated_document.generated_output.model_dump(),
+                generated_report=generated_document.generated_output.model_dump(
+                    exclude={"report_markdown"}
+                ),
                 normalized_transcript=generated_document.normalized_transcript.model_dump()
                 if generated_document.normalized_transcript is not None
                 else None,

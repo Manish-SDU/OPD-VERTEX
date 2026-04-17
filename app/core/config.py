@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     local_llm_endpoint: str = Field(
         default="http://localhost:11434", alias="LOCAL_LLM_ENDPOINT"
     )
+    whisper_api_url: str = Field(default="http://localhost:8001", alias="WHISPER_API_URL")
     whisper_model_name: str = Field(default="base", alias="WHISPER_MODEL_NAME")
     llm_model_name: str = Field(default="qwen3:8b", alias="LLM_MODEL_NAME")
     llm_temperature: float = Field(default=0.2, alias="LLM_TEMPERATURE")

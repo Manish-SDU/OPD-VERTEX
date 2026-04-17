@@ -10,6 +10,7 @@ from app.domain.consultations.models import (
     ConsultationStatus,
 )
 from app.domain.patients.models import PatientCreateRequest
+from app.domain.prescriptions.models import Medication
 from app.domain.suggestive_mode.models import RiskLevel
 
 
@@ -103,6 +104,25 @@ class TestReviewApplicationService:
 
 
 class TestClinicalNotesApplicationService:
+    def test_generate_report_from_seeded_structured_transcript_populates_fields(
+        self, clinical_notes_app_service
+    ):
+        document = clinical_notes_app_service.generate_report(4102, regenerate=True)
+
+        assert (
+            document.generated_output.chief_complaint
+            == "Dizziness when standing up since last night."
+        )
+        assert (
+            document.generated_output.diagnosis
+            == "Orthostatic dizziness likely related to mild dehydration."
+        )
+        assert document.generated_output.medications
+        assert "Complete blood count" in document.generated_output.lab_tests_ordered
+        assert document.generated_output.patient_instructions.startswith(
+            "Increase oral fluids"
+        )
+
     def test_generate_report_creates_generated_document(
         self,
         consultation_doc_repo,
@@ -182,6 +202,32 @@ class TestClinicalNotesApplicationService:
 
 
 class TestSuggestiveReviewApplicationService:
+    def test_seeded_allergy_case_produces_suggestive_warning(
+        self,
+        clinical_notes_app_service,
+        suggestive_review_app_service,
+        generated_doc_repo,
+    ):
+        generated = clinical_notes_app_service.generate_report(4103, regenerate=True)
+        generated.generated_output.medications = [
+            Medication(
+                name="Amoxicillin",
+                dosage="500 mg",
+                frequency="three times daily",
+                duration="7 days",
+                route="oral",
+            )
+        ]
+        generated_doc_repo.save(generated)
+
+        review = suggestive_review_app_service.run_review(4103, regenerate=True)
+
+        assert review.overall_risk_level == RiskLevel.RED
+        assert any(
+            suggestion.title == "Penicillin allergy conflict"
+            for suggestion in review.suggestions
+        )
+
     def test_run_review_persists_suggestive_output(
         self,
         consultation_doc_repo,

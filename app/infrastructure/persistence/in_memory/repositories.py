@@ -11,9 +11,12 @@ from datetime import date
 from app.domain.audit.models import AuditLog, AuditLogRepository
 from app.domain.auth.models import Staff, StaffRepository
 from app.domain.clinical_notes.models import (
+    Assessment,
     ClinicalNoteGenerator,
+    ClinicianApproval,
     ConsultationDocument,
     ConsultationDocumentRepository,
+    EncounterInfo,
     GeneratedClinicalNotes,
     GeneratedDocument,
     GeneratedDocumentStatus,
@@ -25,7 +28,11 @@ from app.domain.clinical_notes.models import (
     PrescriptionArtifact,
     PrescriptionArtifactRepository,
     PromptRepository,
+    ReviewOfSystems,
+    SocialHistory,
+    TranscriptDocument,
     TranscriptNormalizer,
+    Vitals,
 )
 from app.domain.common.types import utcnow
 from app.domain.consultations.models import (
@@ -44,6 +51,9 @@ from app.domain.prescriptions.models import (
 )
 from app.domain.suggestive_mode.models import (
     RiskLevel,
+    Suggestion,
+    SuggestionSeverity,
+    SuggestionType,
     SuggestiveModeService,
     SuggestiveReview,
     SuggestiveReviewRequest,
@@ -54,6 +64,7 @@ from app.domain.transcriptions.models import (
     TranscriptResult,
     TranscriptionService,
 )
+from app.infrastructure.bootstrap.demo_transcripts import DEMO_CONSULTATION_TRANSCRIPTS
 
 
 # ── staff ──────────────────────────────────────────────────────────────
@@ -136,8 +147,56 @@ class InMemoryPatientRepository(PatientRepository):
                 gender="M",
                 phone="+39 0002",
             ),
+            Patient(
+                id=5101,
+                first_name="Ava",
+                last_name="Miller",
+                date_of_birth=date(1988, 5, 11),
+                email="ava.miller@example.local",
+                password_hash=_pw,
+                gender="F",
+                phone="+1 555 0101",
+                allergies="No known drug allergies",
+                medical_history="Mild seasonal allergies",
+            ),
+            Patient(
+                id=5102,
+                first_name="Noah",
+                last_name="Perez",
+                date_of_birth=date(1979, 2, 7),
+                email="noah.perez@example.local",
+                password_hash=_pw,
+                gender="M",
+                phone="+1 555 0102",
+                allergies="No known drug allergies",
+                medical_history="Hypertension treated with lisinopril",
+            ),
+            Patient(
+                id=5103,
+                first_name="Mia",
+                last_name="Nguyen",
+                date_of_birth=date(1995, 9, 3),
+                email="mia.nguyen@example.local",
+                password_hash=_pw,
+                gender="F",
+                phone="+1 555 0103",
+                allergies="Penicillin allergy causing rash",
+                medical_history="Recurrent sinus infections",
+            ),
+            Patient(
+                id=5104,
+                first_name="Luca",
+                last_name="Reed",
+                date_of_birth=date(2001, 12, 14),
+                email="luca.reed@example.local",
+                password_hash=_pw,
+                gender="Other",
+                phone="+1 555 0104",
+                allergies="Not specified",
+                medical_history="Not specified",
+            ),
         ]
-        self._next_id = 3
+        self._next_id = 5105
 
     def list_all(self) -> list[Patient]:
         return self._patients
@@ -183,8 +242,36 @@ class InMemoryConsultationRepository(ConsultationRepository):
                 status=ConsultationStatus.TRANSCRIBING,
                 started_at=now,
             ),
+            Consultation(
+                id=4101,
+                doctor_id=1,
+                patient_id=5101,
+                status=ConsultationStatus.PROCESSING,
+                started_at=now,
+            ),
+            Consultation(
+                id=4102,
+                doctor_id=1,
+                patient_id=5102,
+                status=ConsultationStatus.PROCESSING,
+                started_at=now,
+            ),
+            Consultation(
+                id=4103,
+                doctor_id=1,
+                patient_id=5103,
+                status=ConsultationStatus.PROCESSING,
+                started_at=now,
+            ),
+            Consultation(
+                id=4104,
+                doctor_id=1,
+                patient_id=5104,
+                status=ConsultationStatus.PROCESSING,
+                started_at=now,
+            ),
         ]
-        self._next_id = 3
+        self._next_id = 4105
 
     def list_all(self) -> list[Consultation]:
         return self._consultations
@@ -211,7 +298,16 @@ class InMemoryConsultationRepository(ConsultationRepository):
 
 class InMemoryConsultationDocumentRepository(ConsultationDocumentRepository):
     def __init__(self) -> None:
-        self._docs: dict[int, ConsultationDocument] = {}
+        now = utcnow()
+        self._docs: dict[int, ConsultationDocument] = {
+            consultation_id: ConsultationDocument(
+                consultation_id=consultation_id,
+                transcript=TranscriptDocument(full_text=transcript_text),
+                created_at=now,
+                updated_at=now,
+            )
+            for consultation_id, transcript_text in DEMO_CONSULTATION_TRANSCRIPTS.items()
+        }
 
     def get_by_consultation_id(
         self, consultation_id: int
@@ -332,19 +428,26 @@ class InMemoryPromptRepository(PromptRepository):
                 ),
             ),
             LlmPromptConfig(
-                id="clinical_report_generation_v2",
-                prompt_name="Clinical Report Generation",
+                id="clinical_report_generation_v3",
+                prompt_name="Clinical Report Generation (Template Output)",
                 model_target="qwen3:8b",
                 temperature=0.2,
-                max_tokens=2200,
-                system_prompt="Generate a structured English medical report in JSON only.",
+                max_tokens=2600,
+                system_prompt=(
+                    "Generate an English outpatient clinical report in JSON only. "
+                    "Do not invent facts; use 'Not mentioned' or [] when missing."
+                ),
                 user_prompt_template=(
-                    "Return JSON with keys patient_info, chief_complaint, "
-                    "history_of_present_illness, past_medical_history, allergies, vitals, "
-                    "examination_findings, diagnosis, medications, lab_tests_ordered, "
-                    "follow_up, patient_instructions, clinical_notes_summary. "
-                    "Consultation {consultation_id}. Transcript: {transcript_text}. "
-                    "Normalized transcript: {normalized_transcript}"
+                    "Consultation {consultation_id}. Clinician: {clinician_name}. "
+                    "Patient: {patient_name} ({patient_age}, {patient_gender}). "
+                    "Transcript: {transcript_text}. Normalized: {normalized_transcript}. "
+                    "Return JSON with keys patient_info, encounter_info, chief_complaint, "
+                    "history_of_present_illness, review_of_systems, past_medical_history, "
+                    "current_medications_mentioned, allergies, family_history, social_history, "
+                    "vitals, examination_findings, assessment, diagnosis, medications, plan, "
+                    "lab_tests_ordered, follow_up, patient_instructions, return_precautions, "
+                    "clinical_notes_summary, missing_but_relevant_information, clinician_approval, "
+                    "report_markdown (empty string)."
                 ),
             ),
             LlmPromptConfig(
@@ -463,29 +566,338 @@ class MockTranscriptionService(TranscriptionService):
 
 
 class MockClinicalNoteGenerator(ClinicalNoteGenerator):
+    _FIELD_MAP = {
+        "chief complaint": "chief_complaint",
+        "history of present illness": "history_of_present_illness",
+        "ros general": "ros_general",
+        "ros respiratory": "ros_respiratory",
+        "ros cardiovascular": "ros_cardiovascular",
+        "ros gastrointestinal": "ros_gastrointestinal",
+        "ros neurological": "ros_neurological",
+        "ros genitourinary": "ros_genitourinary",
+        "ros musculoskeletal": "ros_musculoskeletal",
+        "ros other": "ros_other",
+        "past medical history": "past_medical_history",
+        "current medications mentioned": "current_medications_mentioned",
+        "allergies": "allergies",
+        "family history": "family_history",
+        "social smoking": "social_smoking",
+        "social alcohol": "social_alcohol",
+        "social substance use": "social_substance_use",
+        "social occupation": "social_occupation",
+        "vitals bp": "vitals_blood_pressure",
+        "vitals hr": "vitals_heart_rate",
+        "vitals temp": "vitals_temperature",
+        "vitals rr": "vitals_respiratory_rate",
+        "vitals spo2": "vitals_spo2",
+        "vitals weight": "vitals_weight",
+        "vitals height": "vitals_height",
+        "vitals bmi": "vitals_bmi",
+        "examination findings": "examination_findings",
+        "primary diagnosis": "primary_diagnosis",
+        "differential diagnoses": "differential_diagnoses",
+        "clinical impression": "clinical_impression",
+        "medications": "medications",
+        "lab tests ordered": "lab_tests_ordered",
+        "plan imaging": "plan_imaging",
+        "plan referrals": "plan_referrals",
+        "follow up": "follow_up",
+        "patient instructions": "patient_instructions",
+        "return precautions": "return_precautions",
+        "clinical notes summary": "clinical_notes_summary",
+        "missing but relevant information": "missing_but_relevant_information",
+    }
+
+    @staticmethod
+    def _split_list(value: str) -> list[str]:
+        return [item.strip() for item in value.split(";") if item.strip()]
+
+    @staticmethod
+    def _parse_medications(value: str) -> list[Medication]:
+        medications: list[Medication] = []
+        entries = [entry.strip() for entry in value.split(";") if entry.strip()]
+        for entry in entries:
+            parts = [part.strip() for part in entry.split("|")]
+            if not parts:
+                continue
+            while len(parts) < 6:
+                parts.append("")
+            name, dosage, route, frequency, duration, special_instructions = parts[:6]
+            if name.lower() == "none":
+                continue
+            medications.append(
+                Medication(
+                    name=name,
+                    dosage=dosage or "Not specified",
+                    route=route or "oral",
+                    frequency=frequency or "Not specified",
+                    duration=duration or "Not specified",
+                    special_instructions=special_instructions or None,
+                )
+            )
+        return medications
+
+    @classmethod
+    def _parse_structured_transcript(cls, transcript_text: str) -> dict[str, str]:
+        fields: dict[str, str] = {}
+        for raw_line in transcript_text.splitlines():
+            line = raw_line.strip()
+            if not line or ":" not in line:
+                continue
+            label, value = line.split(":", 1)
+            normalized_label = cls._FIELD_MAP.get(label.strip().lower())
+            if normalized_label is None:
+                continue
+            fields[normalized_label] = value.strip()
+        return fields
+
     def generate(self, request) -> GeneratedClinicalNotes:
+        parsed = self._parse_structured_transcript(request.transcript_text)
+        if not parsed:
+            return GeneratedClinicalNotes(
+                patient_info={
+                    "patient_id": str(request.patient_id),
+                    "doctor_id": str(request.doctor_id),
+                },
+                chief_complaint="Mock complaint",
+                diagnosis="Mock diagnosis",
+                follow_up="Not specified",
+                patient_instructions="No additional instructions provided.",
+                clinical_notes_summary=(
+                    "Generated from normalized transcript: "
+                    f"{request.normalized_transcript.normalized_text[:40]}..."
+                ),
+            )
+
+        medications = self._parse_medications(parsed.get("medications", ""))
+        current_medications = self._split_list(
+            parsed.get("current_medications_mentioned", "")
+        )
+        differential_diagnoses = self._split_list(
+            parsed.get("differential_diagnoses", "")
+        )
+        lab_tests = self._split_list(parsed.get("lab_tests_ordered", ""))
+        imaging = self._split_list(parsed.get("plan_imaging", ""))
+        referrals = self._split_list(parsed.get("plan_referrals", ""))
+        return_precautions = self._split_list(parsed.get("return_precautions", ""))
+        missing_info = self._split_list(
+            parsed.get("missing_but_relevant_information", "")
+        )
+
         return GeneratedClinicalNotes(
             patient_info={
                 "patient_id": str(request.patient_id),
                 "doctor_id": str(request.doctor_id),
             },
-            chief_complaint="Mock complaint",
-            diagnosis="Mock diagnosis",
-            follow_up="Not specified",
-            patient_instructions="No additional instructions provided.",
-            clinical_notes_summary=(
-                "Generated from normalized transcript: "
-                f"{request.normalized_transcript.normalized_text[:40]}..."
+            encounter_info=EncounterInfo(
+                visit_type="Outpatient follow-up",
+                consultation_mode="In person",
+                information_reliability="Patient history considered reliable",
             ),
+            chief_complaint=parsed.get("chief_complaint", "Mock complaint"),
+            history_of_present_illness=parsed.get(
+                "history_of_present_illness", "Not mentioned"
+            ),
+            review_of_systems=ReviewOfSystems(
+                general=parsed.get("ros_general", ""),
+                respiratory=parsed.get("ros_respiratory", ""),
+                cardiovascular=parsed.get("ros_cardiovascular", ""),
+                gastrointestinal=parsed.get("ros_gastrointestinal", ""),
+                neurological=parsed.get("ros_neurological", ""),
+                genitourinary=parsed.get("ros_genitourinary", ""),
+                musculoskeletal=parsed.get("ros_musculoskeletal", ""),
+                other=parsed.get("ros_other", ""),
+            ),
+            past_medical_history=parsed.get("past_medical_history", ""),
+            current_medications_mentioned=current_medications,
+            allergies=parsed.get("allergies", ""),
+            family_history=parsed.get("family_history", ""),
+            social_history=SocialHistory(
+                smoking=parsed.get("social_smoking", ""),
+                alcohol=parsed.get("social_alcohol", ""),
+                substance_use=parsed.get("social_substance_use", ""),
+                occupation=parsed.get("social_occupation", ""),
+            ),
+            vitals=Vitals(
+                blood_pressure=parsed.get("vitals_blood_pressure", "Not recorded"),
+                heart_rate=parsed.get("vitals_heart_rate", "Not recorded"),
+                temperature=parsed.get("vitals_temperature", "Not recorded"),
+                respiratory_rate=parsed.get(
+                    "vitals_respiratory_rate", "Not recorded"
+                ),
+                spo2=parsed.get("vitals_spo2", "Not recorded"),
+                weight=parsed.get("vitals_weight", "Not recorded"),
+                height=parsed.get("vitals_height", "Not recorded"),
+                bmi=parsed.get("vitals_bmi", "Not recorded"),
+            ),
+            examination_findings=parsed.get("examination_findings", ""),
+            assessment=Assessment(
+                primary_diagnosis=parsed.get("primary_diagnosis", "Mock diagnosis"),
+                differential_diagnoses=differential_diagnoses,
+                clinical_impression=parsed.get("clinical_impression", ""),
+            ),
+            diagnosis=parsed.get("primary_diagnosis", "Mock diagnosis"),
+            medications=medications,
+            plan={
+                "medications": medications,
+                "lab_tests_ordered": lab_tests,
+                "imaging_ordered": imaging,
+                "referrals": referrals,
+                "follow_up": parsed.get("follow_up", "Not specified"),
+                "patient_instructions": parsed.get(
+                    "patient_instructions", "No additional instructions provided."
+                ),
+            },
+            lab_tests_ordered=lab_tests,
+            follow_up=parsed.get("follow_up", "Not specified"),
+            patient_instructions=parsed.get(
+                "patient_instructions", "No additional instructions provided."
+            ),
+            return_precautions=return_precautions,
+            clinician_approval=ClinicianApproval(
+                status="Draft pending clinician approval",
+            ),
+            clinical_notes_summary=parsed.get(
+                "clinical_notes_summary",
+                (
+                    "Generated from normalized transcript: "
+                    f"{request.normalized_transcript.normalized_text[:40]}..."
+                ),
+            ),
+            missing_but_relevant_information=missing_info,
         )
 
 
 class MockSuggestiveModeService(SuggestiveModeService):
+    @staticmethod
+    def _contains_text(payload: object, needle: str) -> bool:
+        return needle.lower() in str(payload).lower()
+
+    @staticmethod
+    def _extract_medication_names(generated_report: dict[str, object]) -> list[str]:
+        medications = generated_report.get("medications", [])
+        if not isinstance(medications, list):
+            return []
+        names: list[str] = []
+        for medication in medications:
+            if isinstance(medication, dict):
+                name = str(medication.get("name", "")).strip()
+                if name:
+                    names.append(name.lower())
+        return names
+
     def review(self, request: SuggestiveReviewRequest) -> SuggestiveReview:
+        suggestions: list[Suggestion] = []
+        generated_report = request.generated_report
+        normalized_transcript = request.normalized_transcript or {}
+        transcript_blob = f"{generated_report} {normalized_transcript}"
+
+        medication_names = self._extract_medication_names(generated_report)
+        allergies_text = str(generated_report.get("allergies", ""))
+        diagnosis_text = str(generated_report.get("diagnosis", ""))
+        missing_info = generated_report.get("missing_but_relevant_information", [])
+
+        if "amoxicillin" in medication_names and self._contains_text(
+            allergies_text, "penicillin"
+        ):
+            suggestions.append(
+                Suggestion(
+                    type=SuggestionType.CONTRAINDICATION,
+                    severity=SuggestionSeverity.CRITICAL,
+                    title="Penicillin allergy conflict",
+                    detail=(
+                        "The draft includes amoxicillin while the patient history documents "
+                        "a penicillin allergy."
+                    ),
+                    recommendation=(
+                        "Replace the antibiotic with a non-penicillin option and explicitly "
+                        "document the allergy decision."
+                    ),
+                    source_quote="Penicillin allergy causing rash",
+                )
+            )
+
+        if self._contains_text(transcript_blob, "orthostatic") and not self._contains_text(
+            generated_report.get("follow_up", ""), "48"
+        ):
+            suggestions.append(
+                Suggestion(
+                    type=SuggestionType.FOLLOW_UP,
+                    severity=SuggestionSeverity.MEDIUM,
+                    title="Follow-up interval may be too loose",
+                    detail=(
+                        "Orthostatic symptoms were documented, but the follow-up plan does not "
+                        "clearly reinforce short-interval reassessment."
+                    ),
+                    recommendation=(
+                        "Confirm a 24 to 48 hour follow-up window and ensure hydration and blood "
+                        "pressure monitoring instructions are explicit."
+                    ),
+                    source_quote="Orthostatic dizziness likely related to mild dehydration.",
+                )
+            )
+
+        if self._contains_text(diagnosis_text, "fatigue") and (
+            isinstance(missing_info, list) and len(missing_info) > 0
+        ):
+            suggestions.append(
+                Suggestion(
+                    type=SuggestionType.OMISSION,
+                    severity=SuggestionSeverity.MEDIUM,
+                    title="Important fatigue workup details still missing",
+                    detail=(
+                        "The report acknowledges unresolved background information that may "
+                        "change interpretation of persistent fatigue."
+                    ),
+                    recommendation=(
+                        "Document baseline sleep duration, recent weight trend, and any menstrual "
+                        "or dietary history if clinically relevant before final approval."
+                    ),
+                    source_quote=str(missing_info[0]),
+                )
+            )
+
+        if self._contains_text(diagnosis_text, "sinusitis") and not self._contains_text(
+            transcript_blob, "return precautions"
+        ):
+            suggestions.append(
+                Suggestion(
+                    type=SuggestionType.STANDARD_OF_CARE,
+                    severity=SuggestionSeverity.LOW,
+                    title="Return precautions should be explicit",
+                    detail=(
+                        "The sinusitis draft should clearly call out escalation symptoms such as "
+                        "orbital swelling, high fever, or severe headache."
+                    ),
+                    recommendation=(
+                        "Ensure red-flag precautions are visible in the final patient-facing plan."
+                    ),
+                    source_quote="Acute bacterial rhinosinusitis.",
+                )
+            )
+
+        if suggestions:
+            if any(item.severity == SuggestionSeverity.CRITICAL for item in suggestions):
+                risk_level = RiskLevel.RED
+            elif any(
+                item.severity in (SuggestionSeverity.HIGH, SuggestionSeverity.MEDIUM)
+                for item in suggestions
+            ):
+                risk_level = RiskLevel.YELLOW
+            else:
+                risk_level = RiskLevel.GREEN
+            summary = (
+                f"{len(suggestions)} issue(s) flagged for clinician review before approval."
+            )
+        else:
+            risk_level = RiskLevel.GREEN
+            summary = "No significant clinical issues detected by the mock second-pass review."
+
         return SuggestiveReview(
             consultation_id=request.consultation_id,
-            overall_risk_level=RiskLevel.GREEN,
-            summary="No issues detected (mock).",
+            suggestions=suggestions,
+            overall_risk_level=risk_level,
+            summary=summary,
         )
 
 

@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="report-view-container">
+  <div class="report-header">
+    <h1>Clinical Report</h1>
+    <p class="report-meta">Consultation ID: <strong>#{{ consultation_id }}</strong></p>
+  </div>
+
+  {% if generated_document and generated_document.generated_output.report_markdown %}
+  <div class="report-content">
+    <div class="report-actions-bar">
+      {% if user and user.role in ['doctor', 'admin'] %}
+      <a href="/review/report/{{ consultation_id }}/edit" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        Edit & Approve
+      </a>
+      {% endif %}
+      <a href="/review/report/{{ consultation_id }}/print" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path></svg>
+        Export PDF
+      </a>
+    </div>
+
+    <div class="report-markdown">
+      <pre id="report-raw" class="report-raw">{{ generated_document.generated_output.report_markdown }}</pre>
+      <div id="report-rendered" class="report-rendered" aria-live="polite"></div>
+    </div>
+
+    <div class="report-status">
+      <p><strong>Status:</strong> 
+        <span class="badge badge-{{ generated_document.status|lower }}">
+          {{ generated_document.status }}
+        </span>
+      </p>
+      {% if generated_document.approved_at %}
+      <p><strong>Approved At:</strong> {{ generated_document.approved_at }}</p>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-info">
+    <p>No clinical report has been generated yet.</p>
+  </div>
+  {% endif %}
+
+  <div class="back-link">
+    <a href="/review/{{ consultation_id }}">&larr; Back to Review</a>
+  </div>
+</section>
+
+<script>
+function escapeHtml(value) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderReportLines(lines) {
+  const html = [];
+  let listItems = [];
+
+  function flushList() {
+    if (!listItems.length) return;
+    html.push(`<ul class="report-list">${listItems.join('')}</ul>`);
+    listItems = [];
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushList();
+      continue;
+    }
+    if (line.startsWith('- ')) {
+      listItems.push(`<li>${escapeHtml(line.slice(2))}</li>`);
+      continue;
+    }
+
+    flushList();
+    if (/^[A-Z]\.\s+/.test(line)) {
+      html.push(`<h4 class="report-subsection">${escapeHtml(line)}</h4>`);
+    } else if (line.includes(':')) {
+      const [label, ...rest] = line.split(':');
+      html.push(
+        `<div class="report-field"><span class="report-field-label">${escapeHtml(label)}:</span><span class="report-field-value">${escapeHtml(rest.join(':').trim() || '-')}</span></div>`
+      );
+    } else {
+      html.push(`<p class="report-paragraph">${escapeHtml(line)}</p>`);
+    }
+  }
+
+  flushList();
+  return html.join('');
+}
+
+function renderStructuredReport(rawText) {
+  const lines = rawText.split(/\r?\n/).map((line) => line.trimEnd());
+  const nonEmptyLines = lines.filter((line) => line.trim() !== '');
+  if (!nonEmptyLines.length) {
+    return '<p class="report-empty">No report content available.</p>';
+  }
+
+  const title = nonEmptyLines[0];
+  const separatorIndex = lines.findIndex((line) => /^-+$/.test(line.trim()));
+  const metadataLines = separatorIndex === -1
+    ? nonEmptyLines.slice(1)
+    : lines.slice(1, separatorIndex).filter((line) => line.trim() !== '');
+
+  const metadataHtml = metadataLines.map((line) => {
+    if (!line.includes(':')) {
+      return `<div class="report-meta-item report-meta-item--full">${escapeHtml(line)}</div>`;
+    }
+    const [label, ...rest] = line.split(':');
+    return `
+      <div class="report-meta-item">
+        <span class="report-meta-label">${escapeHtml(label)}</span>
+        <span class="report-meta-value">${escapeHtml(rest.join(':').trim() || '-')}</span>
+      </div>
+    `;
+  }).join('');
+
+  const sectionMatches = [...rawText.matchAll(/(?:^|\n)-+\n(\d+\.\s+.+?)\n-+\n([\s\S]*?)(?=\n-+\n\d+\.\s+.+?\n-+|\s*$)/g)];
+  const sectionsHtml = sectionMatches.map((match) => {
+    const heading = match[1].trim();
+    const body = match[2];
+    return `
+      <section class="report-section">
+        <h3 class="report-section-title">${escapeHtml(heading)}</h3>
+        <div class="report-section-body">${renderReportLines(body.split(/\r?\n/))}</div>
+      </section>
+    `;
+  }).join('');
+
+  return `
+    <article class="report-paper">
+      <header class="report-paper-header">
+        <p class="report-eyebrow">Clinical Document</p>
+        <h2>${escapeHtml(title)}</h2>
+      </header>
+      <section class="report-meta-grid">${metadataHtml}</section>
+      <div class="report-sections">${sectionsHtml}</div>
+    </article>
+  `;
+}
+
+const rawReportEl = document.getElementById('report-raw');
+const renderedReportEl = document.getElementById('report-rendered');
+if (rawReportEl && renderedReportEl) {
+  renderedReportEl.innerHTML = renderStructuredReport(rawReportEl.textContent || '');
+}
+</script>
+
+<style>
+.report-view-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.report-header {
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 1.5rem;
+}
+
+.report-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  color: var(--text);
+}
+
+.report-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.report-actions-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.report-actions-bar .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  min-width: 200px;
+  min-height: 60px;
+  padding: 0.95rem 1.4rem;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease,
+    background-color 0.16s ease, color 0.16s ease;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+}
+
+.report-actions-bar .btn:hover {
+  transform: translateY(-1px);
+}
+
+.report-actions-bar .btn svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  stroke-width: 2.15;
+}
+
+.report-actions-bar .btn-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.24);
+}
+
+.report-actions-bar .btn-primary:hover {
+  box-shadow: 0 18px 34px rgba(37, 99, 235, 0.3);
+}
+
+.report-actions-bar .btn-secondary {
+  background: #fff;
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.08);
+}
+
+.report-actions-bar .btn-secondary:hover {
+  background: #eff6ff;
+  border-color: rgba(37, 99, 235, 0.32);
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.14);
+}
+
+.report-markdown {
+  margin-bottom: 2rem;
+}
+
+.report-raw {
+  display: none;
+}
+
+.report-rendered {
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 28%),
+    linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.report-paper-header {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  margin-bottom: 1.5rem;
+}
+
+.report-paper-header h2 {
+  margin: 0.15rem 0 0;
+  font-size: 1.7rem;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.report-eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.report-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.report-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+}
+
+.report-meta-item--full {
+  grid-column: 1 / -1;
+}
+
+.report-meta-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.report-meta-value {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.report-sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.report-section {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  padding: 1.2rem 1.25rem;
+}
+
+.report-section-title {
+  margin: 0 0 0.9rem;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.report-section-body {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.report-field {
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.report-field-label {
+  color: #475569;
+  font-weight: 700;
+}
+
+.report-field-value,
+.report-paragraph {
+  color: #0f172a;
+}
+
+.report-paragraph {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.report-subsection {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  color: #1d4ed8;
+}
+
+.report-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #0f172a;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.report-empty {
+  margin: 0;
+  color: #64748b;
+}
+
+.report-status {
+  background: var(--blue-50);
+  border: 1px solid var(--blue-200);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.report-status p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-draft {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-pending {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.alert {
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+}
+
+.alert-info {
+  background: var(--blue-50);
+  border: 1px solid var(--blue-200);
+  color: var(--blue-900);
+}
+
+.back-link {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.back-link a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
+}
+
+.back-link a:hover {
+  color: var(--accent-hover);
+}
+
+@media (max-width: 768px) {
+  .report-view-container {
+    padding: 1rem;
+  }
+
+  .report-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .report-markdown {
+    padding: 1rem;
+  }
+
+  .report-rendered {
+    padding: 1rem;
+    border-radius: 18px;
+  }
+
+  .report-paper-header h2 {
+    font-size: 1.35rem;
+  }
+
+  .report-field {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .report-actions-bar {
+    flex-direction: column;
+  }
+
+  .report-actions-bar .btn {
+    width: 100%;
+    text-align: center;
+    min-width: 0;
+  }
+}
+
+@media print {
+  .report-header {
+    border-bottom: 3px solid var(--text);
+  }
+
+  .report-actions-bar,
+  .back-link,
+  .site-header {
+    display: none;
+  }
+
+  .report-markdown {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+
+  .report-rendered,
+  .report-section,
+  .report-meta-item {
+    background: white;
+    box-shadow: none;
+    border-color: #d4d4d8;
+  }
+}
+</style>
+{% endblock %}

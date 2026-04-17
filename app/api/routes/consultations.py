@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends, Form, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.api.deps import get_consultation_app_service, get_current_user
+from app.api.deps import (
+    consultation_doc_repository,
+    get_consultation_app_service,
+    get_current_user,
+)
+from app.domain.clinical_notes.models import ConsultationDocument, TranscriptDocument
 from app.domain.consultations.models import ConsultationCreateRequest
 
 templates = Jinja2Templates(directory="app/templates")
@@ -45,9 +50,24 @@ def consultation_create(
     chief_complaint: str = Form(...),
     user=Depends(_require_doctor),
 ) -> RedirectResponse:
+    doctor_id_raw = user.get("sub") or user.get("user_id") or user.get("id")
+    if doctor_id_raw is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid session: missing doctor identifier. Please log in again.",
+        )
+
+    try:
+        doctor_id = int(doctor_id_raw)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid session: doctor identifier is not numeric. Please log in again.",
+        ) from exc
+
     consultation = get_consultation_app_service().create_consultation(
         ConsultationCreateRequest(patient_id=patient_id),
-        doctor_id=int(user.get("sub", 1)),
+        doctor_id=doctor_id,
     )
     return RedirectResponse(url=f"/consultations/{consultation.id}", status_code=303)
 

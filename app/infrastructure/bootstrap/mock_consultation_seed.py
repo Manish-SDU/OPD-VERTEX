@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.domain.clinical_notes.models import ConsultationDocument, TranscriptDocument
 from app.domain.common.types import utcnow
 from app.domain.consultations.models import ConsultationStatus
+from app.infrastructure.bootstrap.demo_transcripts import DEMO_CONSULTATION_TRANSCRIPTS
 from app.infrastructure.db.mongo.repositories.mongo_repos import (
     MongoConsultationDocumentRepository,
 )
@@ -71,14 +72,7 @@ SCENARIOS: tuple[SeededScenario, ...] = (
         allergies="No known drug allergies",
         medical_history="Mild seasonal allergies",
         purpose="Clean happy-path consultation for full draft generation.",
-        transcript_text=(
-            "Synthetic academic demo transcript. Doctor: Good morning, Ava. "
-            "Patient: I have had a sore throat and mild fever for two days. "
-            "Doctor: Any cough or trouble breathing? Patient: Mild dry cough, no breathing trouble. "
-            "Doctor: Any allergies? Patient: No known drug allergies. "
-            "Doctor: I will document acute pharyngitis, recommend fluids, rest, paracetamol as needed, "
-            "and return if symptoms worsen."
-        ),
+        transcript_text=DEMO_CONSULTATION_TRANSCRIPTS[4101],
     ),
     SeededScenario(
         consultation_id=4102,
@@ -93,12 +87,7 @@ SCENARIOS: tuple[SeededScenario, ...] = (
         allergies="No known drug allergies",
         medical_history="Hypertension treated with lisinopril",
         purpose="Noisy ASR transcript with recoverable errors for normalization testing.",
-        transcript_text=(
-            "Synthetic academic demo transcript with ASR noise. docter hello mister perez uh yes yes "
-            "patient says dizzi dizzy since yester night after standing up [noise] no chest pain no fainting. "
-            "doctor asks current meds lisinopril ten milligram daily. patient denies fever cough or vomiting. "
-            "plan hydrate slowly stand up careful check blood pressure at home and come back if worse."
-        ),
+        transcript_text=DEMO_CONSULTATION_TRANSCRIPTS[4102],
     ),
     SeededScenario(
         consultation_id=4103,
@@ -113,12 +102,7 @@ SCENARIOS: tuple[SeededScenario, ...] = (
         allergies="Penicillin allergy causing rash",
         medical_history="Recurrent sinus infections",
         purpose="Medication and allergy conflict case for suggestive review.",
-        transcript_text=(
-            "Synthetic academic demo transcript. Doctor: You have sinus pressure, congestion, and facial pain "
-            "for one week. Patient: Yes, and penicillin gave me a rash before. "
-            "Doctor: I am considering amoxicillin and saline irrigation for acute sinusitis. "
-            "Patient: Please note that penicillin allergy again. Doctor: Understood."
-        ),
+        transcript_text=DEMO_CONSULTATION_TRANSCRIPTS[4103],
     ),
     SeededScenario(
         consultation_id=4104,
@@ -133,12 +117,7 @@ SCENARIOS: tuple[SeededScenario, ...] = (
         allergies="Not specified",
         medical_history="Not specified",
         purpose="Sparse consultation with many missing fields.",
-        transcript_text=(
-            "Synthetic academic demo transcript. Doctor: What brings you in today? "
-            "Patient: I feel tired. Doctor: For how long? Patient: A while, maybe several weeks. "
-            "Doctor: Any other symptoms? Patient: Not sure. Doctor: We will document fatigue, order basic labs, "
-            "and follow up when more information is available."
-        ),
+        transcript_text=DEMO_CONSULTATION_TRANSCRIPTS[4104],
     ),
 )
 
