@@ -58,14 +58,35 @@
   {% endif %}
 
   <h3>Suggestive Mode</h3>
-  <ul>
-    {% for suggestion in suggestive_review.suggestions %}
-    <li>{{ suggestion.severity }} - {{ suggestion.title }} - {{ suggestion.recommendation }}</li>
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:1rem;margin-bottom:1rem;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <span style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 0.9rem;border-radius:999px;font-weight:700;letter-spacing:0.02em;{% if suggestive_review.overall_risk_level == 'GREEN' %}background:#dcfce7;color:#166534;{% elif suggestive_review.overall_risk_level == 'YELLOW' %}background:#fef3c7;color:#92400e;{% else %}background:#fee2e2;color:#991b1b;{% endif %}">
+        Risk: {{ suggestive_review.overall_risk_level }}
+      </span>
+      <p style="margin:0;flex:1 1 240px;color:#334155;">{{ suggestive_review.summary }}</p>
+    </div>
+
+    {% if suggestive_review.suggestions %}
+    <div style="display:grid;gap:1rem;">
+      {% for suggestion in suggestive_review.suggestions %}
+      <section style="border:1px solid #e2e8f0;border-radius:14px;padding:1rem;background:#ffffff;box-shadow:0 1px 2px rgba(15,23,42,0.05);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+          <strong style="font-size:1rem;color:#0f172a;">{{ suggestion.title }}</strong>
+          <span style="display:inline-flex;align-items:center;padding:0.35rem 0.75rem;border-radius:999px;font-size:0.82rem;font-weight:700;text-transform:uppercase;background:#f3f4f6;color:#0f172a;">{{ suggestion.severity }}</span>
+        </div>
+        <p style="margin:0.75rem 0 0.25rem 0;color:#334155;">{{ suggestion.detail }}</p>
+        <p style="margin:0.25rem 0 0.75rem 0;color:#0f172a;"><strong>Recommendation:</strong> {{ suggestion.recommendation }}</p>
+        <p style="margin:0;color:#475569;font-size:0.95rem;"><em>Source quote:</em> {{ suggestion.source_quote }}</p>
+      </section>
+      {% endfor %}
+    </div>
     {% else %}
-    <li>No suggestions.</li>
-    {% endfor %}
-  </ul>
-  <p><strong>Summary:</strong> {{ suggestive_review.summary }}</p>
+    <div style="padding:1.25rem;border:1px dashed #cbd5e1;border-radius:14px;background:#ffffff;">
+      <p style="margin:0 0 0.5rem 0;font-weight:700;color:#0f172a;">No suggestions found.</p>
+      <p style="margin:0;color:#475569;">The draft appears clinically stable based on the current suggestive review output.</p>
+    </div>
+    {% endif %}
+  </div>
 </section>
 
 {% if user and user.role in ['doctor', 'admin'] %}

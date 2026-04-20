@@ -463,6 +463,26 @@ class InMemoryPromptRepository(PromptRepository):
                     "Report: {generated_report}. Normalized transcript: {normalized_transcript}"
                 ),
             ),
+            LlmPromptConfig(
+                id="suggestive_mode_v3",
+                prompt_name="Suggestive Mode -- Clinical Safety Net v3",
+                model_target="qwen3:8b",
+                temperature=0.3,
+                max_tokens=1500,
+                system_prompt=(
+                    "You are a second-pass outpatient clinical documentation safety reviewer. "
+                    "Compare the generated clinical report and the normalized transcript. "
+                    "Return only strict JSON. Use only evidence from the report or transcript. "
+                    "Do not invent medical facts."
+                ),
+                user_prompt_template=(
+                    "Consultation {consultation_id}. Generated report JSON: {generated_report}. "
+                    "Normalized transcript JSON: {normalized_transcript}. "
+                    "Return a JSON object with keys consultation_id, suggestions, "
+                    "overall_risk_level, summary. Each suggestion must contain keys type, "
+                    "severity, title, detail, recommendation, source_quote."
+                ),
+            ),
         ]
 
     def get_by_id(self, prompt_id: str) -> LlmPromptConfig | None:

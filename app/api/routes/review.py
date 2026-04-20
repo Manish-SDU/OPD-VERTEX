@@ -103,6 +103,42 @@ def run_suggestive_review(
     }
 
 
+@router.post("/{consultation_id}/suggestive-review/regenerate")
+def regenerate_suggestive_review(
+    consultation_id: int,
+    service: SuggestiveReviewApplicationService = Depends(
+        get_suggestive_review_app_service
+    ),
+) -> dict:
+    try:
+        review = service.run_review(consultation_id, regenerate=True)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "status": "regenerated",
+        "consultation_id": consultation_id,
+        "suggestive_review": review.model_dump(),
+    }
+
+
+@router.get("/{consultation_id}/suggestive-review")
+def get_suggestive_review(
+    consultation_id: int,
+    service: SuggestiveReviewApplicationService = Depends(
+        get_suggestive_review_app_service
+    ),
+) -> dict:
+    try:
+        review = service.get_review(consultation_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {
+        "status": "loaded",
+        "consultation_id": consultation_id,
+        "suggestive_review": review.model_dump(),
+    }
+
+
 @router.post("/{consultation_id}/approve")
 def approve_review(
     consultation_id: int,

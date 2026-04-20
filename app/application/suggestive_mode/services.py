@@ -15,10 +15,14 @@ from app.domain.suggestive_mode.models import (
     SuggestiveReview,
     SuggestiveReviewRequest,
 )
+from app.application.suggestive_mode.rules import (
+    build_deterministic_suggestions,
+    merge_suggestive_reviews,
+)
 from app.infrastructure.logging import apply_logging_aspect
 
 
-SUGGESTIVE_REVIEW_PROMPT_ID = "suggestive_mode_v2"
+SUGGESTIVE_REVIEW_PROMPT_ID = "suggestive_mode_v3"
 
 
 @apply_logging_aspect("service", "suggestive_mode")
@@ -80,6 +84,16 @@ class SuggestiveReviewApplicationService:
             )
         )
 
+        deterministic_suggestions = build_deterministic_suggestions(
+            generated_report=generated_document.generated_output.model_dump(
+                exclude={"report_markdown"}
+            ),
+            normalized_transcript=generated_document.normalized_transcript.model_dump()
+            if generated_document.normalized_transcript is not None
+            else None,
+        )
+        review = merge_suggestive_reviews(review, deterministic_suggestions)
+
         now = utcnow()
         generated_document.suggestive_output = review
         generated_document.suggestive_metadata = LlmExecutionMetadata(
@@ -105,3 +119,13 @@ class SuggestiveReviewApplicationService:
             consultation_id, ConsultationStatus.REVIEW
         )
         return review
+
+    def get_review(self, consultation_id: int) -> SuggestiveReview:
+        generated_document = self.generated_repository.get_by_consultation_id(
+            consultation_id
+        )
+        if generated_document is None or generated_document.suggestive_output is None:
+            raise ValueError(
+                f"Consultation {consultation_id} does not have a suggestive review yet."
+            )
+        return generated_document.suggestive_output

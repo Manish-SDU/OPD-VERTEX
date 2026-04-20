@@ -14,6 +14,8 @@ from app.domain.clinical_notes.models import (
     TranscriptNormalizationRequest,
     TranscriptNormalizer,
 )
+from pydantic import ValidationError
+
 from app.domain.suggestive_mode.models import (
     SuggestiveModeService,
     SuggestiveReview,
@@ -112,7 +114,12 @@ class OllamaSuggestiveModeService(SuggestiveModeService):
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-        return SuggestiveReview.model_validate(payload)
+        try:
+            return SuggestiveReview.model_validate(payload)
+        except ValidationError as exc:
+            raise ValueError(
+                "Suggestive review returned invalid structured output."
+            ) from exc
 
 
 class OllamaHealthService(LocalLlmHealthService):
