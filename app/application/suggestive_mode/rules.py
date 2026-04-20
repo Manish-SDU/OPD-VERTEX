@@ -20,7 +20,12 @@ _MEDICATION_MISSING_FIELDS = {
 }
 
 _MEDICATION_CONTRAINDICATIONS = {
-    "penicillin": ["amoxicillin", "ampicillin", "amoxicillin/clavulanate", "penicillin"],
+    "penicillin": [
+        "amoxicillin",
+        "ampicillin",
+        "amoxicillin/clavulanate",
+        "penicillin",
+    ],
     "sulfa": ["sulfamethoxazole", "sulfa", "sulfasalazine"],
     "aspirin": ["aspirin", "ibuprofen", "naproxen"],
 }
@@ -72,7 +77,10 @@ def _extract_allergies(generated_report: dict[str, Any]) -> list[str]:
 def _compute_risk_level(suggestions: list[Suggestion]) -> RiskLevel:
     if any(item.severity == SuggestionSeverity.CRITICAL for item in suggestions):
         return RiskLevel.RED
-    if any(item.severity in (SuggestionSeverity.HIGH, SuggestionSeverity.MEDIUM) for item in suggestions):
+    if any(
+        item.severity in (SuggestionSeverity.HIGH, SuggestionSeverity.MEDIUM)
+        for item in suggestions
+    ):
         return RiskLevel.YELLOW
     return RiskLevel.GREEN
 
@@ -85,22 +93,28 @@ def _build_source_quote(candidate: str, fallback: str) -> str:
 
 
 def build_deterministic_suggestions(
-    generated_report: dict[str, Any], normalized_transcript: dict[str, Any] | None = None
+    generated_report: dict[str, Any],
+    normalized_transcript: dict[str, Any] | None = None,
 ) -> list[Suggestion]:
     suggestions: list[Suggestion] = []
     medications = _extract_medications(generated_report)
     allergies = _extract_allergies(generated_report)
     diagnosis = _normalize_text(generated_report.get("diagnosis", ""))
     follow_up = _normalize_text(generated_report.get("follow_up", ""))
-    patient_instructions = _normalize_text(generated_report.get("patient_instructions", ""))
+    patient_instructions = _normalize_text(
+        generated_report.get("patient_instructions", "")
+    )
     return_precautions = generated_report.get("return_precautions", [])
-    assessment = _normalize_text(generated_report.get("assessment", ""))
     plan = generated_report.get("plan", {})
     plan_missing = isinstance(plan, dict) and not any(
         _normalize_text(value) if isinstance(value, str) else bool(value)
         for value in plan.values()
     )
-    transcript_blob = _normalize_text(normalized_transcript) if normalized_transcript is not None else ""
+    transcript_blob = (
+        _normalize_text(normalized_transcript)
+        if normalized_transcript is not None
+        else ""
+    )
 
     if allergies and medications:
         for allergy in allergies:
@@ -140,17 +154,21 @@ def build_deterministic_suggestions(
                     title="Duplicate medication entry detected",
                     detail=(
                         f"The generated report includes {count} entries for {med_name}. "
-                        "Duplicate therapy can increase risk and should be reviewed." 
+                        "Duplicate therapy can increase risk and should be reviewed."
                     ),
                     recommendation=(
-                        "Review the medication list and consolidate or clarify duplicate entries." 
+                        "Review the medication list and consolidate or clarify duplicate entries."
                     ),
                     source_quote=f"Medication repeated: {med_name}",
                 )
             )
 
     for med in medications:
-        missing_fields = [label for field, label in _MEDICATION_MISSING_FIELDS.items() if not med[field]]
+        missing_fields = [
+            label
+            for field, label in _MEDICATION_MISSING_FIELDS.items()
+            if not med[field]
+        ]
         if missing_fields:
             suggestions.append(
                 Suggestion(
@@ -201,7 +219,11 @@ def build_deterministic_suggestions(
             )
         )
 
-    if transcript_blob and "return precautions" in transcript_blob and not return_precautions:
+    if (
+        transcript_blob
+        and "return precautions" in transcript_blob
+        and not return_precautions
+    ):
         suggestions.append(
             Suggestion(
                 type=SuggestionType.STANDARD_OF_CARE,
@@ -243,7 +265,8 @@ def merge_suggestive_reviews(
         return review
 
     existing_by_title: dict[str, Suggestion] = {
-        suggestion.title.strip().lower(): suggestion for suggestion in review.suggestions
+        suggestion.title.strip().lower(): suggestion
+        for suggestion in review.suggestions
     }
 
     severity_order = {
@@ -270,7 +293,5 @@ def merge_suggestive_reviews(
 
     review.overall_risk_level = _compute_risk_level(review.suggestions)
     if not review.summary:
-        review.summary = (
-            f"{len(review.suggestions)} issue(s) flagged for clinician review before approval."
-        )
+        review.summary = f"{len(review.suggestions)} issue(s) flagged for clinician review before approval."
     return review
