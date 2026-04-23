@@ -159,3 +159,49 @@ def apply_logging_aspect(
         return cls
 
     return decorator
+
+
+# ---------------------------------------------------------------------------
+# Performance-threshold aspect
+# ---------------------------------------------------------------------------
+
+
+def log_performance(
+    threshold_ms: float = 500.0,
+    component: str = "service",
+    module: str | None = None,
+) -> Callable[[F], F]:
+    """Decorator that emits a WARNING when a call exceeds *threshold_ms*.
+
+    Combines naturally with ``log_method``::
+
+        @log_performance(threshold_ms=200)
+        @log_method("service", "consultations")
+        def generate_report(self, ...):
+            ...
+
+    Or apply via ``apply_logging_aspect`` which handles entry/exit, and
+    use this separately for SLA boundary checks.
+    """
+
+    def decorator(fn: F) -> F:
+        logger = get_component_logger(component, module)
+
+        @functools.wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            start = time.perf_counter()
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                if elapsed_ms > threshold_ms:
+                    logger.warning(
+                        "[SLOW]  %s took %.1fms (threshold=%.0fms)",
+                        fn.__qualname__,
+                        elapsed_ms,
+                        threshold_ms,
+                    )
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorator

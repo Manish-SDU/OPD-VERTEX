@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import logging
 
+import pytest
+
 from app.infrastructure.logging.aspects import (
     apply_logging_aspect,
     get_component_logger,
     log_method,
+    log_performance,
     log_service,
 )
 
@@ -198,3 +201,55 @@ class TestApplyLoggingAspect:
 
         messages = " ".join(r.message for r in caplog.records)
         assert "[ERROR]" in messages
+
+
+# ── log_performance aspect ────────────────────────────────────────────
+
+
+class TestLogPerformance:
+    def test_fast_call_does_not_emit_slow_warning(self, caplog):
+        @log_performance(threshold_ms=1000, component="test", module="perf")
+        def fast():
+            return 1
+
+        with caplog.at_level(logging.WARNING, logger="opd_vertex.test.perf"):
+            fast()
+
+        slow_records = [r for r in caplog.records if "[SLOW]" in r.message]
+        assert len(slow_records) == 0
+
+    def test_preserves_return_value(self):
+        @log_performance(threshold_ms=1000)
+        def compute():
+            return 42
+
+        assert compute() == 42
+
+    def test_preserves_function_name(self):
+        @log_performance(threshold_ms=1000)
+        def my_perf_fn():
+            pass
+
+        assert my_perf_fn.__name__ == "my_perf_fn"
+
+    def test_propagates_exception(self):
+        @log_performance(threshold_ms=1000)
+        def risky():
+            raise RuntimeError("kaboom")
+
+        with pytest.raises(RuntimeError, match="kaboom"):
+            risky()
+
+    def test_slow_call_emits_warning(self, caplog):
+        import time as _time
+
+        @log_performance(threshold_ms=1, component="test", module="perf")
+        def slow():
+            _time.sleep(0.005)
+
+        with caplog.at_level(logging.WARNING, logger="opd_vertex.test.perf"):
+            slow()
+
+        slow_records = [r for r in caplog.records if "[SLOW]" in r.message]
+        assert len(slow_records) == 1
+        assert "slow" in slow_records[0].message

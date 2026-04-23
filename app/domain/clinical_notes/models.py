@@ -362,6 +362,15 @@ class EditedClinicalNotes(BaseModel):
 # --- MongoDB: generated_documents (Collection 3) -----------------------
 
 
+class DocumentVersionEntry(BaseModel):
+    """Immutable snapshot of a GeneratedDocument at a specific version."""
+
+    version: int
+    snapshot: GeneratedClinicalNotes
+    edit_summary: str = ""
+    created_at: datetime | None = None
+
+
 class GeneratedDocument(BaseModel):
     """Staging area for LLM outputs. Doctor reviews here before approval."""
 
@@ -378,6 +387,8 @@ class GeneratedDocument(BaseModel):
     report_metadata: LlmExecutionMetadata | None = None
     suggestive_metadata: LlmExecutionMetadata | None = None
     doctor_edits: list[DoctorEdit] = Field(default_factory=list)
+    version: int = 1
+    version_history: list[DocumentVersionEntry] = Field(default_factory=list)
     status: GeneratedDocumentStatus = GeneratedDocumentStatus.PENDING_REVIEW
     approved_at: datetime | None = None
     created_at: datetime | None = None
@@ -432,6 +443,13 @@ class GeneratedDocumentRepository(ABC):
 
     @abstractmethod
     def save(self, document: GeneratedDocument) -> GeneratedDocument: ...
+
+    def get_version_history(
+        self, consultation_id: int
+    ) -> list[DocumentVersionEntry]:
+        """Return the full version history for a consultation's generated document."""
+        doc = self.get_by_consultation_id(consultation_id)
+        return doc.version_history if doc else []
 
 
 class ConsultationDocumentRepository(ABC):
