@@ -139,7 +139,9 @@ class TestConsultationServicePerf:
         svc = ConsultationApplicationService(repo)
         req = ConsultationCreateRequest(patient_id=1)
 
-        stats = _time_fn(lambda: svc.create_consultation(req, doctor_id=1), iterations=100)
+        stats = _time_fn(
+            lambda: svc.create_consultation(req, doctor_id=1), iterations=100
+        )
         _save_result("consultation_create", stats)
 
         assert stats["p95_ms"] < 10.0

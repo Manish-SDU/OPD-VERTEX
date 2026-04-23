@@ -120,7 +120,9 @@ class TestCrossConsultationIsolation:
         gen = MockClinicalNoteGenerator()
 
         notes_a = gen.generate(_make_request(consultation_id=1, transcript="Headache"))
-        notes_b = gen.generate(_make_request(consultation_id=2, transcript="Chest pain"))
+        notes_b = gen.generate(
+            _make_request(consultation_id=2, transcript="Chest pain")
+        )
 
         # Patient instructions from A must not appear in B if they're different
         # (mock returns the same fixed text, but the objects must be independent)
@@ -135,10 +137,13 @@ class TestCrossConsultationIsolation:
         notes_2 = gen.generate(_make_request(consultation_id=2))
 
         from app.domain.clinical_notes.models import GeneratedDocument
-        doc1 = GeneratedDocument(consultation_id=1, doctor_id=1, patient_id=1,
-                                  generated_output=notes_1)
-        doc2 = GeneratedDocument(consultation_id=2, doctor_id=1, patient_id=2,
-                                  generated_output=notes_2)
+
+        doc1 = GeneratedDocument(
+            consultation_id=1, doctor_id=1, patient_id=1, generated_output=notes_1
+        )
+        doc2 = GeneratedDocument(
+            consultation_id=2, doctor_id=1, patient_id=2, generated_output=notes_2
+        )
         gen_repo.save(doc1)
         gen_repo.save(doc2)
 
@@ -151,14 +156,18 @@ class TestCrossConsultationIsolation:
 
     def test_consultation_document_repo_no_cross_read(self):
         repo = InMemoryConsultationDocumentRepository()
-        repo.save(ConsultationDocument(
-            consultation_id=10,
-            transcript=TranscriptDocument(full_text="Patient A has diabetes."),
-        ))
-        repo.save(ConsultationDocument(
-            consultation_id=11,
-            transcript=TranscriptDocument(full_text="Patient B has asthma."),
-        ))
+        repo.save(
+            ConsultationDocument(
+                consultation_id=10,
+                transcript=TranscriptDocument(full_text="Patient A has diabetes."),
+            )
+        )
+        repo.save(
+            ConsultationDocument(
+                consultation_id=11,
+                transcript=TranscriptDocument(full_text="Patient B has asthma."),
+            )
+        )
 
         doc10 = repo.get_by_consultation_id(10)
         doc11 = repo.get_by_consultation_id(11)
@@ -328,9 +337,7 @@ class TestPrescriptionInjectionGuard:
         gen = MockClinicalNoteGenerator()
         notes = gen.generate(_make_request())
         combined = " ".join(
-            str(v)
-            for v in notes.model_dump().values()
-            if isinstance(v, str)
+            str(v) for v in notes.model_dump().values() if isinstance(v, str)
         )
         dangerous = ["'; DROP TABLE", "<script>", "exec(", "eval(", "os.system"]
         for pattern in dangerous:

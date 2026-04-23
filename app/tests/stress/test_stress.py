@@ -18,7 +18,10 @@ from datetime import date
 from app.application.clinical_notes.editing import DocumentEditingService
 from app.application.consultations.services import ConsultationApplicationService
 from app.application.patients.services import PatientApplicationService
-from app.domain.consultations.models import ConsultationCreateRequest, ConsultationStatus
+from app.domain.consultations.models import (
+    ConsultationCreateRequest,
+    ConsultationStatus,
+)
 from app.domain.patients.models import PatientCreateRequest
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryConsultationDocumentRepository,
@@ -115,7 +118,9 @@ class TestConsultationRepositoryStress:
         # Create 50 consultations
         created_ids = []
         for i in range(50):
-            c = svc.create_consultation(ConsultationCreateRequest(patient_id=1), doctor_id=1)
+            c = svc.create_consultation(
+                ConsultationCreateRequest(patient_id=1), doctor_id=1
+            )
             created_ids.append(c.id)
 
         # Update every other one
@@ -141,6 +146,7 @@ class TestConsultationRepositoryStress:
         def _create(_: int):
             try:
                 from app.domain.consultations.models import Consultation
+
                 with lock:
                     c = repo.create(
                         Consultation(
@@ -194,7 +200,9 @@ class TestDocumentEditingStress:
         cons_repo = InMemoryConsultationDocumentRepository()
         svc = DocumentEditingService(gen_repo, cons_repo)
 
-        original_diagnosis = gen_repo.get_by_consultation_id(1).generated_output.diagnosis
+        original_diagnosis = gen_repo.get_by_consultation_id(
+            1
+        ).generated_output.diagnosis
 
         for i in range(50):
             svc.apply_edits(1, {"diagnosis": f"Edit {i}"})
@@ -249,7 +257,9 @@ class TestClinicalNoteGenerationStress:
             )
             notes = gen.generate(req)
             assert notes.diagnosis != "", f"Empty diagnosis at iteration {i}"
-            assert notes.chief_complaint != "", f"Empty chief_complaint at iteration {i}"
+            assert notes.chief_complaint != "", (
+                f"Empty chief_complaint at iteration {i}"
+            )
 
     def test_generation_is_deterministic_for_same_input(self):
         """Mock generator must return the same result for the same input."""
@@ -308,7 +318,5 @@ class TestEndToEndPipelineStress:
 
             # Apply an edit
             editing_svc = DocumentEditingService(gen_repo, cons_doc_repo)
-            edited = editing_svc.apply_edits(
-                1, {"diagnosis": f"Run {run} diagnosis"}
-            )
+            edited = editing_svc.apply_edits(1, {"diagnosis": f"Run {run} diagnosis"})
             assert edited.version == 2

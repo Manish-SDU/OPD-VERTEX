@@ -77,9 +77,7 @@ class DocumentEditingService:
 
         return self._gen_repo.save(doc)
 
-    def get_version_history(
-        self, consultation_id: int
-    ) -> list[DocumentVersionEntry]:
+    def get_version_history(self, consultation_id: int) -> list[DocumentVersionEntry]:
         """Return the full version history list for a consultation."""
         return self._gen_repo.get_version_history(consultation_id)
 
@@ -133,9 +131,7 @@ class DocumentEditingService:
         def _get_snapshot(v: int) -> dict:
             if v == 0 or v is None:
                 return doc.generated_output.model_dump()
-            entry = next(
-                (e for e in doc.version_history if e.version == v), None
-            )
+            entry = next((e for e in doc.version_history if e.version == v), None)
             if entry is None:
                 raise ValueError(
                     f"Version {v} not found for consultation {consultation_id}."

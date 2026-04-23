@@ -76,7 +76,9 @@ class TestApplyEdits:
         assert doc.status == GeneratedDocumentStatus.REVISED
 
     def test_edit_stores_snapshot_in_version_history(self, editing_service, gen_repo):
-        original_diagnosis = gen_repo.get_by_consultation_id(1).generated_output.diagnosis
+        original_diagnosis = gen_repo.get_by_consultation_id(
+            1
+        ).generated_output.diagnosis
         doc = editing_service.apply_edits(1, {"diagnosis": "Post-edit"})
 
         assert len(doc.version_history) == 1
@@ -119,7 +121,9 @@ class TestGetVersionHistory:
 
 class TestRestoreVersion:
     def test_restore_reverts_to_snapshot_content(self, editing_service, gen_repo):
-        original_diagnosis = gen_repo.get_by_consultation_id(1).generated_output.diagnosis
+        original_diagnosis = gen_repo.get_by_consultation_id(
+            1
+        ).generated_output.diagnosis
         editing_service.apply_edits(1, {"diagnosis": "Changed diagnosis"})
 
         doc = editing_service.restore_version(1, target_version=1)
@@ -136,9 +140,7 @@ class TestRestoreVersion:
         doc = editing_service.restore_version(1, target_version=1)
 
         # The v2 state must be stored in history before we overwrote it
-        v2_entry = next(
-            (e for e in doc.version_history if e.version == 2), None
-        )
+        v2_entry = next((e for e in doc.version_history if e.version == 2), None)
         assert v2_entry is not None
         assert v2_entry.snapshot.diagnosis == "Changed"
 

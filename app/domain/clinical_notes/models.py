@@ -444,9 +444,7 @@ class GeneratedDocumentRepository(ABC):
     @abstractmethod
     def save(self, document: GeneratedDocument) -> GeneratedDocument: ...
 
-    def get_version_history(
-        self, consultation_id: int
-    ) -> list[DocumentVersionEntry]:
+    def get_version_history(self, consultation_id: int) -> list[DocumentVersionEntry]:
         """Return the full version history for a consultation's generated document."""
         doc = self.get_by_consultation_id(consultation_id)
         return doc.version_history if doc else []
