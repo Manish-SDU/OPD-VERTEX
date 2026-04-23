@@ -13,18 +13,18 @@
     "mean_ms": 0.002,
     "p50_ms": 0.002,
     "p95_ms": 0.002,
-    "p99_ms": 0.011,
+    "p99_ms": 0.008,
     "min_ms": 0.002,
-    "max_ms": 0.019
+    "max_ms": 0.02
   },
   "patient_create": {
     "iterations": 100,
     "mean_ms": 0.005,
     "p50_ms": 0.005,
-    "p95_ms": 0.006,
-    "p99_ms": 0.046,
+    "p95_ms": 0.007,
+    "p99_ms": 0.033,
     "min_ms": 0.004,
-    "max_ms": 0.046
+    "max_ms": 0.033
   },
   "consultation_list": {
     "iterations": 200,
@@ -33,16 +33,16 @@
     "p95_ms": 0.001,
     "p99_ms": 0.001,
     "min_ms": 0.001,
-    "max_ms": 0.01
+    "max_ms": 0.009
   },
   "consultation_create": {
     "iterations": 100,
     "mean_ms": 0.003,
     "p50_ms": 0.003,
-    "p95_ms": 0.004,
-    "p99_ms": 0.028,
+    "p95_ms": 0.005,
+    "p99_ms": 0.03,
     "min_ms": 0.003,
-    "max_ms": 0.028
+    "max_ms": 0.03
   },
   "consultation_get_by_id": {
     "iterations": 500,
@@ -51,34 +51,34 @@
     "p95_ms": 0.001,
     "p99_ms": 0.001,
     "min_ms": 0.001,
-    "max_ms": 0.008
+    "max_ms": 0.011
   },
   "mock_clinical_note_generation": {
     "iterations": 100,
-    "mean_ms": 0.011,
-    "p50_ms": 0.01,
-    "p95_ms": 0.011,
-    "p99_ms": 0.069,
+    "mean_ms": 0.018,
+    "p50_ms": 0.017,
+    "p95_ms": 0.027,
+    "p99_ms": 0.07,
     "min_ms": 0.01,
-    "max_ms": 0.069
+    "max_ms": 0.07
   },
   "transcript_normalizer": {
     "iterations": 200,
     "mean_ms": 0.004,
     "p50_ms": 0.003,
-    "p95_ms": 0.004,
-    "p99_ms": 0.008,
+    "p95_ms": 0.005,
+    "p99_ms": 0.015,
     "min_ms": 0.003,
-    "max_ms": 0.032
+    "max_ms": 0.034
   },
   "document_edit_single_field": {
     "iterations": 100,
-    "mean_ms": 0.098,
-    "p50_ms": 0.093,
-    "p95_ms": 0.118,
-    "p99_ms": 0.27,
+    "mean_ms": 0.103,
+    "p50_ms": 0.092,
+    "p95_ms": 0.159,
+    "p99_ms": 0.36,
     "min_ms": 0.09,
-    "max_ms": 0.27
+    "max_ms": 0.36
   },
   "version_history_retrieval": {
     "iterations": 500,
@@ -87,6 +87,6 @@
     "p95_ms": 0.001,
     "p99_ms": 0.001,
     "min_ms": 0.001,
-    "max_ms": 0.008
+    "max_ms": 0.004
   }
 }

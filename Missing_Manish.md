@@ -46,6 +46,62 @@ python scripts/generate_test_graphs.py
 
 ---
 
+## Running the real LLM tests
+
+The 17 tests in `app/tests/integration/test_real_llm.py` fire real prompts at **Qwen3:8b** via Ollama.  
+They auto-skip if Ollama is not reachable, so they never break CI.
+
+### Option A — Ollama installed natively on your machine
+
+```bash
+# 1. Make sure the model is pulled
+ollama pull qwen3:8b
+
+# 2. Start the Ollama server (if it is not already running)
+ollama serve
+
+# 3. In a second terminal, run just the real-LLM suite
+python -m pytest app/tests/integration/test_real_llm.py -v -s
+```
+
+Ollama listens on `http://localhost:11434` by default — that matches the endpoint baked into the test file. Each test call takes 2–15 s (Qwen3:8b inference), so the full suite takes a few minutes.
+
+### Option B — Ollama running inside Docker
+
+```bash
+# 1. Start Ollama + the app together
+docker compose up --build -d
+
+# 2. Pull the model into the running container (first time only)
+docker compose exec ollama ollama pull qwen3:8b
+# If there is no dedicated ollama service in compose, pull via the app container:
+# docker compose exec app ollama pull qwen3:8b
+
+# 3. Run the real-LLM tests inside the app container
+docker compose exec app python -m pytest app/tests/integration/test_real_llm.py -v -s
+```
+
+If your Ollama container is on a different host/port, override the endpoint:
+
+```bash
+OLLAMA_ENDPOINT=http://<host>:<port> python -m pytest app/tests/integration/test_real_llm.py -v -s
+```
+
+> **Expected output when Ollama is live:** 17 tests pass (PASSED, not skipped).  
+> **Expected output when Ollama is offline:** 17 tests skip with `reason="Ollama not reachable"`.
+
+### What the real-LLM tests verify
+
+| Class | Tests | What it checks |
+|---|---|---|
+| `TestRealLlmStructuralValidity` | 4 | Pydantic parses response, no `"None"` string leaks, medications is a list, diagnosis is non-empty |
+| `TestRealLlmNoInvention` | 5 | No allergy invented, no meds for minimal transcript, no off-topic diagnoses, normaliser preserves key terms |
+| `TestRealLlmContraindication` | 3 | Penicillin + amoxicillin → RED/YELLOW, suggestion mentions allergy, safe prescription → GREEN |
+| `TestRealLlmCrossConsultationIsolation` | 2 | Two separate calls give different diagnoses; no data bleeds between consultations |
+| `TestRealLlmJsonRobustness` | 3 | Short transcript parses, special chars don't break parser, risk level always a valid enum |
+
+---
+
 ## Benchmark results (mock adapters, Python 3.12)
 
 All operations run in-memory (no DB/LLM calls), so these are pure application-logic costs.
