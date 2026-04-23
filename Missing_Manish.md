@@ -1,20 +1,20 @@
-# Missing_Manish
+## Test suite Summary 😊 🤙
 
-> **OPD-Vertex** — a local-first outpatient clinic platform with LLM-assisted clinical notes.
+```
+196 tests   0 failures   7 deprecation-only warnings
+```
+
+| Suite | Tests |
+|---|---|
+| smoke | 6 |
+| integration | 13 |
+| unit (domain, services, repos, logging, security, LLM, versioning, hallucination) | 147 |
+| benchmarks | 10 |
+| stress | 20 |
 
 ---
 
-## What I built
-
-OPD-Vertex is a FastAPI web app for outpatient clinics.  
-Doctors record consultations, a local Qwen3:8b LLM (via Ollama) transcribes and generates structured clinical notes, a suggestive-mode engine flags contraindications, and a doctor can approve or reject the draft — which creates a versioned prescription.
-
-The stack: **FastAPI + Jinja2** (web), **SQLAlchemy + MySQL** (structured data), **MongoDB** (AI documents), **Faster-Whisper** (transcription), **Ollama/Qwen3:8b** (LLM).  
-Everything runs locally, no cloud calls.
-
----
-
-## What was added in this session
+## What was added
 
 | Area | What changed |
 |---|---|
@@ -43,22 +43,6 @@ python -m pytest app/tests/stress/ -v
 # Generate benchmark charts → reports/
 python scripts/generate_test_graphs.py
 ```
-
----
-
-## Test suite at a glance
-
-```
-196 tests   0 failures   7 deprecation-only warnings
-```
-
-| Suite | Tests |
-|---|---|
-| smoke | 6 |
-| integration | 13 |
-| unit (domain, services, repos, logging, security, LLM, versioning, hallucination) | 147 |
-| benchmarks | 10 |
-| stress | 20 |
 
 ---
 
