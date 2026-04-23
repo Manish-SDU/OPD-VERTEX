@@ -13,23 +13,18 @@ all benchmarks.
 from __future__ import annotations
 
 import json
-import os
 import time
 from datetime import date
 from pathlib import Path
 from typing import Callable
-
-import pytest
 
 from app.application.clinical_notes.editing import DocumentEditingService
 from app.application.consultations.services import ConsultationApplicationService
 from app.application.patients.services import PatientApplicationService
 from app.domain.clinical_notes.models import (
     ClinicalReportRequest,
-    ConsultationDocument,
     LlmPromptConfig,
     NormalizedTranscript,
-    TranscriptDocument,
 )
 from app.domain.consultations.models import ConsultationCreateRequest
 from app.domain.patients.models import PatientCreateRequest
@@ -109,13 +104,6 @@ class TestPatientServicePerf:
     def test_create_patient_under_10ms_p95(self):
         repo = InMemoryPatientRepository()
         svc = PatientApplicationService(repo)
-        req = PatientCreateRequest(
-            first_name="Bench",
-            last_name="User",
-            date_of_birth=date(1990, 1, 1),
-            email="bench@example.local",
-            password_hash="x",
-        )
 
         def _create():
             req2 = PatientCreateRequest(

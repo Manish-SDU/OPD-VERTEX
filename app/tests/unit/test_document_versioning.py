@@ -6,10 +6,7 @@ import pytest
 
 from app.application.clinical_notes.editing import DocumentEditingService
 from app.domain.clinical_notes.models import (
-    ConsultationDocument,
-    GeneratedDocument,
     GeneratedDocumentStatus,
-    TranscriptDocument,
 )
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryConsultationDocumentRepository,

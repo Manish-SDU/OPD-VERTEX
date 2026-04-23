@@ -13,10 +13,7 @@ from __future__ import annotations
 import concurrent.futures
 import random
 import threading
-import time
 from datetime import date
-
-import pytest
 
 from app.application.clinical_notes.editing import DocumentEditingService
 from app.application.consultations.services import ConsultationApplicationService
@@ -66,7 +63,7 @@ class TestPatientRepositoryStress:
 
         first = len(svc.list_patients())
         for _ in range(500):
-            result = svc.list_patients()
+            svc.list_patients()
         last = len(svc.list_patients())
 
         assert first == last, "list_patients() count changed without mutations"
@@ -282,7 +279,6 @@ class TestEndToEndPipelineStress:
         for run in range(50):
             consultation_repo = InMemoryConsultationRepository()
             cons_app = ConsultationApplicationService(consultation_repo)
-            patient_repo = InMemoryPatientRepository()
             gen_repo = InMemoryGeneratedDocumentRepository()
             cons_doc_repo = InMemoryConsultationDocumentRepository()
 

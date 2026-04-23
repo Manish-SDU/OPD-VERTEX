@@ -14,8 +14,6 @@ because the application services inject them through the same ports.
 
 from __future__ import annotations
 
-import pytest
-
 from app.domain.clinical_notes.models import (
     ClinicalReportRequest,
     ConsultationDocument,
