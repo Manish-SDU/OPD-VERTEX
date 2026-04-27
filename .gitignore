@@ -1,4 +1,5 @@
 .venv/
+.venv312/
 __pycache__/
 .pytest_cache/
 .mypy_cache/
@@ -23,3 +24,16 @@ app/static/img/.keep
 app/prompts/.keep
 app/email_templates/.keep
 app/models/whisper
+
+# Local cookie jar (curl/test session)
+cookies.txt
+
+# Temporary PDF preview renders
+_pg*.png
+_chk*.png
+
+# PlantUML toolchain (download locally; do not commit the JAR)
+Componenetclass-week17_assignment/tools/
+
+# Raw pytest run captures (regenerable)
+Componenetclass-week17_assignment/runs/

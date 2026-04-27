@@ -1,0 +1,39 @@
+@startuml sequence
+!theme plain
+skinparam dpi 180
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam ParticipantBackgroundColor #F4F7FB
+skinparam ParticipantBorderColor #4A6FA5
+skinparam SequenceLifeLineBorderColor #888
+skinparam SequenceArrowColor #444
+
+title End-to-end consultation (happy path)
+
+actor Doctor
+participant "API GW" as GW
+participant "Consultation" as C
+participant "Transcription" as T
+participant "LLM Orch." as L
+participant "Suggestive\nReview" as S
+participant "Prescription" as P
+participant "PDF" as D
+queue "Kafka" as K
+
+Doctor -> GW : POST /consultations (audio)
+GW -> C : create
+C -> T : transcribe (gRPC)
+T --> C : transcript_id
+C -> L : generate note (gRPC)
+L --> C : draft_id
+C -> S : safety review (gRPC)
+S --> C : suggestions
+C --> Doctor : draft + suggestions
+Doctor -> GW : POST /prescriptions/approve
+GW -> P : approve
+P -> D : render PDF (gRPC)
+D --> P : pdf_url
+P -> K : prescription.approved
+K --> Doctor : 200 OK
+@enduml

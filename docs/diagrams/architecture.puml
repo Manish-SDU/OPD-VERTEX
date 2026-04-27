@@ -1,0 +1,95 @@
+@startuml architecture
+!theme plain
+skinparam dpi 180
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 13
+skinparam roundCorner 12
+skinparam shadowing false
+skinparam padding 6
+skinparam ArrowColor #555
+skinparam ArrowFontColor #333
+skinparam ArrowFontSize 11
+skinparam ArrowThickness 1.3
+skinparam rectangle {
+  BackgroundColor #F4F7FB
+  BorderColor #4A6FA5
+  FontColor #1B2A41
+}
+skinparam queue {
+  BackgroundColor #EAF6EE
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #EEF1F7
+  BorderColor #4A6FA5
+}
+hide stereotype
+
+title OPD-Vertex @ 50M users / 1M concurrent — Microservices Architecture
+
+' ===== top edge =====
+rectangle "**Clients** — Web / Mobile / Tablet" as Client
+cloud "Cloudflare CDN + WAF" as CDN
+rectangle "**API Gateway** (Kong + OIDC, JWT)" as GW
+
+Client -down-> CDN
+CDN -down-> GW
+
+' ===== service rows: each service shows its owned datastore in the label =====
+package "Identity & Access" #DDE6F2 {
+  rectangle "**1. Auth & Identity**\nPostgres + Redis sessions" as S1
+}
+
+package "Clinical Domain (REST in / gRPC east-west)" #DDE6F2 {
+  rectangle "**2. Patient**\nPostgres (sharded)" as S2
+  rectangle "**3. Consultation**\nsaga orchestrator\nPostgres" as S3
+  rectangle "**4. Prescription**\nPostgres (legal record)" as S4
+}
+
+package "AI Pipeline (GPU-bound)" #FCE5D5 {
+  rectangle "**5. Transcription**\nFaster-Whisper on Triton\nMongo + S3" as S5
+  rectangle "**6. LLM Orchestrator**\nvLLM (Qwen3 / Llama)\nMongo" as S6
+  rectangle "**7. Suggestive Review**\nindependent safety model\nMongo" as S7
+}
+
+package "Cross-cutting" #E5F0DA {
+  rectangle "**8. PDF / Document**\nReportLab → S3" as S8
+  rectangle "**9. Notification**\nemail / SMS / push" as S9
+  rectangle "**10. Audit & Compliance**\nElasticsearch + S3 (immutable)" as S10
+  rectangle "**11. Admin / Prompt Config**\nPostgres + Mongo" as S11
+  rectangle "**12. Analytics & Reporting**\nClickHouse" as S12
+}
+
+' ===== gateway → public-facing services only =====
+GW --> S1 : REST
+GW --> S2 : REST
+GW --> S3 : REST
+GW --> S4 : REST
+GW --> S11 : REST
+
+' ===== east-west gRPC (only the few that actually exist) =====
+S3 -[#0066cc]-> S5 : gRPC
+S3 -[#0066cc]-> S6 : gRPC
+S3 -[#0066cc]-> S7 : gRPC
+S4 -[#0066cc]-> S8 : gRPC
+
+' ===== async bus row =====
+queue "**Apache Kafka** (events: consultation.* / prescription.approved / transcript.ready / draft.ready)" as MQ
+queue "**Redis Streams** (LLM job queue)" as RS
+
+S3 --> MQ
+S4 --> MQ
+S5 --> MQ
+S6 --> RS
+
+MQ --> S9  : consume
+MQ --> S10 : consume
+MQ --> S12 : consume
+
+legend right
+| **Edge** | REST/JSON over HTTPS, JWT at gateway |
+| **East-west** | gRPC + mTLS via Istio |
+| **Async** | Kafka events, Redis Streams for LLM jobs |
+| **Data** | each service owns its own database (no shared schemas) |
+endlegend
+@enduml

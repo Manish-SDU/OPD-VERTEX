@@ -1,3 +1,5 @@
+# Tests Explanation
+
 ## Test suite Summary 😊 🤙
 
 ```
@@ -7,10 +9,12 @@
 | Suite | Tests |
 |---|---|
 | smoke | 6 |
-| integration | 13 |
-| unit (domain, services, repos, logging, security, LLM, versioning, hallucination) | 147 |
+| integration | 20 |
+| unit (domain, services, repos, logging, security, LLM, versioning, hallucination) | 146 |
 | benchmarks | 10 |
-| stress | 20 |
+| stress | 14 |
+
+> The PDF report and rendered terminal screenshots for the assignment live in [`Componenetclass-week17_assignment/`](Componenetclass-week17_assignment/README.md).
 
 ---
 

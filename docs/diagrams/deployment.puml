@@ -1,0 +1,58 @@
+@startuml deployment
+!theme plain
+skinparam dpi 180
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #555
+skinparam node {
+  BackgroundColor #F4F7FB
+  BorderColor #4A6FA5
+}
+skinparam database {
+  BackgroundColor #FFF7E8
+  BorderColor #B58105
+}
+skinparam cloud {
+  BackgroundColor #EEF1F7
+  BorderColor #4A6FA5
+}
+
+title Deployment topology — multi-region active/active
+
+cloud "Cloudflare\nCDN + WAF" as CF
+
+package "Region: EU-West" #DDE6F2 {
+  node "Kubernetes (EKS)" as K1 {
+    node "Ingress / Kong" as IG1
+    node "12 services\nIstio mesh + KEDA" as Svc1
+    node "GPU pool\n(Whisper + vLLM)" as GPU1
+  }
+  database "Postgres\n(Patroni)" as PG1
+  database "Mongo / Redis / Kafka" as DB1
+  database "S3 + ClickHouse" as S31
+}
+
+package "Region: US-East" #DDE6F2 {
+  node "Kubernetes (EKS)" as K2 {
+    node "Ingress / Kong" as IG2
+    node "12 services\nIstio mesh + KEDA" as Svc2
+    node "GPU pool\n(Whisper + vLLM)" as GPU2
+  }
+  database "Postgres\n(replica)" as PG2
+  database "Mongo / Redis / Kafka mirror" as DB2
+  database "S3 + ClickHouse" as S32
+}
+
+package "Platform" #E5F0DA {
+  node "Observability\nPrometheus / Grafana / Tempo / Loki" as OBS
+  node "CI/CD\nGitHub Actions + ArgoCD + Trivy" as CI
+}
+
+CF --> IG1
+CF --> IG2
+PG1 <--> PG2 : logical replication
+DB1 <--> DB2 : MirrorMaker2
+S31 <--> S32 : cross-region sync
+@enduml
