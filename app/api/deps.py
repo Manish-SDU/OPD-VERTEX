@@ -16,6 +16,7 @@ from app.application.clinical_notes.services import (
 )
 from app.application.consultations.services import ConsultationApplicationService
 from app.application.patients.services import PatientApplicationService
+from app.application.pdf.services import ReportPdfApplicationService
 from app.application.prescriptions.services import PrescriptionApplicationService
 from app.application.review.services import ReviewApplicationService
 from app.application.suggestive_mode.services import SuggestiveReviewApplicationService
@@ -30,6 +31,7 @@ from app.infrastructure.ai.llm.ollama_adapter import (
 )
 from app.infrastructure.ai.llm.ollama_client import OllamaClient
 from app.infrastructure.auth.mock import MockAuthService
+from app.infrastructure.pdf.reportlab_adapter import ReportLabPdfGenerator
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryAuditLogRepository,
     InMemoryConsultationDocumentRepository,
@@ -281,8 +283,10 @@ def llm_health_service():
 
 
 @lru_cache
-def pdf_generator() -> MockPdfGenerator:
-    return MockPdfGenerator()
+def pdf_generator():
+    if _use_mock():
+        return MockPdfGenerator()
+    return ReportLabPdfGenerator()
 
 
 @lru_cache
@@ -360,6 +364,18 @@ def get_review_app_service() -> ReviewApplicationService:
         consultation_doc_repository(),
         generated_repository(),
         prescription_repository(),
+    )
+
+
+@lru_cache
+def get_report_pdf_app_service() -> ReportPdfApplicationService:
+    """Provides the Report PDF application service with dependencies."""
+    import logging
+    return ReportPdfApplicationService(
+        generated_repository=generated_repository(),
+        consultation_repository=consultation_repository(),
+        pdf_generator=pdf_generator(),
+        logger=logging.getLogger(__name__),
     )
 
 
