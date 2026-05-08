@@ -20,6 +20,7 @@ from app.application.prescriptions.services import PrescriptionApplicationServic
 from app.application.review.services import ReviewApplicationService
 from app.application.suggestive_mode.services import SuggestiveReviewApplicationService
 from app.application.transcriptions.services import TranscriptionApplicationService
+from app.infrastructure.email.smtp_sender import SmtpEmailService
 from app.core.config import get_settings
 from app.core.security import ALGORITHM, SECRET_KEY
 from app.infrastructure.ai.llm.ollama_adapter import (
@@ -286,8 +287,14 @@ def pdf_generator() -> MockPdfGenerator:
 
 
 @lru_cache
-def email_service() -> MockEmailService:
-    return MockEmailService()
+def email_service():
+    settings = get_settings()
+    return SmtpEmailService(
+        host=settings.smtp_host or "mailhog",
+        port=settings.smtp_port or 1025,
+        from_email=settings.smtp_from or "no-reply@example.local",
+        from_name="OPD-Vertex",
+    )
 
 
 @lru_cache
@@ -360,6 +367,8 @@ def get_review_app_service() -> ReviewApplicationService:
         consultation_doc_repository(),
         generated_repository(),
         prescription_repository(),
+        patient_repository(),
+        email_service(),
     )
 
 

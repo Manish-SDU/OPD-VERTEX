@@ -16,6 +16,7 @@ from app.domain.consultations.models import ConsultationRepository, Consultation
 from app.domain.prescriptions.models import Prescription, PrescriptionRepository
 from app.domain.suggestive_mode.models import SuggestiveReview
 from app.infrastructure.logging import apply_logging_aspect
+from app.domain.email.models import EmailAttachment, EmailMessage
 
 
 @apply_logging_aspect("service", "review")
@@ -26,11 +27,15 @@ class ReviewApplicationService:
         consultation_doc_repository: ConsultationDocumentRepository,
         generated_repository: GeneratedDocumentRepository,
         prescription_repository: PrescriptionRepository,
+        patient_repository,
+        email_service,
     ) -> None:
         self.consultation_repository = consultation_repository
         self.consultation_doc_repository = consultation_doc_repository
         self.generated_repository = generated_repository
         self.prescription_repository = prescription_repository
+        self.patient_repository = patient_repository
+        self.email_service = email_service
 
     def build_review_context(
         self, consultation_id: int
@@ -162,3 +167,34 @@ class ReviewApplicationService:
             return date.fromisoformat(cleaned)
         except ValueError:
             return None
+    
+    def send_report_to_patient(self, consultation_id: int) -> dict:
+        generated_document = self.generated_repository.get_by_consultation_id(consultation_id)
+        if generated_document is None:
+            raise ValueError("Generated report not found.")
+
+        if str(generated_document.status).lower() != "approved":
+            raise ValueError("Only approved reports can be emailed.")
+
+        patient = self.patient_repository.get_by_id(generated_document.patient_id)
+        if patient is None:
+            raise ValueError("Patient not found.")
+
+        if not getattr(patient, "email", None):
+            raise ValueError("Patient email is missing.")
+
+        pdf_bytes = b"%PDF-1.4 fake pdf bytes for now"
+
+        message = EmailMessage(
+            to_email=patient.email,
+            to_name=f"{patient.first_name} {patient.last_name}".strip(),
+            subject=f"Clinical Report #{consultation_id}",
+            text_body="Please find your approved clinical report attached.",
+            attachment=EmailAttachment(
+                filename=f"clinical-report-{consultation_id}.pdf",
+                content_type="application/pdf",
+                data=pdf_bytes,
+            ),
+        )
+
+        return self.email_service.send_email(message)

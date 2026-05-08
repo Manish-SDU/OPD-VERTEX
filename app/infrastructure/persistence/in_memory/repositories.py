@@ -10,6 +10,7 @@ from datetime import date
 
 from app.domain.audit.models import AuditLog, AuditLogRepository
 from app.domain.auth.models import Staff, StaffRepository
+from app.domain.email.models import EmailMessage, EmailService
 from app.domain.clinical_notes.models import (
     Assessment,
     ClinicalNoteGenerator,
@@ -961,5 +962,14 @@ class MockPdfGenerator(PdfGenerator):
 
 
 class MockEmailService(EmailService):
-    def send_prescription_email(self, prescription_id: int, recipient: str) -> str:
-        return f"Mock email queued for {recipient} (prescription {prescription_id})."
+    def send_email(self, message: EmailMessage) -> dict:
+        return {
+            "status": "sent",
+            "provider": "mock",
+            "recipient": str(message.to_email),
+            "subject": message.subject,
+            "attachment_filename": (
+                message.attachment.filename if message.attachment else None
+            ),
+            "message": "Mock email sent successfully",
+        }

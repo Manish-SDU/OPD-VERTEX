@@ -12,12 +12,29 @@
     <div class="report-actions-bar">
       {% if user and user.role in ['doctor', 'admin'] %}
       <a href="/review/report/{{ consultation_id }}/edit" class="btn btn-primary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
         Edit & Approve
       </a>
       {% endif %}
+
+      {% if user and user.role == 'doctor' and generated_document.status|lower == 'approved' %}
+      <button type="button" class="btn btn-success" id="send-report-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+          <path d="M3 7l9 6 9-6"></path>
+        </svg>
+        Send to Patient
+      </button>
+      {% endif %}
+
       <a href="/review/report/{{ consultation_id }}/print" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        </svg>
         Export PDF
       </a>
     </div>
@@ -28,7 +45,8 @@
     </div>
 
     <div class="report-status">
-      <p><strong>Status:</strong> 
+      <p>
+        <strong>Status:</strong>
         <span class="badge badge-{{ generated_document.status|lower }}">
           {{ generated_document.status }}
         </span>
@@ -51,7 +69,7 @@
 
 <script>
 function escapeHtml(value) {
-  return value
+  return String(value)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -86,7 +104,10 @@ function renderReportLines(lines) {
     } else if (line.includes(':')) {
       const [label, ...rest] = line.split(':');
       html.push(
-        `<div class="report-field"><span class="report-field-label">${escapeHtml(label)}:</span><span class="report-field-value">${escapeHtml(rest.join(':').trim() || '-')}</span></div>`
+        `<div class="report-field">
+          <span class="report-field-label">${escapeHtml(label)}:</span>
+          <span class="report-field-value">${escapeHtml(rest.join(':').trim() || '-')}</span>
+        </div>`
       );
     } else {
       html.push(`<p class="report-paragraph">${escapeHtml(line)}</p>`);
@@ -147,11 +168,65 @@ function renderStructuredReport(rawText) {
   `;
 }
 
-const rawReportEl = document.getElementById('report-raw');
-const renderedReportEl = document.getElementById('report-rendered');
-if (rawReportEl && renderedReportEl) {
-  renderedReportEl.innerHTML = renderStructuredReport(rawReportEl.textContent || '');
+function showToast(message, type) {
+  const alert = document.createElement('div');
+  const text = document.createElement('span');
+
+  alert.className = `toast toast-${type}`;
+  text.textContent = message;
+  alert.appendChild(text);
+
+  document.body.appendChild(alert);
+
+  setTimeout(() => {
+    alert.remove();
+  }, 3500);
 }
+
+async function sendReportToPatient() {
+  const confirmed = confirm("Send this approved report to the patient's email?");
+  if (!confirmed) return;
+
+  const sendBtn = document.getElementById('send-report-btn');
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.classList.add('btn-loading');
+  }
+
+  try {
+    const response = await fetch(`/review/report/{{ consultation_id }}/send-email`, {
+      method: 'POST'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.detail || 'Failed to send email');
+    }
+
+    showToast('Report email sent successfully. Check MailHog inbox.', 'success');
+  } catch (error) {
+    showToast(error.message || 'Failed to send email', 'error');
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.classList.remove('btn-loading');
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const rawReportEl = document.getElementById('report-raw');
+  const renderedReportEl = document.getElementById('report-rendered');
+  if (rawReportEl && renderedReportEl) {
+    renderedReportEl.innerHTML = renderStructuredReport(rawReportEl.textContent || '');
+  }
+
+  const sendBtn = document.getElementById('send-report-btn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', sendReportToPatient);
+  }
+});
 </script>
 
 <style>
@@ -201,13 +276,25 @@ if (rawReportEl && renderedReportEl) {
   font-weight: 700;
   line-height: 1;
   text-decoration: none;
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease,
-    background-color 0.16s ease, color 0.16s ease;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease,
+    opacity 0.16s ease;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+  cursor: pointer;
 }
 
 .report-actions-bar .btn:hover {
   transform: translateY(-1px);
+}
+
+.report-actions-bar .btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .report-actions-bar .btn svg {
@@ -238,6 +325,20 @@ if (rawReportEl && renderedReportEl) {
   background: #eff6ff;
   border-color: rgba(37, 99, 235, 0.32);
   box-shadow: 0 16px 32px rgba(37, 99, 235, 0.14);
+}
+
+.report-actions-bar .btn-success {
+  background: linear-gradient(135deg, #15803d, #22c55e);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(21, 128, 61, 0.22);
+}
+
+.report-actions-bar .btn-success:hover {
+  box-shadow: 0 18px 34px rgba(21, 128, 61, 0.28);
+}
+
+.report-actions-bar .btn-loading {
+  opacity: 0.8;
 }
 
 .report-markdown {
@@ -453,6 +554,26 @@ if (rawReportEl && renderedReportEl) {
   color: var(--accent-hover);
 }
 
+.toast {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 9999;
+  padding: 0.95rem 1.2rem;
+  border-radius: 14px;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+}
+
+.toast-success {
+  background: #15803d;
+}
+
+.toast-error {
+  background: #b91c1c;
+}
+
 @media (max-width: 768px) {
   .report-view-container {
     padding: 1rem;
@@ -488,6 +609,11 @@ if (rawReportEl && renderedReportEl) {
     width: 100%;
     text-align: center;
     min-width: 0;
+  }
+
+  .toast {
+    left: 1rem;
+    right: 1rem;
   }
 }
 

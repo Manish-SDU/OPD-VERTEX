@@ -9,7 +9,7 @@ services:
       - ollama-data:/root/.ollama
 
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     ports:
@@ -21,6 +21,10 @@ services:
       LOCAL_LLM_ENDPOINT: http://ollama:11434
       WHISPER_API_URL: http://whisper:8001
       LLM_MODEL_NAME: qwen3:8b
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM_EMAIL: no-reply@example.com
+      SMTP_FROM_NAME: OPD-Vertex
     volumes:
       - ./:/workspace
       - model-cache:/workspace/app/models
@@ -29,6 +33,7 @@ services:
       - mongo
       - whisper
       - ollama
+      - mailhog
 
   whisper:
     build:
@@ -60,6 +65,11 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"
 
 volumes:
   mysql-data:

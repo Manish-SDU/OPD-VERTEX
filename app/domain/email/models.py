@@ -26,15 +26,30 @@ class EmailTemplate(BaseModel):
 
 class EmailTemplateRepository(ABC):
     @abstractmethod
-    def list_templates(self) -> list[EmailTemplate]:
+    def list_templates(self) -> list["EmailTemplate"]:
         """Return email templates."""
 
     @abstractmethod
-    def get_by_id(self, template_id: str) -> EmailTemplate | None:
+    def get_by_id(self, template_id: str) -> "EmailTemplate | None":
         """Return a single email template."""
+
+
+class EmailAttachment(BaseModel):
+    filename: str
+    content_type: str
+    data: bytes
+
+
+class EmailMessage(BaseModel):
+    to_email: str
+    to_name: str | None = None
+    subject: str
+    text_body: str
+    html_body: str | None = None
+    attachment: EmailAttachment | None = None
 
 
 class EmailService(ABC):
     @abstractmethod
-    def send_prescription_email(self, prescription_id: int, recipient: str) -> str:
-        """Send prescription PDF email and return a status message."""
+    def send_email(self, message: EmailMessage) -> dict:
+        """Send an email and return provider/result metadata."""
