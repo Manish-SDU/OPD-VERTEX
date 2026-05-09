@@ -169,11 +169,18 @@ class ReviewApplicationService:
             return None
     
     def send_report_to_patient(self, consultation_id: int) -> dict:
-        generated_document = self.generated_repository.get_by_consultation_id(consultation_id)
+        """
+        Send a patient-friendly summary email with prescription, follow-up, and suggestions.
+        No PDF attachment is included.
+        """
+        generated_document = self.generated_repository.get_by_consultation_id(
+            consultation_id
+        )
         if generated_document is None:
             raise ValueError("Generated report not found.")
 
-        if str(generated_document.status).lower() != "approved":
+        # Only approved reports can be emailed
+        if generated_document.status != GeneratedDocumentStatus.APPROVED:
             raise ValueError("Only approved reports can be emailed.")
 
         patient = self.patient_repository.get_by_id(generated_document.patient_id)
@@ -183,18 +190,135 @@ class ReviewApplicationService:
         if not getattr(patient, "email", None):
             raise ValueError("Patient email is missing.")
 
-        pdf_bytes = b"%PDF-1.4 fake pdf bytes for now"
+        notes = generated_document.generated_output
+
+        # clinician name is already injected into encounter_info by ClinicalNotesApplicationService
+        clinician_name = getattr(getattr(notes, "encounter_info", None), "clinician_name", "") or "Your clinician"
+
+        content = self._build_patient_email_content(notes)
+        body = self._build_patient_email_body(
+            patient_name=f"{patient.first_name} {patient.last_name}".strip(),
+            clinician_name=clinician_name,
+            content=content,
+        )
 
         message = EmailMessage(
             to_email=patient.email,
             to_name=f"{patient.first_name} {patient.last_name}".strip(),
-            subject=f"Clinical Report #{consultation_id}",
-            text_body="Please find your approved clinical report attached.",
-            attachment=EmailAttachment(
-                filename=f"clinical-report-{consultation_id}.pdf",
-                content_type="application/pdf",
-                data=pdf_bytes,
-            ),
+            subject=f"Your consultation summary (#{consultation_id})",
+            text_body=body,
+            html_body=None,
+            attachment=None,  # <- key: no PDF
         )
 
         return self.email_service.send_email(message)
+    def _build_patient_email_content(self, notes) -> dict[str, str]:
+        """
+        Extract patient-facing parts:
+        - prescription (medications)
+        - follow-up steps
+        - suggestions (instructions + referrals/tests/imaging)
+        """
+
+        def _attr(obj, *names, default=None):
+            for name in names:
+                if hasattr(obj, name):
+                    value = getattr(obj, name)
+                    if value is not None:
+                        return value
+            return default
+
+        prescription_lines: list[str] = []
+
+        # Medications
+        meds = _attr(notes, "medications", default=[]) or []
+        for med in meds:
+            parts = []
+            name = _attr(med, "name", default="")
+            if name:
+                parts.append(name)
+            dosage = _attr(med, "dosage", "dose", default="")
+            if dosage:
+                parts.append(f"dose: {dosage}")
+            route = _attr(med, "route", default="")
+            if route:
+                parts.append(f"route: {route}")
+            frequency = _attr(med, "frequency", default="")
+            if frequency:
+                parts.append(f"frequency: {frequency}")
+            duration = _attr(med, "duration", default="")
+            if duration:
+                parts.append(f"duration: {duration}")
+            special = _attr(med, "special_instructions", "specialinstructions", default="")
+            if special:
+                parts.append(f"instructions: {special}")
+
+            if parts:
+                prescription_lines.append("- " + ", ".join(parts))
+
+        # Follow-up
+        follow_up = (
+            (_attr(notes, "follow_up", "followup", default="") or "")
+            or (_attr(getattr(notes, "plan", object()), "follow_up", "followup", default="") or "")
+        ).strip()
+
+        # Suggestions
+        suggestions_parts: list[str] = []
+
+        pi = (_attr(notes, "patient_instructions", "patientinstructions", default="") or "").strip()
+        if not pi and hasattr(notes, "plan"):
+            pi = (
+                _attr(notes.plan, "patient_instructions", "patientinstructions", default="")
+                or ""
+            ).strip()
+
+        if pi:
+            suggestions_parts.append(pi)
+
+        # Referrals
+        referrals = []
+        if hasattr(notes, "plan"):
+            referrals = _attr(notes.plan, "referrals", default=[]) or []
+        if referrals:
+            suggestions_parts.append(
+                "Referrals:\n" + "\n".join(f"- {item}" for item in referrals)
+            )
+
+        # Lab tests
+        lab_tests = _attr(notes, "lab_tests_ordered", "labtestsordered", default=[]) or []
+        if lab_tests:
+            suggestions_parts.append(
+                "Lab tests:\n" + "\n".join(f"- {item}" for item in lab_tests)
+            )
+
+        # Imaging
+        imaging = []
+        if hasattr(notes, "plan"):
+            imaging = _attr(notes.plan, "imaging_ordered", "imagingordered", default=[]) or []
+        if imaging:
+            suggestions_parts.append(
+                "Imaging:\n" + "\n".join(f"- {item}" for item in imaging)
+            )
+
+        return {
+            "prescription": "\n".join(prescription_lines) or "No prescription provided.",
+            "follow_up_steps": follow_up or "No follow-up steps provided.",
+            "suggestions": "\n\n".join(suggestions_parts)
+            or "No additional suggestions provided.",
+        }
+
+    def _build_patient_email_body(
+        self,
+        patient_name: str,
+        clinician_name: str,
+        content: dict[str, str],
+    ) -> str:
+        return (
+            f"Dear {patient_name},\n\n"
+            "Here is your treatment information from your consultation.\n\n"
+            f"Prescription:\n{content['prescription']}\n\n"
+            f"Follow-up steps:\n{content['follow_up_steps']}\n\n"
+            f"Suggestions:\n{content['suggestions']}\n\n"
+            "Best regards,\n"
+            f"{clinician_name}"
+        )

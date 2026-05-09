@@ -156,9 +156,10 @@ def send_report_email(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
+        # TEMP: surface the real error so we can debug
         raise HTTPException(
             status_code=500,
-            detail="Failed to send report email",
+            detail=f"Failed to send report email: {exc}",
         ) from exc
 
     return {
@@ -320,4 +321,33 @@ def reject_review(
         "status": "rejected",
         "consultation_id": consultation_id,
         "document_status": document.status if document else "missing_generated_document",
+    }
+
+@router.post("/report/{consultation_id}/send-email")
+def send_report_email(
+    consultation_id: int,
+    user=Depends(get_current_user),
+    review_service: ReviewApplicationService = Depends(get_review_app_service),
+) -> dict:
+    """Send approved report to patient email."""
+    if user.get("role") not in ("doctor", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Only doctors and admins can send reports",
+        )
+
+    try:
+        result = review_service.send_report_to_patient(consultation_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send report email",
+        ) from exc
+
+    return {
+        "status": "sent",
+        "consultation_id": consultation_id,
+        "result": result,
     }
