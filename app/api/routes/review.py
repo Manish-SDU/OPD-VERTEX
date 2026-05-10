@@ -29,6 +29,7 @@ class UpdateReportMarkdownRequest(BaseModel):
 # Report routes first
 # =========================
 
+
 @router.get("/report/{consultation_id}", response_class=HTMLResponse)
 def view_report(
     consultation_id: int,
@@ -125,9 +126,7 @@ def update_report_markdown(
         )
 
     try:
-        review_service.update_report_markdown(
-            consultation_id, payload.report_markdown
-        )
+        review_service.update_report_markdown(consultation_id, payload.report_markdown)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -141,6 +140,7 @@ def update_report_markdown(
 # =========================
 # Generic consultation routes after
 # =========================
+
 
 @router.get("/{consultation_id}", response_class=HTMLResponse)
 def review_page(
@@ -289,8 +289,11 @@ def reject_review(
     return {
         "status": "rejected",
         "consultation_id": consultation_id,
-        "document_status": document.status if document else "missing_generated_document",
+        "document_status": document.status
+        if document
+        else "missing_generated_document",
     }
+
 
 @router.post("/report/{consultation_id}/send-email")
 def send_report_email(

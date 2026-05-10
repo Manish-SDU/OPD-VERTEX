@@ -141,7 +141,8 @@ def test_mock_email_service():
     email_service = MockEmailService()
     msg = email_service.send_prescription_email(1, "user@example.com")
     assert "user@example.com" in msg
-    
+
+
 class TestMockEmailService:
     def test_returns_status_message(self, email_service):
         msg = email_service.send_prescription_email(1, "user@example.com")

@@ -10,7 +10,12 @@ from datetime import date
 
 from app.domain.audit.models import AuditLog, AuditLogRepository
 from app.domain.auth.models import Staff, StaffRepository
-from app.domain.email.models import EmailMessage, EmailService, EmailTemplate, EmailTemplateRepository
+from app.domain.email.models import (
+    EmailMessage,
+    EmailService,
+    EmailTemplate,
+    EmailTemplateRepository,
+)
 from app.domain.clinical_notes.models import (
     Assessment,
     ClinicalNoteGenerator,
@@ -973,5 +978,7 @@ class MockEmailService(EmailService):
             "message": "Mock email sent successfully",
         }
 
-    def send_prescription_email(self, prescription_id: int, recipient_email: str) -> str:
+    def send_prescription_email(
+        self, prescription_id: int, recipient_email: str
+    ) -> str:
         return f"Prescription email sent to {recipient_email} for prescription {prescription_id}"

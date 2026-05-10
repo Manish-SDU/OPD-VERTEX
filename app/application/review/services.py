@@ -167,7 +167,7 @@ class ReviewApplicationService:
             return date.fromisoformat(cleaned)
         except ValueError:
             return None
-    
+
     def send_report_to_patient(self, consultation_id: int) -> dict:
         """
         Send a patient-friendly summary email with prescription, follow-up, and suggestions.
@@ -193,7 +193,10 @@ class ReviewApplicationService:
         notes = generated_document.generated_output
 
         # clinician name is already injected into encounter_info by ClinicalNotesApplicationService
-        clinician_name = getattr(getattr(notes, "encounter_info", None), "clinician_name", "") or "Your clinician"
+        clinician_name = (
+            getattr(getattr(notes, "encounter_info", None), "clinician_name", "")
+            or "Your clinician"
+        )
 
         content = self._build_patient_email_content(notes)
         body = self._build_patient_email_body(
@@ -212,6 +215,7 @@ class ReviewApplicationService:
         )
 
         return self.email_service.send_email(message)
+
     def _build_patient_email_content(self, notes) -> dict[str, str]:
         """
         Extract patient-facing parts:
@@ -249,7 +253,9 @@ class ReviewApplicationService:
             duration = _attr(med, "duration", default="")
             if duration:
                 parts.append(f"duration: {duration}")
-            special = _attr(med, "special_instructions", "specialinstructions", default="")
+            special = _attr(
+                med, "special_instructions", "specialinstructions", default=""
+            )
             if special:
                 parts.append(f"instructions: {special}")
 
@@ -259,16 +265,32 @@ class ReviewApplicationService:
         # Follow-up
         follow_up = (
             (_attr(notes, "follow_up", "followup", default="") or "")
-            or (_attr(getattr(notes, "plan", object()), "follow_up", "followup", default="") or "")
+            or (
+                _attr(
+                    getattr(notes, "plan", object()),
+                    "follow_up",
+                    "followup",
+                    default="",
+                )
+                or ""
+            )
         ).strip()
 
         # Suggestions
         suggestions_parts: list[str] = []
 
-        pi = (_attr(notes, "patient_instructions", "patientinstructions", default="") or "").strip()
+        pi = (
+            _attr(notes, "patient_instructions", "patientinstructions", default="")
+            or ""
+        ).strip()
         if not pi and hasattr(notes, "plan"):
             pi = (
-                _attr(notes.plan, "patient_instructions", "patientinstructions", default="")
+                _attr(
+                    notes.plan,
+                    "patient_instructions",
+                    "patientinstructions",
+                    default="",
+                )
                 or ""
             ).strip()
 
@@ -285,7 +307,9 @@ class ReviewApplicationService:
             )
 
         # Lab tests
-        lab_tests = _attr(notes, "lab_tests_ordered", "labtestsordered", default=[]) or []
+        lab_tests = (
+            _attr(notes, "lab_tests_ordered", "labtestsordered", default=[]) or []
+        )
         if lab_tests:
             suggestions_parts.append(
                 "Lab tests:\n" + "\n".join(f"- {item}" for item in lab_tests)
@@ -294,14 +318,17 @@ class ReviewApplicationService:
         # Imaging
         imaging = []
         if hasattr(notes, "plan"):
-            imaging = _attr(notes.plan, "imaging_ordered", "imagingordered", default=[]) or []
+            imaging = (
+                _attr(notes.plan, "imaging_ordered", "imagingordered", default=[]) or []
+            )
         if imaging:
             suggestions_parts.append(
                 "Imaging:\n" + "\n".join(f"- {item}" for item in imaging)
             )
 
         return {
-            "prescription": "\n".join(prescription_lines) or "No prescription provided.",
+            "prescription": "\n".join(prescription_lines)
+            or "No prescription provided.",
             "follow_up_steps": follow_up or "No follow-up steps provided.",
             "suggestions": "\n\n".join(suggestions_parts)
             or "No additional suggestions provided.",
