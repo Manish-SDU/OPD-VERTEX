@@ -44,7 +44,6 @@ from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryStaffRepository,
     InMemoryTemporaryTranscriptChunkRepository,
     MockClinicalNoteGenerator,
-    MockEmailService,
     MockLlmHealthService,
     MockPdfGenerator,
     MockSuggestiveModeService,

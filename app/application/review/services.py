@@ -16,7 +16,7 @@ from app.domain.consultations.models import ConsultationRepository, Consultation
 from app.domain.prescriptions.models import Prescription, PrescriptionRepository
 from app.domain.suggestive_mode.models import SuggestiveReview
 from app.infrastructure.logging import apply_logging_aspect
-from app.domain.email.models import EmailAttachment, EmailMessage
+from app.domain.email.models import EmailMessage
 
 
 @apply_logging_aspect("service", "review")

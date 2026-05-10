@@ -62,7 +62,7 @@ def staff_repo():
 
 
 @pytest.fixture
-def patient_repo():
+def patient_repository():
     return InMemoryPatientRepository()
 
 
@@ -110,8 +110,8 @@ def email_template_repo():
 
 
 @pytest.fixture
-def mock_auth_service(staff_repo, patient_repo):
-    return MockAuthService(staff_repo, patient_repo)
+def mock_auth_service(staff_repo, patient_repository):
+    return MockAuthService(staff_repo, patient_repository)
 
 
 @pytest.fixture
@@ -158,8 +158,8 @@ def auth_app_service(mock_auth_service):
 
 
 @pytest.fixture
-def patient_app_service(patient_repo):
-    return PatientApplicationService(patient_repo)
+def patient_app_service(patient_repository):
+    return PatientApplicationService(patient_repository)
 
 
 @pytest.fixture
@@ -183,12 +183,16 @@ def review_app_service(
     generated_doc_repo,
     consultation_repo,
     prescription_repo,
+    patient_repository,
+    email_service,
 ):
     return ReviewApplicationService(
         consultation_repo,
         consultation_doc_repo,
         generated_doc_repo,
         prescription_repo,
+        patient_repository,
+        email_service,
     )
 
 
@@ -209,7 +213,7 @@ def clinical_notes_app_service(
     consultation_doc_repo,
     generated_doc_repo,
     prompt_repo,
-    patient_repo,
+    patient_repository,
     staff_repo,
     transcript_normalization_app_service,
     note_generator,
@@ -219,7 +223,7 @@ def clinical_notes_app_service(
         consultation_doc_repo,
         generated_doc_repo,
         prompt_repo,
-        patient_repo,
+        patient_repository,
         staff_repo,
         transcript_normalization_app_service,
         note_generator,

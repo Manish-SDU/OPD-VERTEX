@@ -33,19 +33,19 @@ class TestInMemoryStaffRepository:
 
 
 class TestInMemoryPatientRepository:
-    def test_list_all_returns_seeded_patients(self, patient_repo):
-        patients = patient_repo.list_all()
+    def test_list_all_returns_seeded_patients(self, patient_repository):
+        patients = patient_repository.list_all()
         assert len(patients) >= 2
 
-    def test_get_by_id_returns_patient(self, patient_repo):
-        patient = patient_repo.get_by_id(1)
+    def test_get_by_id_returns_patient(self, patient_repository):
+        patient = patient_repository.get_by_id(1)
         assert patient is not None
         assert patient.first_name == "Giulia"
 
-    def test_get_by_id_returns_none_for_unknown(self, patient_repo):
-        assert patient_repo.get_by_id(999) is None
+    def test_get_by_id_returns_none_for_unknown(self, patient_repository):
+        assert patient_repository.get_by_id(999) is None
 
-    def test_create_assigns_id_and_persists(self, patient_repo):
+    def test_create_assigns_id_and_persists(self, patient_repository):
         req = PatientCreateRequest(
             first_name="Test",
             last_name="User",
@@ -53,12 +53,12 @@ class TestInMemoryPatientRepository:
             email="test@example.local",
             password_hash="dummy",
         )
-        patient = patient_repo.create(req)
+        patient = patient_repository.create(req)
         assert patient.id is not None
-        assert patient_repo.get_by_id(patient.id) is not None
+        assert patient_repository.get_by_id(patient.id) is not None
 
-    def test_create_increments_id(self, patient_repo):
-        initial_count = len(patient_repo.list_all())
+    def test_create_increments_id(self, patient_repository):
+        initial_count = len(patient_repository.list_all())
         req = PatientCreateRequest(
             first_name="A",
             last_name="B",
@@ -66,8 +66,8 @@ class TestInMemoryPatientRepository:
             email="a@b.com",
             password_hash="x",
         )
-        patient_repo.create(req)
-        assert len(patient_repo.list_all()) == initial_count + 1
+        patient_repository.create(req)
+        assert len(patient_repository.list_all()) == initial_count + 1
 
 
 # ── Consultation Repository ───────────────────────────────────────────

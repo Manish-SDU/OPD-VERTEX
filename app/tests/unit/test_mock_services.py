@@ -16,6 +16,7 @@ from app.domain.suggestive_mode.models import RiskLevel, SuggestiveReviewRequest
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryConsultationDocumentRepository,
     InMemoryPrescriptionArtifactRepository,
+    MockEmailService,
 )
 
 
@@ -136,6 +137,11 @@ class TestMockPdfGenerator:
         assert artifact.file_name.endswith(".pdf")
 
 
+def test_mock_email_service():
+    email_service = MockEmailService()
+    msg = email_service.send_prescription_email(1, "user@example.com")
+    assert "user@example.com" in msg
+    
 class TestMockEmailService:
     def test_returns_status_message(self, email_service):
         msg = email_service.send_prescription_email(1, "user@example.com")
