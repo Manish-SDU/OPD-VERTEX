@@ -752,6 +752,22 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Buttons that are <a> should never get the link underline on hover */
+a.btn-cta,
+a.btn-cta:hover,
+a.nc-btn,
+a.nc-btn:hover,
+a.btn-cta--ghost,
+a.btn-cta--ghost:hover,
+a.btn-cta--success,
+a.btn-cta--success:hover,
+a.quick-start-solo,
+a.quick-start-solo:hover,
+a.quick-start__card,
+a.quick-start__card:hover {
+  text-decoration: none;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .login-page { flex-direction: column; }
@@ -1154,3 +1170,95 @@ a:hover {
 .workflow-step--active { background: var(--blue-600); color: #fff; }
 .workflow-step--done   { background: #dcfce7; color: #166534; }
 .workflow-arrow { color: var(--muted); }
+/* === Live Transcription card =================================== */
+.trx-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.trx-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.trx-header__title { display: flex; align-items: center; gap: .85rem; }
+.trx-mic-icon {
+  width: 42px; height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: var(--blue-600);
+  border-radius: 12px;
+}
+.trx-mic-icon svg { width: 20px; height: 20px; }
+.trx-title { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.trx-sub   { margin: 2px 0 0; font-size: .82rem; color: var(--muted); }
+
+.trx-status {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem .8rem;
+  background: #f1f5f9;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.trx-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+.trx-status--recording { background: #fee2e2; color: #991b1b; }
+.trx-status--recording .trx-dot {
+  background: #ef4444;
+  animation: trx-pulse 1.2s infinite ease-in-out;
+}
+.trx-status--saved { background: #dcfce7; color: #166534; }
+.trx-status--saved .trx-dot { background: #22c55e; }
+@keyframes trx-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1;   }
+  50%      { transform: scale(1.4); opacity: .55; }
+}
+
+.trx-actions {
+  display: flex;
+  gap: .65rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.trx-actions svg { flex-shrink: 0; }
+
+.trx-textarea {
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: .92rem;
+  line-height: 1.7;
+  resize: vertical;
+  font-family: inherit;
+  color: var(--text);
+  background: #f8fafc;
+  outline: none;
+  min-height: 220px;
+  transition: border-color .15s ease, background .15s ease;
+}
+.trx-textarea:focus { border-color: var(--blue-600); background: #fff; }
+.trx-textarea::placeholder { color: #94a3b8; font-style: italic; }
+
+.trx-msg { margin-top: .7rem; font-size: .875rem; min-height: 1.2em; }
+.trx-msg--err { color: var(--danger); font-weight: 500; }
+.trx-msg--ok  { color: #166534; font-weight: 600; }

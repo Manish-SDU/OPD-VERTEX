@@ -38,27 +38,52 @@
 </div>
 
 <div id="transcription-ui" style="display:none; margin-top:1.5rem;">
-  <div class="nc-card" style="margin-top:0;">
-    <h3 class="nc-card__title" style="font-size:1.05rem; margin-bottom:1rem;">Transcription</h3>
-
-    <div style="display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1rem; align-items:center;">
-      <button id="start-transcription" class="nc-btn" disabled>&#9654; Start Recording</button>
-      <button id="stop-transcription" class="nc-btn" style="background:#64748b;" disabled>&#9632; Stop</button>
-      <span style="color:var(--muted);font-size:.85rem;">— or —</span>
-      <button id="demo-transcript" class="nc-btn" style="background:var(--success);" disabled>No mic? Load Demo Transcript</button>
-      <button id="save-transcription" class="nc-btn" style="margin-left:auto;" disabled>&#10003; Save Transcription</button>
+  <div class="trx-card">
+    <div class="trx-header">
+      <div class="trx-header__title">
+        <span class="trx-mic-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </span>
+        <div>
+          <h3 class="trx-title">Live Transcription</h3>
+          <p class="trx-sub">Capture the consultation in real time</p>
+        </div>
+      </div>
+      <span class="trx-status" id="trx-status">
+        <span class="trx-dot"></span>
+        <span class="trx-status__text">Ready</span>
+      </span>
     </div>
 
-    <textarea id="transcript-display" readonly rows="12"
-      style="width:100%;padding:.85rem 1rem;border:1px solid var(--border);border-radius:8px;font-size:.9rem;line-height:1.7;resize:vertical;font-family:inherit;color:var(--text);background:var(--bg);outline:none;"
-      placeholder="Transcript will appear here…"></textarea>
+    <div class="trx-actions">
+      <button id="start-transcription" class="btn-cta" disabled>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+        Start Recording
+      </button>
+      <button id="stop-transcription" class="btn-cta btn-cta--ghost" disabled>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        Stop
+      </button>
+      <button id="save-transcription" class="btn-cta btn-cta--success" style="margin-left:auto;" disabled>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Transcription
+      </button>
+    </div>
 
-    {# hidden accumulators used by JS ─ not visible #}
+    <textarea id="transcript-display" readonly rows="12" class="trx-textarea"
+      placeholder="Click Start Recording — your speech will appear here as it's transcribed."></textarea>
+
+    {# hidden accumulators used by JS — not visible #}
     <span id="partial-text" style="display:none;"></span>
     <ul id="transcription-chunks" style="display:none;"></ul>
 
-    <div id="transcription-error" style="color:var(--danger);margin-top:.6rem;font-size:.875rem;"></div>
-    <div id="transcription-saved" style="color:var(--success);margin-top:.6rem;font-size:.875rem;font-weight:600;"></div>
+    <div id="transcription-error" class="trx-msg trx-msg--err"></div>
+    <div id="transcription-saved" class="trx-msg trx-msg--ok"></div>
   </div>
 </div>
 <script src="/static/js/consultation_create.js"></script>
