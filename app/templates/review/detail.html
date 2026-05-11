@@ -1,21 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="page-head">
+  <div>
+    <h2 class="page-head__title">Review Workflow · #{{ consultation_id }}</h2>
+    <p class="page-head__sub">
+      <a href="/consultations/{{ consultation_id }}" style="color: var(--muted); text-decoration: none;">← Back to consultation</a>
+    </p>
+  </div>
+  {% if generated_document %}
+  <span class="status-pill status-pill--{{ generated_document.status|lower }}" style="font-size:.85rem; padding:.4rem 1rem;">{{ generated_document.status }}</span>
+  {% endif %}
+</div>
+
 <section class="card">
-  <h2>Review Workflow: {{ consultation_id }}</h2>
   {% if user and user.role in ['doctor', 'admin'] %}
-  <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin: 0.75rem 0 1.25rem 0;">
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin: 0 0 1.25rem 0;">
     {% if not generated_document %}
-    <button type="button" class="btn-primary" onclick="runReviewAction('generate')">Generate Report</button>
+    <button type="button" class="btn-cta" onclick="runReviewAction('generate')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Generate Report
+    </button>
     {% else %}
-    <button type="button" class="btn-secondary" onclick="runReviewAction('regenerate')">Regenerate Report</button>
+    <button type="button" class="btn-cta btn-cta--ghost" onclick="runReviewAction('regenerate')">↻ Regenerate Report</button>
     {% endif %}
-    <button type="button" class="btn-secondary" onclick="runReviewAction('suggestive-review')">Run Suggestive Review</button>
+    <button type="button" class="btn-cta btn-cta--ghost" onclick="runReviewAction('suggestive-review')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Run Suggestive Review
+    </button>
   </div>
   <p id="review-action-status" style="display:none; margin:0 0 1rem 0; color: var(--muted);"></p>
   {% endif %}
 
   {% if consultation_document %}
-  <h3>Transcript</h3>
+  <h3 style="margin-top:0;">Transcript</h3>
   <p>{{ consultation_document.transcript.full_text }}</p>
   {% if consultation_document.normalized_transcript %}
   <h3>Normalized Transcript (Doctor / Patient)</h3>
@@ -33,7 +50,11 @@
   {% endif %}
   {% endif %}
   {% else %}
-  <p>No consultation transcript has been saved yet.</p>
+  <div class="empty-state" style="padding: 2rem 1rem;">
+    <div class="empty-state__icon">🎙️</div>
+    <p class="empty-state__title">No transcript saved yet</p>
+    <p>Record or load a demo transcript on the consultation page first.</p>
+  </div>
   {% endif %}
 
   {% if generated_document %}
@@ -42,21 +63,17 @@
   <p><strong>History of Present Illness:</strong> {{ generated_document.generated_output.history_of_present_illness }}</p>
   <p><strong>Diagnosis:</strong> {{ generated_document.generated_output.diagnosis }}</p>
   <p><strong>Patient Instructions:</strong> {{ generated_document.generated_output.patient_instructions }}</p>
-  <p><strong>Status:</strong> {{ generated_document.status }}</p>
 
-  <h3>Clinical Report (template.md format)</h3>
-  <div style="margin: 0.75rem 0 1.5rem 0; display: flex; gap: 1rem; flex-wrap: wrap;">
+  <h3>Clinical Report</h3>
+  <div style="margin: 0.75rem 0 1.5rem 0; display: flex; gap: .75rem; flex-wrap: wrap;">
     {% if user and user.role in ['doctor', 'admin'] %}
-    <a href="/review/report/{{ consultation_id }}/edit" style="display: inline-block; padding: 0.6rem 1.15rem; background: var(--blue-600); color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
+    <a href="/review/report/{{ consultation_id }}/edit" class="btn-cta">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       Edit &amp; Approve
     </a>
     {% endif %}
-    <a href="/review/report/{{ consultation_id }}" style="display: inline-block; padding: 0.6rem 1.15rem; background: var(--surface); color: var(--blue-600); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
-      View Report
-    </a>
-    <a href="/review/{{ consultation_id }}/pdf" style="display: inline-block; padding: 0.6rem 1.15rem; background: #16a34a; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
-      &#8595; Download PDF
-    </a>
+    <a href="/review/report/{{ consultation_id }}" class="btn-cta btn-cta--ghost">View Full Report</a>
+    <a href="/review/{{ consultation_id }}/pdf" class="btn-cta btn-cta--success">↓ Download PDF</a>
   </div>
 
   {% if generated_document.generated_output.report_markdown %}
@@ -68,7 +85,11 @@
   <p>No template-style report text is available yet.</p>
   {% endif %}
   {% else %}
-  <p>No AI report has been generated yet.</p>
+  <div class="empty-state" style="padding: 2rem 1rem;">
+    <div class="empty-state__icon">📄</div>
+    <p class="empty-state__title">No AI report generated yet</p>
+    <p>Click <strong>Generate Report</strong> above to create the clinical document from the transcript.</p>
+  </div>
   {% endif %}
 
 <h3>Suggestive Mode</h3>

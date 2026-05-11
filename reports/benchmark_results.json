@@ -6,7 +6,7 @@
     "p95_ms": 0.001,
     "p99_ms": 0.003,
     "min_ms": 0.001,
-    "max_ms": 0.023
+    "max_ms": 0.021
   },
   "patient_search_by_name": {
     "iterations": 200,
@@ -20,11 +20,11 @@
   "patient_create": {
     "iterations": 100,
     "mean_ms": 0.005,
-    "p50_ms": 0.004,
+    "p50_ms": 0.005,
     "p95_ms": 0.006,
-    "p99_ms": 0.037,
+    "p99_ms": 0.038,
     "min_ms": 0.004,
-    "max_ms": 0.037
+    "max_ms": 0.038
   },
   "consultation_list": {
     "iterations": 200,
@@ -33,52 +33,52 @@
     "p95_ms": 0.001,
     "p99_ms": 0.001,
     "min_ms": 0.001,
-    "max_ms": 0.01
+    "max_ms": 0.011
   },
   "consultation_create": {
     "iterations": 100,
     "mean_ms": 0.004,
     "p50_ms": 0.003,
     "p95_ms": 0.004,
-    "p99_ms": 0.03,
+    "p99_ms": 0.031,
     "min_ms": 0.003,
-    "max_ms": 0.03
+    "max_ms": 0.031
   },
   "consultation_get_by_id": {
     "iterations": 500,
     "mean_ms": 0.001,
     "p50_ms": 0.001,
     "p95_ms": 0.001,
-    "p99_ms": 0.001,
+    "p99_ms": 0.002,
     "min_ms": 0.001,
-    "max_ms": 0.008
+    "max_ms": 0.027
   },
   "mock_clinical_note_generation": {
     "iterations": 100,
-    "mean_ms": 0.011,
+    "mean_ms": 0.012,
     "p50_ms": 0.01,
-    "p95_ms": 0.013,
-    "p99_ms": 0.066,
+    "p95_ms": 0.015,
+    "p99_ms": 0.072,
     "min_ms": 0.01,
-    "max_ms": 0.066
+    "max_ms": 0.072
   },
   "transcript_normalizer": {
     "iterations": 200,
-    "mean_ms": 0.008,
-    "p50_ms": 0.007,
-    "p95_ms": 0.007,
-    "p99_ms": 0.028,
-    "min_ms": 0.006,
-    "max_ms": 0.149
+    "mean_ms": 0.011,
+    "p50_ms": 0.008,
+    "p95_ms": 0.014,
+    "p99_ms": 0.04,
+    "min_ms": 0.007,
+    "max_ms": 0.123
   },
   "document_edit_single_field": {
     "iterations": 100,
-    "mean_ms": 0.095,
-    "p50_ms": 0.091,
-    "p95_ms": 0.106,
-    "p99_ms": 0.27,
-    "min_ms": 0.088,
-    "max_ms": 0.27
+    "mean_ms": 0.098,
+    "p50_ms": 0.093,
+    "p95_ms": 0.115,
+    "p99_ms": 0.291,
+    "min_ms": 0.09,
+    "max_ms": 0.291
   },
   "version_history_retrieval": {
     "iterations": 500,

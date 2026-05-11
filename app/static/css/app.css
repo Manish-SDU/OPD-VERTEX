@@ -970,3 +970,166 @@ a:hover {
   color: #166534;
   border: 1px solid #bbf7d0;
 }
+
+/* -- Quick Start CTAs (doctor dashboard) ----------------------------- */
+.quick-start {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 2rem 0;
+}
+.quick-start__card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.quick-start__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  border-color: var(--blue-600);
+}
+.quick-start__card--primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  border-color: transparent;
+}
+.quick-start__card--primary:hover { border-color: transparent; box-shadow: 0 12px 28px rgba(37, 99, 235, 0.35); }
+.quick-start__icon {
+  width: 44px; height: 44px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.quick-start__icon svg { width: 22px; height: 22px; }
+.quick-start__icon--soft {
+  background: #eff6ff;
+  color: var(--blue-600);
+}
+.quick-start__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.quick-start__title { font-weight: 700; font-size: 1rem; }
+.quick-start__sub { font-size: .82rem; opacity: .85; }
+.quick-start__card:not(.quick-start__card--primary) .quick-start__sub { color: var(--muted); }
+.quick-start__arrow { font-size: 1.25rem; opacity: .8; }
+
+/* -- Consultation list polish --------------------------------------- */
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.25rem 0;
+  flex-wrap: wrap;
+}
+.page-head__title { margin: 0; font-size: 1.5rem; }
+.page-head__sub { margin: .15rem 0 0; color: var(--muted); font-size: .9rem; }
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .65rem 1.1rem;
+  background: var(--blue-600);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(37, 99, 235, .25); }
+.btn-cta--ghost { background: transparent; color: var(--blue-600); border: 1px solid var(--border); }
+.btn-cta--ghost:hover { background: #eff6ff; box-shadow: none; }
+.btn-cta--success { background: #16a34a; }
+.btn-cta--success:hover { box-shadow: 0 6px 14px rgba(22, 163, 74, .3); }
+
+.status-pill {
+  display: inline-block;
+  padding: .25rem .7rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.status-pill--in_progress, .status-pill--in-progress { background: #dbeafe; color: #1e40af; }
+.status-pill--saved      { background: #fef3c7; color: #92400e; }
+.status-pill--completed,
+.status-pill--approved   { background: #dcfce7; color: #166534; }
+.status-pill--cancelled  { background: #fee2e2; color: #991b1b; }
+.status-pill--draft      { background: #e2e8f0; color: #334155; }
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--muted);
+}
+.empty-state__icon {
+  font-size: 2.5rem;
+  opacity: .35;
+  margin-bottom: .5rem;
+}
+.empty-state__title { color: var(--text); font-weight: 600; margin: .25rem 0; }
+
+/* -- Consultation detail + workflow --------------------------------- */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+}
+.info-card h3 {
+  margin: 0 0 .9rem 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.info-row { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid #f1f5f9; }
+.info-row:last-child { border-bottom: none; }
+.info-row__label { color: var(--muted); font-size: .85rem; }
+.info-row__value { font-weight: 600; color: var(--text); text-align: right; }
+
+.action-stack { display: flex; flex-direction: column; gap: .65rem; }
+
+/* Workflow step indicator */
+.workflow-steps {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: 0 0 1.5rem 0;
+  flex-wrap: wrap;
+}
+.workflow-step {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .45rem .85rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 600;
+}
+.workflow-step--active { background: var(--blue-600); color: #fff; }
+.workflow-step--done   { background: #dcfce7; color: #166534; }
+.workflow-arrow { color: var(--muted); }

@@ -1,19 +1,111 @@
 {% extends "base.html" %}
 {% block content %}
+{% if consultation %}
+<div class="page-head">
+  <div>
+    <h2 class="page-head__title">Consultation #{{ consultation.id }}</h2>
+    <p class="page-head__sub">
+      <a href="/consultations" style="color: var(--muted); text-decoration: none;">← Back to all consultations</a>
+    </p>
+  </div>
+  <span class="status-pill status-pill--{{ consultation.status|lower|replace(' ', '_') }}" style="font-size: .85rem; padding: .4rem 1rem;">
+    {{ consultation.status|replace('_', ' ') }}
+  </span>
+</div>
+
+{# ── Workflow steps ── #}
+<div class="workflow-steps">
+  {% set has_started = consultation.started_at %}
+  {% set has_saved = consultation.status|lower in ['saved', 'completed', 'approved'] %}
+  {% set is_done = consultation.status|lower in ['completed', 'approved'] %}
+  <span class="workflow-step {% if has_started %}workflow-step--done{% else %}workflow-step--active{% endif %}">1. Started</span>
+  <span class="workflow-arrow">→</span>
+  <span class="workflow-step {% if has_saved %}workflow-step--done{% elif has_started %}workflow-step--active{% endif %}">2. Transcribed</span>
+  <span class="workflow-arrow">→</span>
+  <span class="workflow-step {% if is_done %}workflow-step--done{% elif has_saved %}workflow-step--active{% endif %}">3. Reviewed &amp; Sent</span>
+</div>
+
+<div class="detail-grid">
+  {# ── Main info ── #}
+  <section class="info-card">
+    <h3>Patient Information</h3>
+    {% if patient %}
+    <div class="info-row">
+      <span class="info-row__label">Name</span>
+      <span class="info-row__value">{{ patient.first_name }} {{ patient.last_name }}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row__label">Patient ID</span>
+      <span class="info-row__value">#{{ patient.id }}</span>
+    </div>
+    {% if patient.dob %}
+    <div class="info-row">
+      <span class="info-row__label">Date of Birth</span>
+      <span class="info-row__value">{{ patient.dob.strftime('%d %b %Y') if patient.dob.strftime is defined else patient.dob }}</span>
+    </div>
+    {% endif %}
+    {% if patient.gender %}
+    <div class="info-row">
+      <span class="info-row__label">Gender</span>
+      <span class="info-row__value">{{ patient.gender|capitalize }}</span>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="info-row">
+      <span class="info-row__label">Patient</span>
+      <span class="info-row__value">#{{ consultation.patient_id }}</span>
+    </div>
+    {% endif %}
+
+    <h3 style="margin-top: 1.5rem;">Encounter Details</h3>
+    <div class="info-row">
+      <span class="info-row__label">Chief Complaint</span>
+      <span class="info-row__value">{{ consultation.chief_complaint or "—" }}</span>
+    </div>
+    {% if consultation.started_at %}
+    <div class="info-row">
+      <span class="info-row__label">Started</span>
+      <span class="info-row__value">{{ consultation.started_at.strftime('%d %b %Y · %H:%M') }}</span>
+    </div>
+    {% endif %}
+    {% if consultation.ended_at %}
+    <div class="info-row">
+      <span class="info-row__label">Ended</span>
+      <span class="info-row__value">{{ consultation.ended_at.strftime('%d %b %Y · %H:%M') }}</span>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── Action panel ── #}
+  <aside class="info-card">
+    <h3>Next Steps</h3>
+    <div class="action-stack">
+      <a href="/review/{{ consultation.id }}" class="btn-cta">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        Open Review Workflow
+      </a>
+      <a href="/review/report/{{ consultation.id }}" class="btn-cta btn-cta--ghost">
+        View Clinical Report
+      </a>
+      <a href="/review/{{ consultation.id }}/pdf" class="btn-cta btn-cta--ghost">
+        ↓ Download PDF
+      </a>
+      {% if patient %}
+      <a href="/patients/{{ patient.id }}" class="btn-cta btn-cta--ghost">
+        View Patient Chart
+      </a>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+{% else %}
 <section class="card">
-  {% if consultation %}
-  <h2>Consultation #{{ consultation.id }}</h2>
-  <p><strong>Status:</strong> {{ consultation.status }}</p>
-  <p><strong>Patient:</strong> {% if patient %}{{ patient.first_name }} {{ patient.last_name }} (ID: {{ consultation.patient_id }}){% else %}#{{ consultation.patient_id }}{% endif %}</p>
-  {% if consultation.chief_complaint %}
-  <p><strong>Chief Complaint:</strong> {{ consultation.chief_complaint }}</p>
-  {% endif %}
-  {% if consultation.started_at %}
-  <p><strong>Started:</strong> {{ consultation.started_at.strftime('%Y-%m-%d %H:%M') }}</p>
-  {% endif %}
-  <p><a href="/review/{{ consultation.id }}" class="btn-primary" style="display:inline-block;margin-top:0.5rem;">Open Review Workflow</a></p>
-  {% else %}
-  <h2>Consultation not found</h2>
-  {% endif %}
+  <div class="empty-state">
+    <div class="empty-state__icon">⚠️</div>
+    <p class="empty-state__title">Consultation not found</p>
+    <p>This consultation may have been deleted or you do not have access.</p>
+    <a href="/consultations" class="btn-cta" style="margin-top: 1rem;">← Back to consultations</a>
+  </div>
 </section>
+{% endif %}
 {% endblock %}

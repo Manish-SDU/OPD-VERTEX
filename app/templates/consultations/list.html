@@ -1,26 +1,62 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card">
-  <div class="split">
-    <h2>Consultations</h2>
-    {% if user.role == "doctor" %}
-    <a href="/consultations/new">Start consultation</a>
-    {% endif %}
+<div class="page-head">
+  <div>
+    <h2 class="page-head__title">{% if user.role == "patient" %}My Consultations{% else %}Consultations{% endif %}</h2>
+    <p class="page-head__sub">
+      {% if consultations %}
+        {{ consultations|length }} record{{ '' if consultations|length == 1 else 's' }}
+      {% else %}
+        No consultations yet
+      {% endif %}
+    </p>
   </div>
-  <table>
-    <thead><tr><th>ID</th><th>Patient</th><th>Status</th><th>Complaint</th><th>Date</th></tr></thead>
+  {% if user.role == "doctor" %}
+  <a href="/consultations/new" class="btn-cta">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Start Consultation
+  </a>
+  {% endif %}
+</div>
+
+{% if consultations %}
+<section class="card" style="padding: 0; overflow: hidden;">
+  <table style="margin: 0;">
+    <thead>
+      <tr>
+        <th style="width: 70px;">ID</th>
+        <th>Patient</th>
+        <th>Status</th>
+        <th>Chief Complaint</th>
+        <th>Date</th>
+        <th></th>
+      </tr>
+    </thead>
     <tbody>
       {% for consultation in consultations %}
       {% set p = patients.get(consultation.patient_id) %}
       <tr>
-        <td><a href="/consultations/{{ consultation.id }}">{{ consultation.id }}</a></td>
-        <td>{% if p %}{{ p.first_name }} {{ p.last_name }}{% else %}#{{ consultation.patient_id }}{% endif %}</td>
-        <td>{{ consultation.status }}</td>
-        <td>{{ consultation.chief_complaint or "&mdash;" }}</td>
-        <td>{{ consultation.started_at.strftime('%Y-%m-%d') if consultation.started_at else "&mdash;" }}</td>
+        <td><strong>#{{ consultation.id }}</strong></td>
+        <td>{% if p %}{{ p.first_name }} {{ p.last_name }}{% else %}Patient #{{ consultation.patient_id }}{% endif %}</td>
+        <td><span class="status-pill status-pill--{{ consultation.status|lower|replace(' ', '_') }}">{{ consultation.status|replace('_', ' ') }}</span></td>
+        <td style="color: var(--text);">{{ consultation.chief_complaint or "—" }}</td>
+        <td style="color: var(--muted); font-size: .9rem;">{{ consultation.started_at.strftime('%d %b %Y') if consultation.started_at else "—" }}</td>
+        <td><a href="/consultations/{{ consultation.id }}" class="btn-cta btn-cta--ghost" style="padding: .35rem .8rem; font-size: .85rem;">Open →</a></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </section>
+{% else %}
+<section class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon">📋</div>
+    <p class="empty-state__title">No consultations yet</p>
+    <p>{% if user.role == "doctor" %}Start your first consultation to begin transcribing patient encounters.{% else %}Your consultations will appear here once your doctor creates one.{% endif %}</p>
+    {% if user.role == "doctor" %}
+    <a href="/consultations/new" class="btn-cta" style="margin-top: 1rem;">Start your first consultation</a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
 {% endblock %}
