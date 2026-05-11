@@ -129,10 +129,12 @@ if (idInput) {
 
 // ── Consultation creation + transcription ─────────────────────────────
 
-let ws = null;
-let audioStream = null;
-let audioContext = null;
-let processor = null;
+// Web Speech API — works natively in Chrome/Edge with any microphone.
+// Falls back gracefully when unavailable.
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let recognition = null;
+let finalTranscript = '';
 let consultationId = null;
 let sessionId = null;
 
@@ -205,31 +207,39 @@ if (form) {
   };
 }
 
-function cleanupAudio() {
-  try { if (processor) processor.disconnect(); } catch {}
-  processor = null;
-  try { if (audioStream) audioStream.getTracks().forEach(t => t.stop()); } catch {}
-  audioStream = null;
-  try { if (audioContext && audioContext.state !== 'closed') audioContext.close(); } catch {}
-  audioContext = null;
+function stopRecognition() {
+  if (recognition) {
+    recognition.onend = null;   // prevent auto-restart
+    try { recognition.stop(); } catch {}
+    recognition = null;
+  }
+  finalTranscript = '';
+}
+
+// Disable Start button and show a hint when browser lacks speech recognition.
+if (startBtn && !SpeechRecognition) {
+  startBtn.title = 'Live transcription requires Chrome or Edge';
 }
 
 if (startBtn) {
   startBtn.onclick = async function () {
-    cleanupAudio();
-    if (ws) { try { ws.close(); } catch {} ws = null; }
+    if (!SpeechRecognition) {
+      transcriptionError.textContent =
+        'Your browser does not support live transcription. Please use Google Chrome or Microsoft Edge.';
+      return;
+    }
 
+    stopRecognition();
     startBtn.disabled = true;
     stopBtn.disabled = false;
     transcriptionError.textContent = '';
     transcriptionSaved.textContent = '';
-    partialText.textContent = '';
-    chunksList.innerHTML = '';
     if (transcriptArea) transcriptArea.value = '';
-    setStatus('ready', 'Connecting…');
+    finalTranscript = '';
+    setStatus('ready', 'Starting…');
 
     try {
-      // 1. Create a transcription session.
+      // Create a server-side session so Save has somewhere to persist the text.
       if (!sessionId) {
         const sResp = await fetch('/transcriptions/session/start', {
           method: 'POST',
@@ -237,98 +247,55 @@ if (startBtn) {
           body: JSON.stringify({ consultation_id: parseInt(consultationId) }),
         });
         const raw = await sResp.text();
-        if (!sResp.ok) throw new Error(`Start session failed (${sResp.status}): ${raw.substring(0, 180)}`);
+        if (!sResp.ok) throw new Error(`Session start failed (${sResp.status}): ${raw.substring(0, 180)}`);
         const data = JSON.parse(raw);
         if (!data.session_id) throw new Error('Missing session_id');
         sessionId = data.session_id;
       }
 
-      // 2. Open WebSocket.
-      const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${wsProto}//${window.location.host}/transcriptions/ws/${sessionId}`);
-      ws.binaryType = 'arraybuffer';
+      // Start browser speech recognition.
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
 
-      ws.onerror = () => { transcriptionError.textContent = 'WebSocket error'; };
+      recognition.onstart = () => setStatus('recording', 'Recording');
 
-      ws.onmessage = (event) => {
-        if (typeof event.data !== 'string') return;
-        const trimmed = event.data.trim();
-        if (!trimmed.startsWith('{')) return;
-        let msg;
-        try { msg = JSON.parse(trimmed); } catch { return; }
-
-        // Backend may send either { partial_text } / { chunk_id, text } or
-        // a Gabriele-style { type: 'partial' | 'final' | 'final_full', segment }.
-        if (msg.partial_text !== undefined) {
-          partialText.textContent = msg.partial_text;
-          if (transcriptArea) transcriptArea.value = msg.partial_text;
-        } else if (msg.chunk_id !== undefined) {
-          const li = document.createElement('li');
-          li.textContent = `[${msg.timestamp}s] ${msg.text}`;
-          chunksList.appendChild(li);
-          if (transcriptArea && msg.text) {
-            transcriptArea.value += (transcriptArea.value ? '\n' : '') + msg.text;
+      recognition.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const text = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += text + ' ';
+          } else {
+            interim += text;
           }
-        } else if (msg.type === 'partial' && msg.segment) {
-          if (transcriptArea) transcriptArea.value = msg.segment.text;
-        } else if (msg.type === 'final' && msg.segment && msg.segment.text.trim()) {
-          if (transcriptArea) transcriptArea.value += (transcriptArea.value ? '\n' : '') + msg.segment.text;
-        } else if (msg.type === 'final_full') {
-          if (transcriptArea && msg.full_text) transcriptArea.value = msg.full_text;
-          saveBtn.disabled = false;
-        } else if (msg.error) {
-          transcriptionError.textContent = msg.error;
+        }
+        if (transcriptArea) transcriptArea.value = finalTranscript + interim;
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+          transcriptionError.textContent = 'Microphone access denied — allow microphone access in your browser settings.';
+        } else if (event.error !== 'aborted') {
+          transcriptionError.textContent = `Speech recognition error: ${event.error}`;
+        }
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        setStatus('ready', 'Ready');
+      };
+
+      // Auto-restart on silence so recording stays active until Stop is pressed.
+      recognition.onend = () => {
+        if (!stopBtn.disabled) {
+          try { recognition.start(); } catch {}
         }
       };
 
-      // 3. Wait for socket open, then start mic capture (PCM16 @ 16kHz).
-      await new Promise((resolve, reject) => {
-        ws.onopen = resolve;
-        setTimeout(() => reject(new Error('WebSocket open timeout')), 5000);
-      });
-      setStatus('recording', 'Recording');
-
-      audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
-      });
-
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') await audioContext.resume();
-
-      const source = audioContext.createMediaStreamSource(audioStream);
-      const gainNode = audioContext.createGain();
-      gainNode.gain.value = 4.0;
-      processor = audioContext.createScriptProcessor(4096, 1, 1);
-
-      source.connect(gainNode);
-      gainNode.connect(processor);
-      processor.connect(audioContext.destination);
-
-      const resampleRatio = 16000 / audioContext.sampleRate;
-      processor.onaudioprocess = (e) => {
-        const audioData = e.inputBuffer.getChannelData(0);
-        const targetLength = Math.floor(audioData.length * resampleRatio);
-        const resampled = new Float32Array(targetLength);
-        for (let i = 0; i < targetLength; i++) {
-          const sourceIndex = i / resampleRatio;
-          const left = Math.floor(sourceIndex);
-          const right = left + 1;
-          const frac = sourceIndex - left;
-          resampled[i] = right < audioData.length
-            ? audioData[left] * (1 - frac) + audioData[right] * frac
-            : (audioData[left] || 0);
-        }
-        const int16 = new Int16Array(resampled.length);
-        for (let i = 0; i < resampled.length; i++) {
-          int16[i] = Math.max(-1, Math.min(1, resampled[i])) * 0x7FFF;
-        }
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(int16.buffer);
-        }
-      };
+      recognition.start();
     } catch (err) {
-      console.error('[Audio]', err);
-      transcriptionError.textContent = `Microphone error: ${err.name || ''} ${err.message || err}`;
+      console.error('[Speech]', err);
+      transcriptionError.textContent = `Could not start recording: ${err.message || err}`;
       startBtn.disabled = false;
       stopBtn.disabled = true;
       setStatus('ready', 'Ready');
@@ -338,15 +305,10 @@ if (startBtn) {
 
 if (stopBtn) {
   stopBtn.onclick = function () {
+    stopRecognition();
     stopBtn.disabled = true;
     startBtn.disabled = false;
     saveBtn.disabled = false;
-    cleanupAudio();
-    setTimeout(() => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        try { ws.send('FINALIZE'); } catch {}
-      }
-    }, 300);
     setStatus('saved', 'Stopped');
   };
 }
