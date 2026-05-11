@@ -1043,6 +1043,10 @@ class MockStreamingTranscriptionService(StreamingTranscriptionService):
     def get_session_consultation_id(self, session_id: str) -> int:
         return self._sessions.get(session_id, 0)
 
+    def get_completed_results(self, session_id: str) -> list[dict]:
+        text = self._texts.get(session_id, "")
+        return [{"text": text}] if text else []
+
 
 class MockEmailService(EmailService):
     def send_email(self, message: EmailMessage) -> dict:

@@ -44,6 +44,10 @@ class StreamingTranscriptionService(ABC):
         """Process audio chunk. Returns transcription if ready."""
 
     @abstractmethod
+    def get_completed_results(self, session_id: str) -> list[dict]:
+        """Return list of completed transcription chunks so far."""
+
+    @abstractmethod
     def finalize_session(self, session_id: str) -> TranscriptResult:
         """End streaming and return combined transcript."""
 

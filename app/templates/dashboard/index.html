@@ -137,7 +137,12 @@
     {% for entry in audit_entries or [] %}
     <li>
       <span class="activity-dot"></span>
-      {{ entry.action }} on <strong>{{ entry.entity_type }}</strong> ({{ entry.entity_id }})
+      <strong>{{ entry.action }}</strong>
+      {% if entry.target_table %} on <em>{{ entry.target_table }}</em>{% endif %}
+      {% if entry.target_id %} #{{ entry.target_id }}{% endif %}
+      <span style="color:var(--muted);font-size:.8rem;margin-left:.5rem">
+        {{ entry.timestamp.strftime('%d %b %Y %H:%M') if entry.timestamp else '' }}
+      </span>
     </li>
     {% else %}
     <li><span class="activity-dot"></span> No recent activity.</li>

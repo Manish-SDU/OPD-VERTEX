@@ -1,80 +1,274 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="card profile-card">
-    <!-- Profile Header -->
-    <div class="profile-header">
-        <div class="profile-avatar">👤</div>
-        <div class="profile-info">
-            <h2>{{ user.first_name }} {{ user.last_name }}</h2>
-            <p>{{ user.email }}</p>
-            <div class="profile-role-badge">
-                {% if user.role == "patient" %}
-                    🏥 Patient
-                {% elif user.role == "doctor" %}
-                    👨‍⚕️ Doctor
-                {% elif user.role == "admin" %}
-                    ⚙️ Administrator
-                {% endif %}
-            </div>
+<style>
+/* ── Profile Layout ── */
+.profile-wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* ── Hero card ── */
+.profile-hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.profile-initials {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-400) 100%);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: .03em;
+  box-shadow: 0 4px 14px rgba(37,99,235,.25);
+}
+
+.profile-hero-body { flex: 1; min-width: 0; }
+
+.profile-hero-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 .25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-hero-email {
+  font-size: .9375rem;
+  color: var(--muted);
+  margin: 0 0 .75rem;
+}
+
+.profile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .25rem .85rem;
+  border-radius: 999px;
+  font-size: .8125rem;
+  font-weight: 600;
+}
+.badge-doctor  { background: #eff6ff; color: var(--blue-700); }
+.badge-patient { background: #f0fdf4; color: #15803d; }
+.badge-admin   { background: #fdf4ff; color: #7e22ce; }
+
+.profile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .8125rem;
+  color: var(--muted);
+  margin-left: .75rem;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  display: inline-block;
+}
+.status-dot.inactive { background: var(--danger); }
+
+/* ── Info grid ── */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+@media (max-width: 640px) { .profile-grid { grid-template-columns: 1fr; } }
+
+/* ── Section card ── */
+.profile-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .9rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.section-head svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+.section-head h3 { margin: 0; font-size: .875rem; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: .04em; }
+
+.section-body { padding: .25rem 0; }
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: .7rem 1.25rem;
+  font-size: .9375rem;
+  border-bottom: 1px solid var(--border);
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--muted); font-size: .8rem; font-weight: 500; flex-shrink: 0; }
+.info-value { color: var(--text); font-weight: 500; text-align: right; }
+.info-value.empty { color: #c4c9d4; font-style: italic; font-weight: 400; }
+</style>
+
+<div class="profile-wrap">
+
+  {# ── Hero ── #}
+  <div class="profile-hero">
+    <div class="profile-initials">
+      {{ user.first_name[0] | upper }}{{ user.last_name[0] | upper }}
+    </div>
+    <div class="profile-hero-body">
+      <p class="profile-hero-name">{{ user.first_name }} {{ user.last_name }}</p>
+      <p class="profile-hero-email">{{ user.email }}</p>
+      <span class="profile-badge badge-{{ user.role }}">
+        {% if user.role == 'doctor' %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M8.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+        Doctor
+        {% elif user.role == 'patient' %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Patient
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Admin
+        {% endif %}
+      </span>
+      <span class="profile-status">
+        <span class="status-dot{% if not user.is_active %} inactive{% endif %}"></span>
+        {{ 'Active' if user.is_active else 'Inactive' }}
+      </span>
+    </div>
+  </div>
+
+  {# ── Patient sections ── #}
+  {% if user.role == 'patient' %}
+  <div class="profile-grid">
+
+    <div class="profile-section">
+      <div class="section-head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <h3>Personal</h3>
+      </div>
+      <div class="section-body">
+        <div class="info-row">
+          <span class="info-label">Date of birth</span>
+          <span class="info-value {% if not user.date_of_birth %}empty{% endif %}">
+            {{ user.date_of_birth.strftime('%d %b %Y') if user.date_of_birth else 'Not provided' }}
+          </span>
         </div>
-        <div class="profile-actions">
-            <button class="primary">Edit Profile</button>
+        <div class="info-row">
+          <span class="info-label">Gender</span>
+          <span class="info-value {% if not user.gender %}empty{% endif %}">{{ user.gender or 'Not provided' }}</span>
         </div>
+        <div class="info-row">
+          <span class="info-label">Phone</span>
+          <span class="info-value {% if not user.phone %}empty{% endif %}">{{ user.phone or 'Not provided' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Address</span>
+          <span class="info-value {% if not user.address %}empty{% endif %}">{{ user.address or 'Not provided' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Emergency contact</span>
+          <span class="info-value {% if not user.emergency_contact %}empty{% endif %}">{{ user.emergency_contact or 'Not provided' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Insurance ID</span>
+          <span class="info-value {% if not user.insurance_id %}empty{% endif %}">{{ user.insurance_id or 'Not provided' }}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Patient Profile -->
-    {% if user.role == "patient" %}
-    <div class="profile-grid">
-        <div class="profile-section">
-            <h3>👤 Personal Information</h3>
-            <ul class="profile-list">
-                <li><strong>Date of Birth:</strong> <span>{{ user.date_of_birth or "N/A" }}</span></li>
-                <li><strong>Gender:</strong> <span>{{ user.gender or "N/A" }}</span></li>
-                <li><strong>Phone:</strong> <span>{{ user.phone or "N/A" }}</span></li>
-                <li><strong>Address:</strong> <span>{{ user.address or "N/A" }}</span></li>
-                <li><strong>Emergency Contact:</strong> <span>{{ user.emergency_contact or "N/A" }}</span></li>
-                <li><strong>Insurance ID:</strong> <span>{{ user.insurance_id or "N/A" }}</span></li>
-            </ul>
+    <div class="profile-section">
+      <div class="section-head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <h3>Medical</h3>
+      </div>
+      <div class="section-body">
+        <div class="info-row">
+          <span class="info-label">Blood type</span>
+          <span class="info-value {% if not user.blood_type %}empty{% endif %}">{{ user.blood_type or 'Not provided' }}</span>
         </div>
-        <div class="profile-section">
-            <h3>🏥 Medical Information</h3>
-            <ul class="profile-list">
-                <li><strong>Blood Type:</strong> <span>{{ user.blood_type or "N/A" }}</span></li>
-                <li><strong>Allergies:</strong> <span>{{ user.allergies or "N/A" }}</span></li>
-                <li><strong>Medical History:</strong> <span>{{ user.medical_history or "N/A" }}</span></li>
-            </ul>
+        <div class="info-row">
+          <span class="info-label">Allergies</span>
+          <span class="info-value {% if not user.allergies %}empty{% endif %}">{{ user.allergies or 'None recorded' }}</span>
         </div>
+        <div class="info-row">
+          <span class="info-label">Medical history</span>
+          <span class="info-value {% if not user.medical_history %}empty{% endif %}">{{ user.medical_history or 'None recorded' }}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Doctor/Admin Profile -->
-    {% elif user.role == "doctor" or user.role == "admin" %}
-    <div class="profile-grid">
-        <div class="profile-section">
-            <h3>👨‍⚕️ Professional Information</h3>
-            <ul class="profile-list">
-                <li><strong>Phone:</strong> <span>{{ user.phone or "N/A" }}</span></li>
-                <li><strong>Specialization:</strong> <span>{{ user.specialization or "N/A" }}</span></li>
-                <li><strong>License Number:</strong> <span>{{ user.license_number or "N/A" }}</span></li>
-            </ul>
+  </div>
+
+  {# ── Doctor / Admin sections ── #}
+  {% elif user.role in ('doctor', 'admin') %}
+  <div class="profile-grid">
+
+    <div class="profile-section">
+      <div class="section-head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        <h3>Professional</h3>
+      </div>
+      <div class="section-body">
+        <div class="info-row">
+          <span class="info-label">Specialization</span>
+          <span class="info-value {% if not user.specialization %}empty{% endif %}">{{ user.specialization or 'Not provided' }}</span>
         </div>
-        <div class="profile-section">
-            <h3>ℹ️ Additional Details</h3>
-            <ul class="profile-list">
-                <li><strong>Role:</strong> <span>{{ user.role.title() or "N/A" }}</span></li>
-                <li><strong>Status:</strong> <span>{% if user.is_active %}Active{% else %}Inactive{% endif %}</span></li>
-            </ul>
+        <div class="info-row">
+          <span class="info-label">License number</span>
+          <span class="info-value {% if not user.license_number %}empty{% endif %}">{{ user.license_number or 'Not provided' }}</span>
         </div>
+        <div class="info-row">
+          <span class="info-label">Phone</span>
+          <span class="info-value {% if not user.phone %}empty{% endif %}">{{ user.phone or 'Not provided' }}</span>
+        </div>
+      </div>
     </div>
 
-    {% else %}
-    <div class="profile-grid">
-        <div class="profile-section">
-            <h3>Profile Information</h3>
-            <p>No additional profile data available for this role.</p>
+    <div class="profile-section">
+      <div class="section-head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        <h3>Account</h3>
+      </div>
+      <div class="section-body">
+        <div class="info-row">
+          <span class="info-label">Role</span>
+          <span class="info-value">{{ user.role | title }}</span>
         </div>
+        <div class="info-row">
+          <span class="info-label">Status</span>
+          <span class="info-value">{{ 'Active' if user.is_active else 'Inactive' }}</span>
+        </div>
+        {% if user.created_at %}
+        <div class="info-row">
+          <span class="info-label">Member since</span>
+          <span class="info-value">{{ user.created_at.strftime('%d %b %Y') }}</span>
+        </div>
+        {% endif %}
+      </div>
     </div>
-    {% endif %}
+
+  </div>
+  {% endif %}
+
 </div>
-
 {% endblock %}
+
