@@ -8,14 +8,16 @@
     {% endif %}
   </div>
   <table>
-    <thead><tr><th>ID</th><th>Patient</th><th>Status</th><th>Complaint</th></tr></thead>
+    <thead><tr><th>ID</th><th>Patient</th><th>Status</th><th>Complaint</th><th>Date</th></tr></thead>
     <tbody>
       {% for consultation in consultations %}
+      {% set p = patients.get(consultation.patient_id) %}
       <tr>
         <td><a href="/consultations/{{ consultation.id }}">{{ consultation.id }}</a></td>
-        <td>{{ consultation.patient_id }}</td>
+        <td>{% if p %}{{ p.first_name }} {{ p.last_name }}{% else %}#{{ consultation.patient_id }}{% endif %}</td>
         <td>{{ consultation.status }}</td>
-        <td>{{ consultation.chief_complaint }}</td>
+        <td>{{ consultation.chief_complaint or "&mdash;" }}</td>
+        <td>{{ consultation.started_at.strftime('%Y-%m-%d') if consultation.started_at else "&mdash;" }}</td>
       </tr>
       {% endfor %}
     </tbody>

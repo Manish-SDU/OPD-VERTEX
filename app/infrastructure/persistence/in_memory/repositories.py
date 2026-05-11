@@ -401,6 +401,14 @@ class InMemoryGeneratedDocumentRepository(GeneratedDocumentRepository):
                         )
                     ],
                     clinical_notes_summary="Routine follow-up. BP controlled on current medication.",
+                    report_markdown=(
+                        "# Clinical Report\n\n"
+                        "**Patient:** Giulia Rossi | **Age:** 36 | **Gender:** F\n\n"
+                        "## Chief Complaint\nFollow-up hypertension\n\n"
+                        "## Diagnosis\nEssential hypertension, controlled\n\n"
+                        "## Medications\n- Lisinopril 10 mg once daily for 30 days (oral)\n\n"
+                        "## Clinical Notes\nRoutine follow-up. BP controlled on current medication.\n"
+                    ),
                 ),
             ),
         }
@@ -926,13 +934,23 @@ class MockSuggestiveModeService(SuggestiveModeService):
 
 class MockTranscriptNormalizer(TranscriptNormalizer):
     def normalize(self, request) -> NormalizedTranscript:
-        cleaned = " ".join(request.transcript_text.split())
+        """Return a mock normalized transcript with speaker-labeled turns."""
+        import re
+        raw = request.transcript_text or ""
+        # Normalize whitespace first
+        cleaned = re.sub(r"  +", " ", raw).strip()
+        # Split the raw text into sentences and alternate DOCTOR/PATIENT
+        sentences = [s.strip() for s in cleaned.split(".") if s.strip()]
+        turns = []
+        for i, sentence in enumerate(sentences):
+            speaker = "DOCTOR" if i % 2 == 0 else "PATIENT"
+            turns.append({"speaker": speaker, "utterance": sentence + "."})
+        if not turns and cleaned:
+            turns = [{"speaker": "UNKNOWN", "utterance": cleaned}]
         return NormalizedTranscript(
-            raw_text=request.transcript_text,
-            normalized_text=cleaned,
-            chronology_notes=["Mock normalization preserved chronology."],
-            removed_noise=[],
-            unresolved_segments=[],
+            raw_text=raw,
+            cleaned_transcript=turns,
+            normalization_notes=["Mock normalization with alternating doctor/patient turns."],
             language="en",
         )
 
@@ -953,7 +971,19 @@ class MockPdfGenerator(PdfGenerator):
     def generate_report_pdf(
         self, report_markdown: str, consultation_metadata
     ) -> str:
-        return f"/tmp/mock_report_{consultation_metadata.consultation_id}.pdf"
+        import tempfile, os
+        tmp_dir = tempfile.gettempdir()
+        file_path = os.path.join(tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf")
+        # Write a minimal valid PDF so FileResponse can serve it
+        with open(file_path, "wb") as fh:
+            fh.write(
+                b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+                b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+                b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\n"
+                b"xref\n0 4\n0000000000 65535 f \n"
+                b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n0\n%%EOF\n"
+            )
+        return file_path
 
     def generate_prescription_pdf(
         self, prescription: Prescription

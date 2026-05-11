@@ -18,8 +18,19 @@
   <h3>Transcript</h3>
   <p>{{ consultation_document.transcript.full_text }}</p>
   {% if consultation_document.normalized_transcript %}
-  <h3>Normalized Transcript</h3>
+  <h3>Normalized Transcript (Doctor / Patient)</h3>
+  {% if consultation_document.normalized_transcript.cleaned_transcript %}
+  <div style="border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:1rem;">
+    {% for turn in consultation_document.normalized_transcript.cleaned_transcript %}
+    <div style="padding:0.5rem 1rem; {% if turn.speaker == 'DOCTOR' %}background:#eff6ff; border-left:4px solid #2563eb;{% elif turn.speaker == 'PATIENT' %}background:#f0fdf4; border-left:4px solid #16a34a;{% else %}background:#f8fafc; border-left:4px solid #94a3b8;{% endif %}">
+      <span style="font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; {% if turn.speaker == 'DOCTOR' %}color:#2563eb;{% elif turn.speaker == 'PATIENT' %}color:#16a34a;{% else %}color:#64748b;{% endif %}">{{ turn.speaker }}</span>
+      <p style="margin:0.25rem 0 0 0;">{{ turn.utterance }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
   <p>{{ consultation_document.normalized_transcript.normalized_text }}</p>
+  {% endif %}
   {% endif %}
   {% else %}
   <p>No consultation transcript has been saved yet.</p>
@@ -37,11 +48,14 @@
   <div style="margin: 0.75rem 0 1.5rem 0; display: flex; gap: 1rem; flex-wrap: wrap;">
     {% if user and user.role in ['doctor', 'admin'] %}
     <a href="/review/report/{{ consultation_id }}/edit" style="display: inline-block; padding: 0.6rem 1.15rem; background: var(--blue-600); color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
-      Edit & Approve
+      Edit &amp; Approve
     </a>
     {% endif %}
     <a href="/review/report/{{ consultation_id }}" style="display: inline-block; padding: 0.6rem 1.15rem; background: var(--surface); color: var(--blue-600); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
       View Report
+    </a>
+    <a href="/review/{{ consultation_id }}/pdf" style="display: inline-block; padding: 0.6rem 1.15rem; background: #16a34a; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
+      &#8595; Download PDF
     </a>
   </div>
 

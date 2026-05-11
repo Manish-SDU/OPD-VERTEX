@@ -2,10 +2,16 @@
 {% block content %}
 <section class="card">
   {% if consultation %}
-  <h2>Consultation {{ consultation.id }}</h2>
-  <p>Status: {{ consultation.status }}</p>
-  <p>Patient: {{ consultation.patient_id }}</p>
-  <p><a href="/review/{{ consultation.id }}">Open review workflow</a></p>
+  <h2>Consultation #{{ consultation.id }}</h2>
+  <p><strong>Status:</strong> {{ consultation.status }}</p>
+  <p><strong>Patient:</strong> {% if patient %}{{ patient.first_name }} {{ patient.last_name }} (ID: {{ consultation.patient_id }}){% else %}#{{ consultation.patient_id }}{% endif %}</p>
+  {% if consultation.chief_complaint %}
+  <p><strong>Chief Complaint:</strong> {{ consultation.chief_complaint }}</p>
+  {% endif %}
+  {% if consultation.started_at %}
+  <p><strong>Started:</strong> {{ consultation.started_at.strftime('%Y-%m-%d %H:%M') }}</p>
+  {% endif %}
+  <p><a href="/review/{{ consultation.id }}" class="btn-primary" style="display:inline-block;margin-top:0.5rem;">Open Review Workflow</a></p>
   {% else %}
   <h2>Consultation not found</h2>
   {% endif %}

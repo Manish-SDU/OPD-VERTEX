@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from app.infrastructure.persistence.repositories import (
         GeneratedDocumentRepository,
         ConsultationRepository,
+        PatientRepository,
+        StaffRepository,
     )
 
 
@@ -26,11 +28,15 @@ class ReportPdfApplicationService:
         generated_repository: GeneratedDocumentRepository,
         consultation_repository: ConsultationRepository,
         pdf_generator: PdfGenerator,
+        patient_repository: PatientRepository | None = None,
+        staff_repository: StaffRepository | None = None,
         logger: logging.Logger | None = None,
     ):
         self.generated_repository = generated_repository
         self.consultation_repository = consultation_repository
         self.pdf_generator = pdf_generator
+        self.patient_repository = patient_repository
+        self.staff_repository = staff_repository
         self.logger = logger or logging.getLogger(__name__)
 
     def generate_report_pdf(self, consultation_id: int) -> ReportPdfArtifact:
@@ -75,8 +81,17 @@ class ReportPdfApplicationService:
             raise ValueError(f"Consultation {consultation_id} not found")
 
         # Fetch patient and clinician info
-        patient = consultation.patient
-        clinician = consultation.clinician
+        # Prefer explicit repositories (works for both mock and SQL modes).
+        # Fall back to ORM relationship attributes for SQL-only setups.
+        if self.patient_repository is not None:
+            patient = self.patient_repository.get_by_id(consultation.patient_id)
+        else:
+            patient = getattr(consultation, "patient", None)
+
+        if self.staff_repository is not None:
+            clinician = self.staff_repository.get_by_id(consultation.doctor_id)
+        else:
+            clinician = getattr(consultation, "clinician", None)
 
         if not patient or not clinician:
             self.logger.warning(

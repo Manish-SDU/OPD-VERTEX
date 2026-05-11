@@ -383,6 +383,8 @@ def get_report_pdf_app_service() -> ReportPdfApplicationService:
         generated_repository=generated_repository(),
         consultation_repository=consultation_repository(),
         pdf_generator=pdf_generator(),
+        patient_repository=patient_repository(),
+        staff_repository=staff_repository(),
         logger=logging.getLogger(__name__),
     )
 

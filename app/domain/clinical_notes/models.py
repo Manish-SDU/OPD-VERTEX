@@ -29,10 +29,27 @@ class Vitals(BaseModel):
     bmi: str = "Not recorded"
 
 
+class SpeakerTurn(BaseModel):
+    """A single speaker turn in a normalized transcript."""
+
+    speaker: str  # DOCTOR | PATIENT | UNKNOWN
+    utterance: str
+
+
 class NormalizedTranscript(BaseModel):
-    """LLM-cleaned transcript that preserves meaning and chronology."""
+    """LLM-cleaned transcript that preserves meaning and chronology.
+
+    The LLM returns cleaned_transcript (speaker-labeled turns).  We keep the
+    raw_text / normalized_text fields for backwards-compatibility with any code
+    that still reads the flat string form; normalized_text is auto-derived.
+    """
 
     raw_text: str = ""
+    # Speaker-labeled turns as produced by the normalization prompt
+    cleaned_transcript: list[SpeakerTurn] = Field(default_factory=list)
+    uncertain_segments: list[dict] = Field(default_factory=list)
+    normalization_notes: list[str] = Field(default_factory=list)
+    # Derived flat text kept for backward-compat
     normalized_text: str = ""
     chronology_notes: list[str] = Field(default_factory=list)
     removed_noise: list[str] = Field(default_factory=list)
@@ -43,6 +60,7 @@ class NormalizedTranscript(BaseModel):
         "chronology_notes",
         "removed_noise",
         "unresolved_segments",
+        "normalization_notes",
         mode="before",
     )
     @classmethod
@@ -55,10 +73,33 @@ class NormalizedTranscript(BaseModel):
             cleaned = value.strip()
             if not cleaned:
                 return []
-            # If the model returns a single string, keep it as one note.
-            # (We avoid splitting heuristics to preserve original meaning.)
             return [cleaned]
         return value
+
+    @field_validator("cleaned_transcript", mode="before")
+    @classmethod
+    def _coerce_cleaned_transcript(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            result = []
+            for item in value:
+                if isinstance(item, SpeakerTurn):
+                    result.append(item)
+                elif isinstance(item, dict):
+                    speaker = item.get("speaker", "UNKNOWN")
+                    utterance = item.get("utterance", item.get("text", ""))
+                    if utterance:
+                        result.append(SpeakerTurn(speaker=speaker, utterance=utterance))
+            return result
+        return []
+
+    def model_post_init(self, __context) -> None:
+        """Derive normalized_text from cleaned_transcript if not set."""
+        if not self.normalized_text and self.cleaned_transcript:
+            self.normalized_text = "\n".join(
+                f"{turn.speaker}: {turn.utterance}" for turn in self.cleaned_transcript
+            )
 
 
 class LlmExecutionMetadata(BaseModel):

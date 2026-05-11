@@ -29,6 +29,8 @@ class ConsultationApplicationService:
         consultation = Consultation(
             doctor_id=doctor_id,
             patient_id=payload.patient_id,
+            chief_complaint=payload.chief_complaint,
+            visit_type=payload.visit_type,
             status=ConsultationStatus.RECORDING,
             started_at=utcnow(),
         )

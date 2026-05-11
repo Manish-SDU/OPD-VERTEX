@@ -1,5 +1,7 @@
 """Patient routes."""
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -13,6 +15,13 @@ from app.api.deps import (
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
+
+
+def _calculate_age(dob: date | None) -> str:
+    if not dob:
+        return "N/A"
+    today = date.today()
+    return str(today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day)))
 
 
 @router.get("", response_class=HTMLResponse)
@@ -64,6 +73,7 @@ def patient_detail(
         "patients/detail.html",
         {
             "patient": patient,
+            "patient_age": _calculate_age(patient.date_of_birth if patient else None),
             "consultations": consultations,
             "prescriptions": prescriptions,
             "page_title": "Patient Detail",

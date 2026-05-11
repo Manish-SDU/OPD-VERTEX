@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from app.api.deps import (
     get_consultation_app_service,
     get_current_user,
+    get_patient_app_service,
 )
 from app.domain.consultations.models import ConsultationCreateRequest
 
@@ -26,10 +27,11 @@ def _require_doctor(user=Depends(get_current_user)):
 @router.get("", response_class=HTMLResponse)
 def consultation_list(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     consultations = get_consultation_app_service().list_consultations()
+    patients = {p.id: p for p in get_patient_app_service().list_patients()}
     return templates.TemplateResponse(
         request,
         "consultations/list.html",
-        {"consultations": consultations, "page_title": "Consultations", "user": user},
+        {"consultations": consultations, "patients": patients, "page_title": "Consultations", "user": user},
     )
 
 
@@ -45,7 +47,7 @@ def consultation_new(request: Request, user=Depends(_require_doctor)) -> HTMLRes
 @router.post("")
 def consultation_create(
     patient_id: int = Form(...),
-    chief_complaint: str = Form(...),
+    chief_complaint: str = Form(""),
     user=Depends(_require_doctor),
 ) -> RedirectResponse:
     doctor_id_raw = user.get("sub") or user.get("user_id") or user.get("id")
@@ -64,7 +66,9 @@ def consultation_create(
         ) from exc
 
     consultation = get_consultation_app_service().create_consultation(
-        ConsultationCreateRequest(patient_id=patient_id),
+        ConsultationCreateRequest(
+            patient_id=patient_id, chief_complaint=chief_complaint or None
+        ),
         doctor_id=doctor_id,
     )
     return RedirectResponse(url=f"/consultations/{consultation.id}", status_code=303)
@@ -75,11 +79,13 @@ def consultation_detail(
     consultation_id: int, request: Request, user=Depends(get_current_user)
 ) -> HTMLResponse:
     consultation = get_consultation_app_service().get_consultation(consultation_id)
+    patient = get_patient_app_service().get_patient(consultation.patient_id) if consultation else None
     return templates.TemplateResponse(
         request,
         "consultations/detail.html",
         {
             "consultation": consultation,
+            "patient": patient,
             "page_title": "Consultation Detail",
             "user": user,
         },

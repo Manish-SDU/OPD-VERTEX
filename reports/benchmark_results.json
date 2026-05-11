@@ -4,89 +4,89 @@
     "mean_ms": 0.001,
     "p50_ms": 0.001,
     "p95_ms": 0.001,
-    "p99_ms": 0.005,
+    "p99_ms": 0.017,
     "min_ms": 0.001,
-    "max_ms": 0.028
+    "max_ms": 0.019
   },
   "patient_search_by_name": {
     "iterations": 200,
     "mean_ms": 0.002,
     "p50_ms": 0.002,
     "p95_ms": 0.002,
-    "p99_ms": 0.017,
+    "p99_ms": 0.015,
     "min_ms": 0.002,
-    "max_ms": 0.022
+    "max_ms": 0.02
   },
   "patient_create": {
     "iterations": 100,
-    "mean_ms": 0.006,
+    "mean_ms": 0.005,
     "p50_ms": 0.005,
-    "p95_ms": 0.007,
-    "p99_ms": 0.04,
+    "p95_ms": 0.009,
+    "p99_ms": 0.033,
     "min_ms": 0.004,
-    "max_ms": 0.04
+    "max_ms": 0.033
   },
   "consultation_list": {
     "iterations": 200,
     "mean_ms": 0.001,
     "p50_ms": 0.001,
     "p95_ms": 0.001,
-    "p99_ms": 0.001,
+    "p99_ms": 0.01,
     "min_ms": 0.001,
-    "max_ms": 0.01
+    "max_ms": 0.022
   },
   "consultation_create": {
     "iterations": 100,
     "mean_ms": 0.004,
     "p50_ms": 0.003,
-    "p95_ms": 0.004,
-    "p99_ms": 0.057,
-    "min_ms": 0.002,
-    "max_ms": 0.057
+    "p95_ms": 0.005,
+    "p99_ms": 0.03,
+    "min_ms": 0.003,
+    "max_ms": 0.03
   },
   "consultation_get_by_id": {
     "iterations": 500,
     "mean_ms": 0.001,
     "p50_ms": 0.001,
     "p95_ms": 0.001,
-    "p99_ms": 0.001,
+    "p99_ms": 0.002,
     "min_ms": 0.001,
-    "max_ms": 0.025
+    "max_ms": 0.027
   },
   "mock_clinical_note_generation": {
     "iterations": 100,
-    "mean_ms": 0.02,
-    "p50_ms": 0.018,
-    "p95_ms": 0.026,
-    "p99_ms": 0.093,
-    "min_ms": 0.015,
-    "max_ms": 0.093
+    "mean_ms": 0.011,
+    "p50_ms": 0.01,
+    "p95_ms": 0.013,
+    "p99_ms": 0.073,
+    "min_ms": 0.01,
+    "max_ms": 0.073
   },
   "transcript_normalizer": {
     "iterations": 200,
-    "mean_ms": 0.004,
-    "p50_ms": 0.004,
-    "p95_ms": 0.004,
-    "p99_ms": 0.025,
-    "min_ms": 0.003,
-    "max_ms": 0.033
+    "mean_ms": 0.008,
+    "p50_ms": 0.007,
+    "p95_ms": 0.008,
+    "p99_ms": 0.027,
+    "min_ms": 0.007,
+    "max_ms": 0.134
   },
   "document_edit_single_field": {
     "iterations": 100,
-    "mean_ms": 0.099,
-    "p50_ms": 0.094,
-    "p95_ms": 0.118,
-    "p99_ms": 0.324,
-    "min_ms": 0.091,
-    "max_ms": 0.324
+    "mean_ms": 0.097,
+    "p50_ms": 0.092,
+    "p95_ms": 0.117,
+    "p99_ms": 0.309,
+    "min_ms": 0.089,
+    "max_ms": 0.309
   },
   "version_history_retrieval": {
     "iterations": 500,
-    "mean_ms": 0.001,
-    "p50_ms": 0.001,
+    "mean_ms": 0.002,
+    "p50_ms": 0.002,
     "p95_ms": 0.002,
     "p99_ms": 0.002,
     "min_ms": 0.001,
-    "max_ms": 0.007
+    "max_ms": 0.048
   }
 }

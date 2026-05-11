@@ -25,6 +25,8 @@ class Consultation(BaseModel):
     id: int | None = None
     doctor_id: int
     patient_id: int
+    chief_complaint: str | None = None
+    visit_type: str | None = None
     status: ConsultationStatus = ConsultationStatus.RECORDING
     started_at: datetime | None = None
     ended_at: datetime | None = None
@@ -35,6 +37,8 @@ class Consultation(BaseModel):
 
 class ConsultationCreateRequest(BaseModel):
     patient_id: int
+    chief_complaint: str | None = None
+    visit_type: str | None = None
 
 
 class ConsultationRepository(ABC):
