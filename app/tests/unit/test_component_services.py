@@ -32,7 +32,6 @@ from app.domain.patients.models import Patient
 from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryConsultationDocumentRepository,
     InMemoryConsultationRepository,
-    InMemoryEmailTemplateRepository,
     InMemoryGeneratedDocumentRepository,
     InMemoryPatientRepository,
     InMemoryPrescriptionRepository,

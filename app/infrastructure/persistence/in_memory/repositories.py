@@ -971,7 +971,8 @@ class MockPdfGenerator(PdfGenerator):
     def generate_report_pdf(
         self, report_markdown: str, consultation_metadata
     ) -> str:
-        import tempfile, os
+        import os
+        import tempfile
         tmp_dir = tempfile.gettempdir()
         file_path = os.path.join(tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf")
         # Write a minimal valid PDF so FileResponse can serve it

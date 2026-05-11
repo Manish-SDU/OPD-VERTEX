@@ -297,6 +297,8 @@ def email_service():
         port=settings.smtp_port or 1025,
         from_email=settings.smtp_from or "no-reply@example.local",
         from_name="OPD-Vertex",
+        username=settings.smtp_user or "",
+        password=settings.smtp_password or "",
     )
 
 

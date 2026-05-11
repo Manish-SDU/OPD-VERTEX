@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 
-import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
 
@@ -120,7 +119,6 @@ class TestConsultationListUI:
 
     def test_consultation_list_shows_patient_names(self):
         resp = client.get("/consultations", cookies=_doctor_cookies())
-        html = resp.text
         # The list should not show raw IDs only – at least no bare "#" IDs
         # (or should show patient names from the seeded data)
         assert resp.status_code == 200

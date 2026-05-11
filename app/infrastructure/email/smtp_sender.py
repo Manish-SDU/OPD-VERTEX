@@ -9,11 +9,21 @@ from app.domain.email.models import EmailMessage, EmailService
 
 
 class SmtpEmailService(EmailService):
-    def __init__(self, host: str, port: int, from_email: str, from_name: str) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        from_email: str,
+        from_name: str,
+        username: str = "",
+        password: str = "",
+    ) -> None:
         self.host = host
         self.port = port
         self.from_email = from_email
         self.from_name = from_name
+        self.username = username
+        self.password = password
 
     def send_email(self, message: EmailMessage) -> dict:
         msg = MIMEMultipart("mixed")
@@ -39,12 +49,31 @@ class SmtpEmailService(EmailService):
             )
             msg.attach(part)
 
-        with smtplib.SMTP(self.host, self.port) as server:
-            server.send_message(msg)
+        # Port 465 → implicit SSL; port 587 → STARTTLS; everything else → plain
+        if self.port == 465:
+            with smtplib.SMTP_SSL(self.host, self.port) as server:
+                if self.username and self.password:
+                    server.login(self.username, self.password)
+                server.send_message(msg)
+        elif self.port == 587:
+            with smtplib.SMTP(self.host, self.port) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                if self.username and self.password:
+                    server.login(self.username, self.password)
+                server.send_message(msg)
+        else:
+            # Plain SMTP – used for MailHog (port 1025) in dev
+            with smtplib.SMTP(self.host, self.port) as server:
+                if self.username and self.password:
+                    server.login(self.username, self.password)
+                server.send_message(msg)
 
+        provider = "smtp-ssl" if self.port == 465 else ("smtp-tls" if self.port == 587 else "smtp-dev")
         return {
             "status": "sent",
-            "provider": "smtp-dev",
+            "provider": provider,
             "host": self.host,
             "port": self.port,
             "recipient": str(message.to_email),

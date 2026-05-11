@@ -2,33 +2,28 @@
 
 from __future__ import annotations
 
-import os
 import re
 from datetime import datetime
 from pathlib import Path
 
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
     Spacer,
-    PageBreak,
     Table,
     TableStyle,
-    Image,
-    KeepTogether,
 )
-from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER
 
 
 from app.domain.clinical_notes.models import PrescriptionArtifact
 from app.domain.pdf.models import (
     PdfGenerator,
     ConsultationMetadata,
-    PrescriptionData,
 )
 from app.domain.prescriptions.models import Prescription
 from app.core.config import get_settings
@@ -188,8 +183,6 @@ class ReportLabPdfGenerator(PdfGenerator):
         # Verify file was created and get size
         if not file_path.exists():
             raise IOError(f"Failed to create PDF at {file_path}")
-
-        file_size_kb = file_path.stat().st_size / 1024
 
         return str(file_path)
     
