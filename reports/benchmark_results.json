@@ -4,9 +4,9 @@
     "mean_ms": 0.001,
     "p50_ms": 0.001,
     "p95_ms": 0.001,
-    "p99_ms": 0.014,
+    "p99_ms": 0.003,
     "min_ms": 0.001,
-    "max_ms": 0.032
+    "max_ms": 0.02
   },
   "patient_search_by_name": {
     "iterations": 200,
@@ -15,12 +15,12 @@
     "p95_ms": 0.002,
     "p99_ms": 0.004,
     "min_ms": 0.002,
-    "max_ms": 0.018
+    "max_ms": 0.024
   },
   "patient_create": {
     "iterations": 100,
     "mean_ms": 0.005,
-    "p50_ms": 0.004,
+    "p50_ms": 0.005,
     "p95_ms": 0.007,
     "p99_ms": 0.031,
     "min_ms": 0.004,
@@ -39,10 +39,10 @@
     "iterations": 100,
     "mean_ms": 0.004,
     "p50_ms": 0.003,
-    "p95_ms": 0.004,
-    "p99_ms": 0.033,
+    "p95_ms": 0.007,
+    "p99_ms": 0.035,
     "min_ms": 0.003,
-    "max_ms": 0.033
+    "max_ms": 0.035
   },
   "consultation_get_by_id": {
     "iterations": 500,
@@ -51,34 +51,34 @@
     "p95_ms": 0.001,
     "p99_ms": 0.001,
     "min_ms": 0.001,
-    "max_ms": 0.007
+    "max_ms": 0.01
   },
   "mock_clinical_note_generation": {
     "iterations": 100,
-    "mean_ms": 0.011,
-    "p50_ms": 0.01,
-    "p95_ms": 0.013,
-    "p99_ms": 0.067,
+    "mean_ms": 0.01,
+    "p50_ms": 0.009,
+    "p95_ms": 0.011,
+    "p99_ms": 0.069,
     "min_ms": 0.009,
-    "max_ms": 0.067
+    "max_ms": 0.069
   },
   "transcript_normalizer": {
     "iterations": 200,
-    "mean_ms": 0.007,
+    "mean_ms": 0.008,
     "p50_ms": 0.007,
     "p95_ms": 0.008,
-    "p99_ms": 0.018,
+    "p99_ms": 0.037,
     "min_ms": 0.006,
-    "max_ms": 0.12
+    "max_ms": 0.123
   },
   "document_edit_single_field": {
     "iterations": 100,
     "mean_ms": 0.095,
-    "p50_ms": 0.091,
-    "p95_ms": 0.103,
-    "p99_ms": 0.351,
-    "min_ms": 0.088,
-    "max_ms": 0.351
+    "p50_ms": 0.09,
+    "p95_ms": 0.109,
+    "p99_ms": 0.289,
+    "min_ms": 0.087,
+    "max_ms": 0.289
   },
   "version_history_retrieval": {
     "iterations": 500,
@@ -87,6 +87,6 @@
     "p95_ms": 0.002,
     "p99_ms": 0.002,
     "min_ms": 0.001,
-    "max_ms": 0.004
+    "max_ms": 0.006
   }
 }
