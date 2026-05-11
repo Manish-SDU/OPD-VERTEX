@@ -130,6 +130,7 @@ class TestInMemoryPrescriptionRepository:
 
 class TestInMemoryAuditLogRepository:
     def test_list_recent(self, audit_repo):
+        audit_repo.append(AuditLog(user_id=1, user_role="doctor", action="LOGIN"))
         entries = audit_repo.list_recent()
         assert len(entries) >= 1
 

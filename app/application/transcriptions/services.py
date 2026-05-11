@@ -132,6 +132,22 @@ class TranscriptionApplicationService:
         self._persist_transcript(consultation_id, result)
         return result
 
+    def inject_demo_text(self, session_id: str, text: str) -> None:
+        """Inject text for demo / no-mic mode. Saves as a single temp chunk."""
+        if hasattr(self.streaming_service, "inject_text"):
+            self.streaming_service.inject_text(session_id, text)
+        consultation_id = self.streaming_service.get_session_consultation_id(session_id)
+        chunk = TemporaryTranscriptChunk(
+            consultation_id=consultation_id,
+            session_id=session_id,
+            chunk_id=1,
+            text=text,
+            timestamp=0.0,
+            is_final=True,
+            created_at=datetime.utcnow(),
+        )
+        self.temp_chunk_repo.save_chunk(chunk)
+
     def _persist_transcript(
         self, consultation_id: int, result: TranscriptResult
     ) -> TranscriptResult:

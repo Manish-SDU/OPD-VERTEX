@@ -120,6 +120,21 @@ async def get_session_results(
     }
 
 
+class InjectDemoRequest(BaseModel):
+    text: str
+
+
+@router.post("/session/{session_id}/inject-demo")
+async def inject_demo_text(
+    session_id: str,
+    request: InjectDemoRequest,
+    service: TranscriptionApplicationService = Depends(get_transcription_service),
+) -> dict:
+    """Inject text directly into a session (demo / no-mic mode)."""
+    service.inject_demo_text(session_id, request.text)
+    return {"status": "injected", "characters": len(request.text)}
+
+
 @router.post("/session/{session_id}/complete")
 async def complete_transcription(
     session_id: str,

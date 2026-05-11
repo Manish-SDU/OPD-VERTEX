@@ -149,6 +149,8 @@ const partialText = document.getElementById('partial-text');
 const chunksList = document.getElementById('transcription-chunks');
 const transcriptionError = document.getElementById('transcription-error');
 const transcriptionSaved = document.getElementById('transcription-saved');
+const transcriptArea    = document.getElementById('transcript-display');
+const demoBtn           = document.getElementById('demo-transcript');
 
 if (form) {
   form.onsubmit = async function(e) {
@@ -269,6 +271,7 @@ if (startBtn) {
             chunksList.appendChild(li);
           } else if (data.partial_text !== undefined) {
             partialText.textContent = data.partial_text;
+            if (transcriptArea) transcriptArea.value = data.partial_text;
           } else if (data.error) {
             transcriptionError.textContent = data.error;
           }
@@ -420,6 +423,7 @@ if (stopBtn) {
         if (data.partial_text && data.partial_text !== lastPartialText) {
           lastPartialText = data.partial_text;
           partialText.textContent = data.partial_text;
+          if (transcriptArea) transcriptArea.value = data.partial_text;
         }
       } catch (err) {
         console.error('Error polling results:', err);
@@ -473,12 +477,96 @@ if (saveBtn) {
       startBtn.disabled = true;
       stopBtn.disabled = true;
       saveBtn.disabled = true;
+      if (transcriptArea) transcriptArea.value = '';
       consultationId = null;
       sessionId = null;
     } catch (err) {
       console.error('[Save] Fetch error:', err);
       transcriptionError.textContent = err.message || err;
       saveBtn.disabled = false;
+    }
+  };
+}
+
+// ── Demo transcript (no microphone) ──────────────────────────────────
+const DEMO_TEXT =
+`Receptionist: Good morning. What brings you in today?
+
+Patient: I've been having stomach pain since last night.
+
+Receptionist: Please have a seat. The doctor will see you shortly.
+
+Doctor: Hello, I'm Dr. Smith. What seems to be the problem?
+
+Patient: I have pain in my stomach, mostly on the lower right side.
+
+Doctor: When did it start?
+
+Patient: Yesterday evening after dinner.
+
+Doctor: Do you have nausea, vomiting, or fever?
+
+Patient: I feel a little nauseous, but no fever.
+
+Doctor: How strong is the pain from 1 to 10?
+
+Patient: About a 6.
+
+Doctor: I'm going to examine your abdomen now.
+
+Patient: Okay.
+
+Doctor: It may be a stomach infection or irritation, but I'd like you to get a scan and some blood tests to be safe.
+
+Patient: Alright.
+
+Doctor: Until then, drink plenty of water, avoid heavy food, and take the medicine I prescribe.
+
+Patient: Thank you, doctor.
+
+Doctor: You're welcome. Please come back if the pain gets worse.`;
+
+if (demoBtn) {
+  demoBtn.onclick = async function () {
+    demoBtn.disabled = true;
+    transcriptionError.textContent = '';
+    transcriptionSaved.textContent = '';
+    try {
+      // Start session if needed
+      if (!sessionId) {
+        const resp = await fetch('/transcriptions/session/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ consultation_id: parseInt(consultationId) }),
+        });
+        const raw = await resp.text();
+        if (!resp.ok) throw new Error(`Start session failed (${resp.status}): ${raw.substring(0, 200)}`);
+        const data = JSON.parse(raw);
+        if (!data.session_id) throw new Error('Missing session_id in response');
+        sessionId = data.session_id;
+      }
+
+      // Inject demo text
+      const injectResp = await fetch(`/transcriptions/session/${sessionId}/inject-demo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: DEMO_TEXT }),
+      });
+      if (!injectResp.ok) {
+        const err = await injectResp.text();
+        throw new Error(`Inject failed (${injectResp.status}): ${err.substring(0, 200)}`);
+      }
+
+      // Show text and enable save
+      if (transcriptArea) transcriptArea.value = DEMO_TEXT;
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+      saveBtn.disabled = false;
+      transcriptionSaved.textContent = 'Demo transcript loaded — click Save Transcription to continue.';
+    } catch (err) {
+      console.error('[Demo] Error:', err);
+      transcriptionError.textContent = err.message || err;
+      demoBtn.disabled = false;
     }
   };
 }

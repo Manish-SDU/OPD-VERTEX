@@ -567,17 +567,8 @@ class InMemoryPrescriptionRepository(PrescriptionRepository):
 
 class InMemoryAuditLogRepository(AuditLogRepository):
     def __init__(self) -> None:
-        self._entries = [
-            AuditLog(
-                id=1,
-                user_id=1,
-                user_role="doctor",
-                action="LOGIN",
-                target_table="staff",
-                target_id=1,
-            ),
-        ]
-        self._next_id = 2
+        self._entries: list[AuditLog] = []
+        self._next_id = 1
 
     def list_recent(self) -> list[AuditLog]:
         return self._entries[-20:]
@@ -1046,6 +1037,10 @@ class MockStreamingTranscriptionService(StreamingTranscriptionService):
     def get_completed_results(self, session_id: str) -> list[dict]:
         text = self._texts.get(session_id, "")
         return [{"text": text}] if text else []
+
+    def inject_text(self, session_id: str, text: str) -> None:
+        """Directly set transcript text (demo / no-mic mode)."""
+        self._texts[session_id] = text
 
 
 class MockEmailService(EmailService):

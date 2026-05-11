@@ -4,6 +4,7 @@ from datetime import date
 
 import pytest
 
+from app.domain.audit.models import AuditLog
 from app.domain.clinical_notes.models import ConsultationDocument, TranscriptDocument
 from app.domain.consultations.models import (
     ConsultationCreateRequest,
@@ -76,7 +77,8 @@ class TestPrescriptionApplicationService:
 
 
 class TestAuditApplicationService:
-    def test_recent_entries(self, audit_app_service):
+    def test_recent_entries(self, audit_app_service, audit_repo):
+        audit_repo.append(AuditLog(user_id=1, user_role="doctor", action="LOGIN"))
         entries = audit_app_service.recent_entries()
         assert len(entries) >= 1
         assert entries[0].action == "LOGIN"
