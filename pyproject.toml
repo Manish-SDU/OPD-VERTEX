@@ -17,6 +17,12 @@ dependencies = [
   "uvicorn[standard]>=0.35.0,<1.0.0",
   # HTTP Client
   "httpx>=0.28.1,<1.0.0",
+  # Async email
+  "aiosmtplib>=3.0",
+  # Markdown → HTML (for email report rendering)
+  "markdown>=3.6",
+  # WebSocket client (transcription proxy)
+  "websockets>=12.0",
   # SQL
   "sqlalchemy>=2.0.0,<3.0.0",
   "pymysql>=1.1.0,<2.0.0",
@@ -28,15 +34,13 @@ dependencies = [
   "bcrypt>=4.1.0,<5.0.0",
   "python-jose>=3.3.0,<4.0.0",
   "passlib>=1.7.4,<2.0.0",
-  "faster-whisper>=0.10.0",
-  "soundfile>=0.12.1",
-  "numpy>=1.23.0",
 ]
 
 [project.optional-dependencies]
 dev = [
   "httpx>=0.28.1,<1.0.0",
   "pytest>=8.4.1,<9.0.0",
+  "pytest-asyncio>=0.23.0",
   "plotext>=5.3.0,<6.0.0",
 ]
 

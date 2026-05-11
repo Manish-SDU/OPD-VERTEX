@@ -9,7 +9,7 @@ services:
       - ollama-data:/root/.ollama
 
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     ports:
@@ -20,7 +20,9 @@ services:
     environment:
       LOCAL_LLM_ENDPOINT: http://ollama:11434
       WHISPER_API_URL: http://whisper:8001
-      LLM_MODEL_NAME: qwen3:8b
+      LLM_MODEL_NAME: llama3.2:1b
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
     volumes:
       - ./:/workspace
       - model-cache:/workspace/app/models
@@ -29,18 +31,49 @@ services:
       - mongo
       - whisper
       - ollama
+      - mailhog
 
+  # CPU whisper (default)
   whisper:
     build:
-      context: .
-      dockerfile: whisper_api/Dockerfile
+      context: ./whisper_api
+      dockerfile: Dockerfile
     ports:
       - "8001:8001"
     volumes:
-      - whisper-models:/whisper-api/models
-      - ./whisper_api:/whisper-api/whisper_api
+      - whisper-models:/models
     environment:
-      HF_HOME: /whisper-api/models
+      WHISPER_MODEL: tiny
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
+
+  # GPU whisper — opt-in via: docker compose --profile gpu up whisper-gpu
+  whisper-gpu:
+    profiles: [gpu]
+    build:
+      context: ./whisper_api
+      dockerfile: Dockerfile.gpu
+    ports:
+      - "8001:8001"
+    volumes:
+      - whisper-models:/models
+    environment:
+      WHISPER_MODEL: large-v3
+      WHISPER_DEVICE: cuda
+      WHISPER_COMPUTE_TYPE: float16
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
 
   mysql:
     image: mysql:8.4

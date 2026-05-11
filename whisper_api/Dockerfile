@@ -1,53 +1,17 @@
-FROM python:3.12-slim AS builder
+FROM python:3.11-slim
 
-WORKDIR /whisper-api
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 
-
-COPY whisper_api/pyproject.toml ./
-COPY whisper_api/ ./whisper_api/
-
-# Install build tools for webrtcvad
 RUN apt-get update && apt-get install -y --no-install-recommends \
-	build-essential \
-	gcc \
-	python3-dev \
-	&& rm -rf /var/lib/apt/lists/*
+        ffmpeg curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-RUN pip install --no-cache-dir -e .
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Set HuggingFace cache directory
-ENV HF_HOME=/whisper-api/models
-RUN mkdir -p /whisper-api/models
+COPY pipeline.py server.py ./
 
-# Download Faster-Whisper models during build
-COPY app/scripts/download_whisper_model.py ./app/scripts/
-RUN python app/scripts/download_whisper_model.py
-
-
-FROM python:3.12-slim
-
-WORKDIR /whisper-api
-
-
-COPY whisper_api/pyproject.toml ./
-COPY whisper_api/ ./whisper_api/
-
-# Install build tools for webrtcvad
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	build-essential \
-	gcc \
-	python3-dev \
-	&& rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir -e .
-
-# Set HuggingFace cache to persistent location
-ENV HF_HOME=/whisper-api/models
-
-# Copy models from builder stage
-COPY --from=builder /whisper-api/models /whisper-api/models
-
+ENV WHISPER_MODEL=large-v3 WHISPER_DEVICE=cpu WHISPER_COMPUTE_TYPE=int8 WHISPER_PORT=8001
 EXPOSE 8001
-
-CMD ["python", "-m", "whisper_api.main"]
+CMD ["python", "server.py"]

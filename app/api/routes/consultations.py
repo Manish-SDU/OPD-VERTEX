@@ -25,7 +25,11 @@ def _require_doctor(user=Depends(get_current_user)):
 
 @router.get("", response_class=HTMLResponse)
 def consultation_list(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
-    consultations = get_consultation_app_service().list_consultations()
+    all_consultations = get_consultation_app_service().list_consultations()
+    if user.get("role") == "patient":
+        consultations = [c for c in all_consultations if c.patient_id == int(user["sub"])]
+    else:
+        consultations = all_consultations
     return templates.TemplateResponse(
         request,
         "consultations/list.html",
@@ -75,6 +79,10 @@ def consultation_detail(
     consultation_id: int, request: Request, user=Depends(get_current_user)
 ) -> HTMLResponse:
     consultation = get_consultation_app_service().get_consultation(consultation_id)
+    if user.get("role") == "patient" and (
+        consultation is None or consultation.patient_id != int(user["sub"])
+    ):
+        raise HTTPException(status_code=403, detail="Access denied.")
     return templates.TemplateResponse(
         request,
         "consultations/detail.html",

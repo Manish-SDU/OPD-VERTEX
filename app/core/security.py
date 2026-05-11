@@ -47,3 +47,30 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         )
     except Exception:
         return False
+
+
+INVITE_TOKEN_EXPIRE_HOURS = 72
+
+
+def create_patient_invite_token(patient_id: int, invited_by: int) -> str:
+    """Return a signed JWT usable as a single-use patient login link."""
+    expire = datetime.utcnow() + timedelta(hours=INVITE_TOKEN_EXPIRE_HOURS)
+    payload = {
+        "sub": str(patient_id),
+        "kind": "patient_invite",
+        "invited_by": invited_by,
+        "exp": expire,
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_patient_invite_token(token: str) -> dict | None:
+    """Decode and validate a patient invite token. Returns None if invalid/expired."""
+    from jose import JWTError
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("kind") != "patient_invite":
+            return None
+        return payload
+    except JWTError:
+        return None

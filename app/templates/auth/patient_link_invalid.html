@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:60vh;flex-direction:column;gap:1rem;text-align:center;padding:2rem;">
+  <h1 style="font-size:1.75rem;font-weight:700;">Link expired or already used</h1>
+  <p style="color:#6b7280;max-width:36rem;">
+    This login link is no longer valid. Links are single-use and expire after 72 hours.
+    Please ask your doctor to send you a new link.
+  </p>
+  <a href="/login" style="margin-top:1rem;padding:0.6rem 1.4rem;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+    Back to login
+  </a>
+</div>
+{% endblock %}

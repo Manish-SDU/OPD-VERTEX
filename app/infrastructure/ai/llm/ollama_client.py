@@ -1,43 +1,51 @@
-"""Low-level Ollama HTTP client for local Qwen3 8B access."""
+"""Ollama HTTP client — sync health check + async JSON generation."""
 
 from __future__ import annotations
 
 import json
-import time
-from typing import Any
+import logging
+from typing import TypeVar
 
 import httpx
+from pydantic import BaseModel, ValidationError
 
 from app.domain.clinical_notes.models import LlmHealthStatus
 
+log = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=BaseModel)
+
 
 class OllamaClientError(RuntimeError):
-    """Raised when the local Ollama server cannot satisfy a request."""
+    """Raised when the Ollama server cannot satisfy a request."""
 
 
-class OllamaClient:
+class AsyncOllamaClient:
+    """Async client using /api/chat with native JSON mode + Pydantic validation."""
+
     def __init__(
         self,
         base_url: str,
-        model_name: str,
-        timeout_seconds: float = 120.0,
-        max_retries: int = 2,
+        model: str,
+        temperature: float = 0.2,
+        num_ctx: int = 8192,
+        timeout_s: float = 120.0,
     ) -> None:
         self.base_url = base_url.rstrip("/")
-        self.model_name = model_name
-        self.timeout_seconds = timeout_seconds
-        self.max_retries = max_retries
-        self._client = httpx.Client(
-            base_url=self.base_url, timeout=self.timeout_seconds
-        )
+        self.model = model
+        self.temperature = temperature
+        self.num_ctx = num_ctx
+        self.timeout_s = timeout_s
 
     def check_status(self) -> LlmHealthStatus:
+        """Synchronous health check (used by the /llm/health endpoint)."""
         detail = ""
         ollama_reachable = False
         model_available = False
         try:
-            response = self._client.get("/api/tags")
-            response.raise_for_status()
+            with httpx.Client(timeout=10.0) as client:
+                response = client.get(f"{self.base_url}/api/tags")
+                response.raise_for_status()
             ollama_reachable = True
             payload = response.json()
             models = payload.get("models", [])
@@ -46,128 +54,101 @@ class OllamaClient:
                 for item in models
                 if isinstance(item, dict)
             }
-            model_available = self.model_name in model_names
+            model_available = self.model in model_names
             if not model_available:
-                detail = (
-                    f"Configured model '{self.model_name}' is not available in Ollama."
-                )
+                detail = f"Configured model '{self.model}' is not available in Ollama."
         except httpx.HTTPError as exc:
             detail = f"Ollama request failed: {exc}"
 
         return LlmHealthStatus(
             base_url=self.base_url,
-            model_name=self.model_name,
+            model_name=self.model,
             ollama_reachable=ollama_reachable,
             model_available=model_available,
             healthy=ollama_reachable and model_available,
             detail=detail,
         )
 
-    def generate_json(
-        self,
-        *,
-        system_prompt: str,
-        user_prompt: str,
-        temperature: float,
-        max_tokens: int,
-    ) -> dict[str, Any]:
-        raw_response = self._generate_once(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-
-        parsed = self._parse_json(raw_response)
-        if parsed is not None:
-            return parsed
-
-        repaired_response = self._repair_json(
-            raw_response=raw_response,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-        repaired = self._parse_json(repaired_response)
-        if repaired is None:
-            raise OllamaClientError("Qwen3 returned malformed JSON twice.")
-        return repaired
-
-    def _generate_once(
-        self,
-        *,
-        system_prompt: str,
-        user_prompt: str,
-        temperature: float,
-        max_tokens: int,
-    ) -> str:
-        payload = {
-            "model": self.model_name,
-            "system": system_prompt,
-            "prompt": user_prompt,
-            "stream": False,
+    async def _chat(self, system: str, user: str, temperature: float) -> str:
+        body = {
+            "model": self.model,
             "format": "json",
-            "options": {
-                "temperature": temperature,
-                "num_predict": max_tokens,
-            },
+            "stream": False,
+            "options": {"temperature": temperature, "num_ctx": self.num_ctx},
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
         }
+        async with httpx.AsyncClient(timeout=self.timeout_s) as client:
+            r = await client.post(f"{self.base_url}/api/chat", json=body)
+            r.raise_for_status()
+            payload = r.json()
+        return payload["message"]["content"]
 
-        last_error: Exception | None = None
-        for attempt in range(1, self.max_retries + 2):
+    async def generate_json(
+        self,
+        system: str,
+        user: str,
+        schema: type[T],
+        retries: int = 1,
+        temperature: float | None = None,
+    ) -> T:
+        """Call Ollama and validate the response against a Pydantic schema.
+
+        On validation failure the error is fed back to the LLM so it can
+        self-correct within `retries` additional attempts.
+        """
+        temp = self.temperature if temperature is None else temperature
+        last_err: Exception | None = None
+        prompt = user
+        for attempt in range(retries + 1):
             try:
-                response = self._client.post("/api/generate", json=payload)
-                response.raise_for_status()
-                body = response.json()
-                text = body.get("response", "")
-                if not text:
-                    raise OllamaClientError("Ollama returned an empty response body.")
-                return text
-            except (httpx.HTTPError, OllamaClientError, ValueError) as exc:
-                last_error = exc
-                if attempt > self.max_retries:
-                    break
-                time.sleep(0.35 * attempt)
-
-        raise OllamaClientError(f"Ollama generation failed: {last_error}")
-
-    def _repair_json(
-        self, *, raw_response: str, temperature: float, max_tokens: int
-    ) -> str:
-        repair_system_prompt = (
-            "You repair malformed JSON. Return only valid JSON. "
-            "Do not add commentary or new facts."
-        )
-        repair_user_prompt = (
-            "Repair the following malformed JSON so it becomes valid JSON.\n"
-            "Return only the repaired JSON object.\n\n"
-            f"{raw_response}"
-        )
-        return self._generate_once(
-            system_prompt=repair_system_prompt,
-            user_prompt=repair_user_prompt,
-            temperature=min(temperature, 0.1),
-            max_tokens=max_tokens,
+                raw = await self._chat(system, prompt, temp)
+                data = json.loads(raw)
+                return schema.model_validate(data)
+            except (json.JSONDecodeError, ValidationError) as exc:
+                last_err = exc
+                log.warning(
+                    "LLM JSON parse/validation failed (attempt %d): %s", attempt + 1, exc
+                )
+                prompt = (
+                    f"{user}\n\n---\nYour previous response failed validation:\n{exc}\n"
+                    "Return ONLY valid JSON conforming to the schema."
+                )
+        raise OllamaClientError(
+            f"LLM produced no valid JSON after {retries + 1} attempts: {last_err}"
         )
 
-    def _parse_json(self, raw_response: str) -> dict[str, Any] | None:
-        candidate = self._extract_json_candidate(raw_response)
-        if candidate is None:
-            return None
-        try:
-            parsed = json.loads(candidate)
-        except json.JSONDecodeError:
-            return None
-        if not isinstance(parsed, dict):
-            return None
-        return parsed
 
-    def _extract_json_candidate(self, raw_response: str) -> str | None:
-        stripped = raw_response.strip()
-        if stripped.startswith("{") and stripped.endswith("}"):
-            return stripped
+class OllamaClient(AsyncOllamaClient):
+    """Backward-compatible sync wrapper around AsyncOllamaClient.
 
-        start = stripped.find("{")
-        end = stripped.rfind("}")
-        if start == -1 or end == -1 or end <= start:
-            return None
-        return stripped[start : end + 1]
+    The review / clinical-notes pipeline is synchronous so it calls the old
+    generate_json(system_prompt=, user_prompt=, temperature=, max_tokens=)
+    interface, which this class restores using a blocking httpx call.
+    """
+
+    def generate_json(  # type: ignore[override]
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> dict:
+        body = {
+            "model": self.model,
+            "format": "json",
+            "stream": False,
+            "options": {"temperature": temperature, "num_ctx": max(self.num_ctx, max_tokens)},
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        }
+        with httpx.Client(timeout=self.timeout_s) as client:
+            r = client.post(f"{self.base_url}/api/chat", json=body)
+            r.raise_for_status()
+        content = r.json()["message"]["content"]
+        import json as _json
+        return _json.loads(content)

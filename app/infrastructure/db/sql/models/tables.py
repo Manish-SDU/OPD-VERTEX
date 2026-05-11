@@ -216,7 +216,34 @@ class PrescriptionRow(Base):
     patient = relationship("PatientRow", back_populates="prescriptions")
 
 
-# ── Table 5: audit_logs ────────────────────────────────────────────────
+# ── Table 5: patient_invitation_tokens ────────────────────────────────
+
+
+class PatientInvitationTokenRow(Base):
+    __tablename__ = "patient_invitation_tokens"
+
+    token: Mapped[str] = mapped_column(String(128), primary_key=True)
+    patient_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("patients.patient_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    invited_by: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("staff.staff_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_pit_patient_id", "patient_id"),
+        Index("ix_pit_expires_at", "expires_at"),
+    )
+
+
+# ── Table 6: audit_logs ────────────────────────────────────────────────
 
 
 class AuditLogRow(Base):

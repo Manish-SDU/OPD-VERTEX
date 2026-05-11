@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from app.domain.clinical_notes.models import (
     ConsultationDocumentRepository,
     GeneratedDocumentRepository,
@@ -23,6 +25,36 @@ from app.infrastructure.logging import apply_logging_aspect
 
 
 SUGGESTIVE_REVIEW_PROMPT_ID = "suggestive_mode_v3"
+
+_SEP = "----------------------------------------------------------------"
+
+
+def _patch_review_flags_in_markdown(markdown: str, review: SuggestiveReview) -> str:
+    """Replace the INTERNAL CLINICIAN REVIEW FLAGS section with live review data."""
+    lines = [
+        "(Internal use only - do not include in patient-facing printout unless approved)",
+        "",
+        f"Risk Level: {review.overall_risk_level or 'GREEN'}",
+        "",
+        f"Summary: {review.summary or 'No issues identified.'}",
+        "",
+        "Review Suggestions:",
+    ]
+    if review.suggestions:
+        for s in review.suggestions:
+            lines.append(f"- [{s.severity}] {s.title}: {s.detail}")
+            if s.recommendation:
+                lines.append(f"  Recommendation: {s.recommendation}")
+    else:
+        lines.append("- No suggestions found. The draft appears clinically stable.")
+
+    new_content = "\n".join(lines)
+    pattern = (
+        rf"({re.escape(_SEP)}\n\d+\. INTERNAL CLINICIAN REVIEW FLAGS\n{re.escape(_SEP)}\n)"
+        rf".*?"
+        rf"(?={re.escape(_SEP)}|\Z)"
+    )
+    return re.sub(pattern, rf"\1{new_content}\n\n", markdown, flags=re.DOTALL)
 
 
 @apply_logging_aspect("service", "suggestive_mode")
@@ -105,6 +137,12 @@ class SuggestiveReviewApplicationService:
             generated_at=now,
         )
         generated_document.updated_at = now
+        if generated_document.generated_output.report_markdown:
+            generated_document.generated_output.report_markdown = (
+                _patch_review_flags_in_markdown(
+                    generated_document.generated_output.report_markdown, review
+                )
+            )
         self.generated_repository.save(generated_document)
 
         consultation_document = self.consultation_doc_repository.get_by_consultation_id(

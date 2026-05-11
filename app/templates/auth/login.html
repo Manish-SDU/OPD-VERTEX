@@ -23,28 +23,100 @@
   <!-- Login form panel -->
   <div class="login-form-panel">
     <div class="login-card">
-      <h2>Welcome back</h2>
-      <p class="login-subtitle">Sign in to your account</p>
 
-      {% if message %}
-      <div class="alert alert-info">{{ message }}</div>
-      {% endif %}
-      {% if error %}
-      <div class="alert alert-info" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;">{{ error }}</div>
-      {% endif %}
+      <!-- Tabs -->
+      <div style="display:flex;border-bottom:2px solid #e5e7eb;margin-bottom:1.5rem;gap:0;">
+        <button id="tab-staff" onclick="switchTab('staff')"
+          style="flex:1;padding:.6rem;background:none;border:none;cursor:pointer;font-weight:600;font-size:.9rem;color:#2563eb;border-bottom:2px solid #2563eb;margin-bottom:-2px;">
+          Staff Login
+        </button>
+        <button id="tab-patient" onclick="switchTab('patient')"
+          style="flex:1;padding:.6rem;background:none;border:none;cursor:pointer;font-weight:600;font-size:.9rem;color:#9ca3af;border-bottom:2px solid transparent;margin-bottom:-2px;">
+          Patient Access
+        </button>
+      </div>
 
-      <form method="post" action="/login">
-        <div class="form-group">
-          <label for="email">Email address</label>
-          <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      <!-- Staff login form -->
+      <div id="panel-staff">
+        <h2>Welcome back</h2>
+        <p class="login-subtitle">Sign in to your account</p>
+
+        {% if message %}
+        <div class="alert alert-info">{{ message }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="alert alert-info" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/login">
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" class="btn-primary">Sign in</button>
+        </form>
+      </div>
+
+      <!-- Patient access panel -->
+      <div id="panel-patient" style="display:none;">
+        <h2>Patient Access</h2>
+        <p class="login-subtitle">Paste the login link your doctor sent you</p>
+
+        <div id="patient-error" style="display:none;padding:.65rem .85rem;border-radius:8px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;margin-bottom:1rem;font-size:.875rem;"></div>
+
+        <div class="form-group" style="margin-bottom:1.25rem;">
+          <label for="patient-link">Your login link</label>
+          <input type="text" id="patient-link" placeholder="Paste your link here…"
+            style="width:100%;padding:.7rem .85rem;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;box-sizing:border-box;">
         </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" placeholder="Enter your password" required>
-        </div>
-        <button type="submit" class="btn-primary">Sign in</button>
-      </form>
+        <button onclick="patientLogin()" class="btn-primary"
+          style="width:100%;padding:.75rem;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;font-size:.95rem;cursor:pointer;">
+          Access my records
+        </button>
+
+        <p style="margin-top:1.25rem;font-size:.8125rem;color:#6b7280;text-align:center;">
+          Don't have a link? Ask your doctor to send one to your email.
+        </p>
+      </div>
+
     </div>
   </div>
 </div>
+
+<script>
+  function switchTab(tab) {
+    const isStaff = tab === 'staff';
+    document.getElementById('panel-staff').style.display = isStaff ? '' : 'none';
+    document.getElementById('panel-patient').style.display = isStaff ? 'none' : '';
+    document.getElementById('tab-staff').style.color = isStaff ? '#2563eb' : '#9ca3af';
+    document.getElementById('tab-staff').style.borderBottomColor = isStaff ? '#2563eb' : 'transparent';
+    document.getElementById('tab-patient').style.color = isStaff ? '#9ca3af' : '#2563eb';
+    document.getElementById('tab-patient').style.borderBottomColor = isStaff ? 'transparent' : '#2563eb';
+  }
+
+  function patientLogin() {
+    const raw = document.getElementById('patient-link').value.trim();
+    const errEl = document.getElementById('patient-error');
+    errEl.style.display = 'none';
+    if (!raw) {
+      errEl.textContent = 'Please paste your login link.';
+      errEl.style.display = 'block';
+      return;
+    }
+    // Accept either the full URL or just the token
+    let token = raw;
+    const match = raw.match(/\/patient-link\/([^/?#]+)/);
+    if (match) token = match[1];
+    window.location.href = '/patient-link/' + token;
+  }
+
+  // If arriving with ?tab=patient, auto-switch
+  if (new URLSearchParams(window.location.search).get('tab') === 'patient') {
+    switchTab('patient');
+  }
+</script>
 {% endblock %}

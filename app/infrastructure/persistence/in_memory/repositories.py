@@ -42,7 +42,13 @@ from app.domain.consultations.models import (
 )
 from app.domain.email.models import EmailService, EmailTemplate, EmailTemplateRepository
 from app.domain.auth.models import StaffCreateRequest
-from app.domain.patients.models import Patient, PatientCreateRequest, PatientRepository
+from app.domain.patients.models import (
+    Patient,
+    PatientCreateRequest,
+    PatientInvitationToken,
+    PatientInvitationTokenRepository,
+    PatientRepository,
+)
 from app.domain.pdf.models import PdfGenerator
 from app.domain.prescriptions.models import (
     Medication,
@@ -963,3 +969,19 @@ class MockPdfGenerator(PdfGenerator):
 class MockEmailService(EmailService):
     def send_prescription_email(self, prescription_id: int, recipient: str) -> str:
         return f"Mock email queued for {recipient} (prescription {prescription_id})."
+
+
+class InMemoryPatientInvitationTokenRepository(PatientInvitationTokenRepository):
+    def __init__(self) -> None:
+        self._tokens: dict[str, PatientInvitationToken] = {}
+
+    def create(self, token: PatientInvitationToken) -> PatientInvitationToken:
+        self._tokens[token.token] = token
+        return token
+
+    def get_by_token(self, token: str) -> PatientInvitationToken | None:
+        return self._tokens.get(token)
+
+    def mark_used(self, token: str, used_at) -> None:
+        if token in self._tokens:
+            self._tokens[token] = self._tokens[token].model_copy(update={"used_at": used_at})

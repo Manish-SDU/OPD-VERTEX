@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,20 +35,25 @@ class Settings(BaseSettings):
         default="http://localhost:8001", alias="WHISPER_API_URL"
     )
     whisper_model_name: str = Field(default="base", alias="WHISPER_MODEL_NAME")
-    llm_model_name: str = Field(default="qwen3:8b", alias="LLM_MODEL_NAME")
+    llm_model_name: str = Field(default="llama3.1:8b", alias="LLM_MODEL_NAME")
     llm_temperature: float = Field(default=0.2, alias="LLM_TEMPERATURE")
     llm_max_tokens: int = Field(default=2200, alias="LLM_MAX_TOKENS")
+    llm_num_ctx: int = Field(default=8192, alias="LLM_NUM_CTX")
     ollama_timeout_seconds: float = Field(default=120.0, alias="OLLAMA_TIMEOUT_SECONDS")
     ollama_max_retries: int = Field(default=2, alias="OLLAMA_MAX_RETRIES")
+    whisper_device: str = Field(default="cpu", alias="WHISPER_DEVICE")
+    whisper_compute_type: str = Field(default="int8", alias="WHISPER_COMPUTE_TYPE")
     seed_prompts_on_startup: bool = Field(default=True, alias="SEED_PROMPTS_ON_STARTUP")
     seed_mock_consultations_on_startup: bool = Field(
         default=False, alias="SEED_MOCK_CONSULTATIONS_ON_STARTUP"
     )
-    smtp_host: str = Field(default="localhost", alias="SMTP_HOST")
+    smtp_host: str = Field(default="mailhog", alias="SMTP_HOST")
     smtp_port: int = Field(default=1025, alias="SMTP_PORT")
     smtp_user: str = Field(default="", alias="SMTP_USER")
     smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
-    smtp_from: str = Field(default="noreply@example.local", alias="SMTP_FROM")
+    smtp_tls: bool = Field(default=False, alias="SMTP_TLS")
+    smtp_from: str = Field(default="opd-vertex@clinic.local", alias="SMTP_FROM")
+    smtp_from_name: str = Field(default="OPD-Vertex Clinic", alias="SMTP_FROM_NAME")
     pdf_output_dir: str = Field(default="./storage/pdfs", alias="PDF_OUTPUT_DIR")
     transcripts_dir: str = Field(
         default="./storage/transcripts", alias="TRANSCRIPTS_DIR"
@@ -58,14 +63,6 @@ class Settings(BaseSettings):
     )
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     use_mock_adapters: bool = Field(default=True, alias="USE_MOCK_ADAPTERS")
-
-    @field_validator("llm_model_name")
-    @classmethod
-    def validate_qwen_model(cls, value: str) -> str:
-        normalized = value.strip()
-        if normalized != "qwen3:8b":
-            raise ValueError("Only the local model 'qwen3:8b' is supported.")
-        return normalized
 
 
 @lru_cache

@@ -72,3 +72,33 @@ class PatientRepository(ABC):
     @abstractmethod
     def create(self, payload: PatientCreateRequest) -> Patient:
         """Persist a new patient."""
+
+
+class PatientInvitationToken(BaseModel):
+    """Single-use login token sent to a patient by a doctor."""
+
+    token: str
+    patient_id: int
+    invited_by: int  # staff_id of the doctor who generated the link
+    expires_at: datetime
+    used_at: datetime | None = None
+
+    @property
+    def is_valid(self) -> bool:
+        from datetime import timezone
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        return self.used_at is None and now < self.expires_at.replace(tzinfo=None)
+
+
+class PatientInvitationTokenRepository(ABC):
+    @abstractmethod
+    def create(self, token: PatientInvitationToken) -> PatientInvitationToken:
+        """Persist a new invitation token."""
+
+    @abstractmethod
+    def get_by_token(self, token: str) -> PatientInvitationToken | None:
+        """Return the token record, or None if not found."""
+
+    @abstractmethod
+    def mark_used(self, token: str, used_at: datetime) -> None:
+        """Mark a token as consumed."""

@@ -36,6 +36,7 @@ from app.infrastructure.persistence.in_memory.repositories import (
     InMemoryConsultationRepository,
     InMemoryEmailTemplateRepository,
     InMemoryGeneratedDocumentRepository,
+    InMemoryPatientInvitationTokenRepository,
     InMemoryPatientRepository,
     InMemoryPrescriptionArtifactRepository,
     InMemoryPrescriptionRepository,
@@ -291,13 +292,37 @@ def email_service() -> MockEmailService:
 
 
 @lru_cache
+def _in_memory_invitation_token_repo() -> InMemoryPatientInvitationTokenRepository:
+    return InMemoryPatientInvitationTokenRepository()
+
+
+def invitation_token_repository():
+    return _in_memory_invitation_token_repo()
+
+
+def get_smtp_email_service():
+    from app.infrastructure.email.smtp_sender import SmtpEmailService
+    settings = get_settings()
+    return SmtpEmailService(
+        host=settings.smtp_host,
+        port=settings.smtp_port,
+        user=settings.smtp_user or None,
+        password=settings.smtp_password or None,
+        use_tls=settings.smtp_tls,
+        from_addr=settings.smtp_from,
+        from_name=settings.smtp_from_name,
+    )
+
+
+@lru_cache
 def ollama_client() -> OllamaClient:
     settings = get_settings()
     return OllamaClient(
         base_url=settings.local_llm_endpoint,
-        model_name=settings.llm_model_name,
-        timeout_seconds=settings.ollama_timeout_seconds,
-        max_retries=settings.ollama_max_retries,
+        model=settings.llm_model_name,
+        temperature=settings.llm_temperature,
+        num_ctx=settings.llm_num_ctx,
+        timeout_s=settings.ollama_timeout_seconds,
     )
 
 
@@ -306,7 +331,10 @@ def get_auth_app_service() -> AuthApplicationService:
 
 
 def get_patient_app_service() -> PatientApplicationService:
-    return PatientApplicationService(patient_repository())
+    return PatientApplicationService(
+        repository=patient_repository(),
+        token_repository=invitation_token_repository(),
+    )
 
 
 def get_consultation_app_service() -> ConsultationApplicationService:
@@ -368,19 +396,8 @@ def get_llm_health_app_service() -> LlmHealthApplicationService:
 
 
 def get_transcription_service() -> TranscriptionApplicationService:
-    from app.infrastructure.ai.transcription.faster_whisper_adapter import (
-        StreamingFasterWhisperService,
-    )
+    from app.infrastructure.ai.transcription.whisper_client import FasterWhisperRemoteSTT
 
     settings = get_settings()
-    streaming_service = StreamingFasterWhisperService(
-        model_size=settings.whisper_model_name,
-        device="cpu",
-        chunk_duration=2.0,
-    )
-    return TranscriptionApplicationService(
-        streaming_service=streaming_service,
-        temp_chunk_repo=temp_transcript_chunk_repository(),
-        consultation_doc_repository=consultation_doc_repository(),
-        consultation_repository=consultation_repository(),
-    )
+    stt = FasterWhisperRemoteSTT(url=settings.whisper_api_url)
+    return TranscriptionApplicationService(stt=stt)

@@ -6,9 +6,11 @@ COPY pyproject.toml README.md alembic.ini ./
 COPY app ./app
 COPY alembic ./alembic
 COPY .env.example ./.env.example
+COPY entrypoint.sh ./entrypoint.sh
 
-RUN pip install --no-cache-dir -e .[dev]
+RUN pip install --no-cache-dir -e .[dev] \
+    && chmod +x /workspace/entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/workspace/entrypoint.sh"]

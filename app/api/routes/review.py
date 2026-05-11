@@ -2,20 +2,29 @@
 
 from __future__ import annotations
 
+import logging
+
+import markdown as md
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from app.api.deps import (
+    generated_repository,
     get_clinical_notes_app_service,
     get_current_user,
     get_review_app_service,
+    get_smtp_email_service,
     get_suggestive_review_app_service,
+    patient_repository,
 )
 from app.application.clinical_notes.services import ClinicalNotesApplicationService
 from app.application.review.services import ReviewApplicationService
 from app.application.suggestive_mode.services import SuggestiveReviewApplicationService
+from app.domain.ai.schemas import Attachment
+
+log = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
@@ -140,7 +149,7 @@ def get_suggestive_review(
 
 
 @router.post("/{consultation_id}/approve")
-def approve_review(
+async def approve_review(
     consultation_id: int,
     service: ReviewApplicationService = Depends(get_review_app_service),
 ) -> dict:
@@ -148,6 +157,51 @@ def approve_review(
         prescription = service.approve_review(consultation_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # Email the report PDF (HTML) to the patient
+    try:
+        gen_doc = generated_repository().get_by_consultation_id(consultation_id)
+        patient = patient_repository().get_by_id(prescription.patient_id)
+        if gen_doc and patient and patient.email:
+            markdown_text = gen_doc.generated_output.report_markdown or ""
+            report_html = md.markdown(markdown_text, extensions=["tables", "fenced_code"])
+            full_html = (
+                "<!DOCTYPE html><html><head>"
+                "<meta charset='UTF-8'>"
+                "<style>"
+                "body{font-family:Georgia,serif;max-width:800px;margin:2rem auto;padding:0 1.5rem;color:#1a1a2e;}"
+                "h1,h2,h3{font-family:'Segoe UI',sans-serif;}"
+                "table{border-collapse:collapse;width:100%;}"
+                "th,td{border:1px solid #ccc;padding:0.5rem 0.75rem;text-align:left;}"
+                "th{background:#f0f4ff;}"
+                "hr{border:none;border-top:1px solid #d6deea;margin:1.5rem 0;}"
+                "pre,code{background:#f5f5f5;padding:0.25rem 0.5rem;border-radius:4px;font-size:0.9em;}"
+                "</style>"
+                "</head><body>"
+                f"{report_html}"
+                "</body></html>"
+            )
+            await get_smtp_email_service().send(
+                to=patient.email,
+                subject=f"Your Clinical Report – Consultation #{consultation_id}",
+                body_html=full_html,
+                body_text=markdown_text,
+                attachments=[
+                    Attachment(
+                        filename=f"clinical_report_{consultation_id}.html",
+                        content=full_html.encode("utf-8"),
+                        content_type="text/html",
+                    )
+                ],
+            )
+            log.info(
+                "Report emailed to patient=%s for consultation=%s",
+                patient.email,
+                consultation_id,
+            )
+    except Exception as exc:
+        log.warning("Failed to email report for consultation=%s: %s", consultation_id, exc)
+
     return {
         "status": "approved",
         "consultation_id": consultation_id,

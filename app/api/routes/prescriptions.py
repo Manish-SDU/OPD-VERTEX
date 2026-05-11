@@ -12,7 +12,11 @@ router = APIRouter()
 
 @router.get("", response_class=HTMLResponse)
 def prescription_list(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
-    prescriptions = get_prescription_app_service().list_prescriptions()
+    all_prescriptions = get_prescription_app_service().list_prescriptions()
+    if user.get("role") == "patient":
+        prescriptions = [p for p in all_prescriptions if p.patient_id == int(user["sub"])]
+    else:
+        prescriptions = all_prescriptions
     return templates.TemplateResponse(
         request,
         "prescriptions/list.html",

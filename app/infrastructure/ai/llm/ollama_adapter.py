@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from app.domain.clinical_notes.models import (
     ClinicalNoteGenerator,
@@ -23,12 +24,24 @@ from app.domain.suggestive_mode.models import (
 )
 from app.infrastructure.ai.llm.ollama_client import OllamaClient
 
+_PLACEHOLDER = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
+
 
 def _render_prompt(template: str, **values: str) -> str:
-    try:
-        return template.format(**values)
-    except KeyError as exc:
-        raise ValueError(f"Prompt template is missing placeholder: {exc}") from exc
+    """Replace {simple_name} tokens only — leaves JSON braces in the template untouched."""
+    missing = []
+
+    def _sub(m: re.Match) -> str:
+        key = m.group(1)
+        if key in values:
+            return str(values[key])
+        missing.append(key)
+        return m.group(0)
+
+    result = _PLACEHOLDER.sub(_sub, template)
+    if missing:
+        raise ValueError(f"Prompt template is missing placeholder: {missing[0]!r}")
+    return result
 
 
 class OllamaTranscriptNormalizer(TranscriptNormalizer):
@@ -91,6 +104,33 @@ class OllamaClinicalNoteGenerator(ClinicalNoteGenerator):
         return GeneratedClinicalNotes.model_validate(payload)
 
 
+_VALID_TYPES = {"OMISSION", "CONTRAINDICATION", "DOSAGE_CHECK", "STANDARD_OF_CARE", "INTERACTION_WARNING", "FOLLOW_UP"}
+_VALID_SEVERITIES = {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
+_VALID_RISKS = {"GREEN", "YELLOW", "RED"}
+
+
+def _coerce_suggestive_output(raw: dict, consultation_id: int) -> dict:
+    """Normalise LLM output so small models with wrong enum casing/values still validate."""
+    raw.setdefault("consultation_id", consultation_id)
+    raw.setdefault("summary", "")
+    if not isinstance(raw.get("summary"), str):
+        raw["summary"] = ""
+    risk = str(raw.get("overall_risk_level", "")).upper()
+    raw["overall_risk_level"] = risk if risk in _VALID_RISKS else "GREEN"
+    coerced = []
+    for s in raw.get("suggestions", []):
+        if not isinstance(s, dict):
+            continue
+        t = str(s.get("type", "")).upper()
+        s["type"] = t if t in _VALID_TYPES else "OMISSION"
+        sev = str(s.get("severity", "")).upper()
+        s["severity"] = sev if sev in _VALID_SEVERITIES else "LOW"
+        s.setdefault("source_quote", "N/A")
+        coerced.append(s)
+    raw["suggestions"] = coerced
+    return raw
+
+
 class OllamaSuggestiveModeService(SuggestiveModeService):
     def __init__(self, client: OllamaClient) -> None:
         self.client = client
@@ -114,6 +154,7 @@ class OllamaSuggestiveModeService(SuggestiveModeService):
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
+        payload = _coerce_suggestive_output(payload, request.consultation_id)
         try:
             return SuggestiveReview.model_validate(payload)
         except ValidationError as exc:

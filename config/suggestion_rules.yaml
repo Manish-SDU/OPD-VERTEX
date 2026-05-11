@@ -1,0 +1,65 @@
+# ============================================================
+# Hybrid suggester rule list.
+# Each rule has triggers (patient-mentioned terms or
+# assessment-derived conditions) and an action (suggested
+# investigation or standard-of-care reminder).
+#
+# A rule fires when ANY of `patient_mentions` appears in the
+# transcript AND NONE of `excluded_if_present` (orders the
+# doctor already discussed) appears.
+# ============================================================
+
+rules:
+  - id: chronic_cough_cxr
+    severity: medium
+    patient_mentions: ["chronic cough", "cough for weeks", "cough for months", "long-standing cough"]
+    excluded_if_present: ["chest x-ray", "chest xray", "cxr"]
+    suggestion: "Patient reports chronic cough. Consider ordering a Chest X-Ray to rule out pulmonary pathology."
+
+  - id: chest_pain_ecg
+    severity: high
+    patient_mentions: ["chest pain", "chest tightness", "chest pressure", "pain in chest"]
+    excluded_if_present: ["ecg", "ekg", "electrocardiogram"]
+    suggestion: "Patient reports chest pain. An ECG is recommended to evaluate cardiac causes."
+
+  - id: diabetes_hba1c
+    severity: medium
+    patient_mentions: ["diabetes", "diabetic", "high sugar", "blood sugar", "glucose levels"]
+    excluded_if_present: ["hba1c", "glycated hemoglobin", "hemoglobin a1c"]
+    suggestion: "Patient has diabetes / dysglycemia. Consider HbA1c to assess 3-month glycemic control."
+
+  - id: hypertension_lipids
+    severity: low
+    patient_mentions: ["hypertension", "high blood pressure", "high bp"]
+    excluded_if_present: ["lipid profile", "cholesterol panel", "lipids"]
+    suggestion: "Hypertensive patient — consider a lipid profile if not done in the last 12 months."
+
+  - id: severe_headache_neuro
+    severity: high
+    patient_mentions: ["worst headache of my life", "thunderclap headache", "sudden severe headache"]
+    excluded_if_present: ["ct head", "ct brain", "mri brain", "neurology referral"]
+    suggestion: "Sudden severe headache flagged. Consider urgent neuroimaging (CT head) and neurology consult."
+
+  - id: dysuria_urinalysis
+    severity: low
+    patient_mentions: ["burning urination", "painful urination", "dysuria", "urine burning"]
+    excluded_if_present: ["urinalysis", "urine routine", "urine culture"]
+    suggestion: "Dysuria mentioned — consider urinalysis ± culture to confirm UTI."
+
+  - id: weight_loss_screen
+    severity: medium
+    patient_mentions: ["unintentional weight loss", "lost weight without trying", "losing weight"]
+    excluded_if_present: ["cbc", "tft", "thyroid function", "tumor markers"]
+    suggestion: "Unintentional weight loss reported. Consider CBC, TFT, and constitutional-symptom workup."
+
+  - id: pregnancy_meds_safety
+    severity: high
+    patient_mentions: ["pregnant", "pregnancy", "trying to conceive", "expecting"]
+    excluded_if_present: ["pregnancy-safe", "category b", "category a"]
+    suggestion: "Pregnancy noted — verify all prescribed medications are pregnancy-category safe (avoid ACE-I, NSAIDs in 3rd trimester, tetracyclines, etc.)."
+
+  - id: penicillin_allergy_check
+    severity: high
+    patient_mentions: ["allergic to penicillin", "penicillin allergy", "amoxicillin allergy"]
+    excluded_if_present: ["non-beta-lactam", "alternative antibiotic"]
+    suggestion: "Penicillin allergy on file — confirm prescribed antibiotics are non-beta-lactam alternatives."

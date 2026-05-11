@@ -20,7 +20,61 @@
       <h1>{{ patient.first_name }} {{ patient.last_name }}</h1>
       <p class="patient-id">Patient ID: {{ patient.id }}</p>
     </div>
+    <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;">
+      <button id="send-link-btn" onclick="sendLoginLink({{ patient.id }})"
+        style="padding:0.5rem 1.1rem;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">
+        Send Login Link
+      </button>
+      <div id="link-result" style="display:none;max-width:420px;">
+        <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.25rem;">Link generated — copy and send to patient:</p>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <input id="link-value" type="text" readonly
+            style="flex:1;font-size:0.78rem;padding:0.3rem 0.5rem;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;" />
+          <button onclick="copyLink()"
+            style="padding:0.3rem 0.7rem;background:#f3f4f6;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;font-size:0.78rem;">
+            Copy
+          </button>
+        </div>
+        <p id="link-email-note" style="font-size:0.75rem;color:#10b981;margin:0.25rem 0 0;"></p>
+      </div>
+      <p id="link-error" style="display:none;font-size:0.78rem;color:#ef4444;"></p>
+    </div>
   </div>
+
+  <script>
+    async function sendLoginLink(patientId) {
+      const btn = document.getElementById('send-link-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      document.getElementById('link-result').style.display = 'none';
+      document.getElementById('link-error').style.display = 'none';
+      try {
+        const res = await fetch(`/patients/${patientId}/send-invitation`, {method: 'POST'});
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('link-value').value = data.link;
+          document.getElementById('link-email-note').textContent = `Also emailed to ${data.email}`;
+          document.getElementById('link-result').style.display = 'block';
+          btn.textContent = 'Resend Link';
+        } else {
+          document.getElementById('link-error').textContent = data.detail || 'Failed to generate link.';
+          document.getElementById('link-error').style.display = 'block';
+          btn.textContent = 'Send Login Link';
+        }
+      } catch (e) {
+        document.getElementById('link-error').textContent = 'Network error.';
+        document.getElementById('link-error').style.display = 'block';
+        btn.textContent = 'Send Login Link';
+      }
+      btn.disabled = false;
+    }
+
+    function copyLink() {
+      const input = document.getElementById('link-value');
+      input.select();
+      navigator.clipboard.writeText(input.value).catch(() => document.execCommand('copy'));
+    }
+  </script>
 
   <div class="patient-content">
     {# ── Personal Information ── #}
@@ -102,17 +156,30 @@
         {% if prescriptions|length > 0 %}
         <div class="history-list">
           {% for prescription in prescriptions %}
-          {% for medication in prescription.medications %}
+          {% set real_meds = prescription.medications | selectattr("name") | list %}
+          {% if real_meds %}
+            {% for medication in real_meds %}
+            <div class="history-item">
+              <div class="history-date">
+                <span class="status-badge">{{ medication.name }}</span>
+              </div>
+              <div class="history-details">
+                <p class="history-label">Date: <strong>{{ prescription.created_at.strftime('%m/%d/%Y') if prescription.created_at else "—" }}</strong></p>
+                <p class="history-description">Dosage: {{ medication.dosage or "—" }} | Frequency: {{ medication.frequency or "—" }} | Duration: {{ medication.duration or "—" }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
           <div class="history-item">
             <div class="history-date">
-              <span class="status-badge">{{ medication.name }}</span>
+              <span class="status-badge">Rx #{{ prescription.id }}</span>
             </div>
             <div class="history-details">
-              <p class="history-label">Duration: <strong>{{ prescription.created_at.strftime('%m/%d/%Y') if prescription.created_at else "—" }}</strong></p>
-              <p class="history-description">Dosage: {{ medication.dosage }} | Frequency: {{ medication.frequency }} | Duration: {{ medication.duration }}</p>
+              <p class="history-label">Date: <strong>{{ prescription.created_at.strftime('%m/%d/%Y') if prescription.created_at else "—" }}</strong></p>
+              <p class="history-description">{{ prescription.diagnosis or "No diagnosis recorded" }}</p>
             </div>
           </div>
-          {% endfor %}
+          {% endif %}
           {% endfor %}
         </div>
         {% else %}
