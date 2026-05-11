@@ -1262,3 +1262,10 @@ a.quick-start__card:hover {
 .trx-msg { margin-top: .7rem; font-size: .875rem; min-height: 1.2em; }
 .trx-msg--err { color: var(--danger); font-weight: 500; }
 .trx-msg--ok  { color: #166534; font-weight: 600; }
+.trx-manual-hint {
+  margin-top: .9rem;
+  font-size: .8rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: .75rem;
+}
