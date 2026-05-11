@@ -164,7 +164,7 @@
 .btn-check-history:hover {
   background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-  transform: translateY(-1px);
+  filter: brightness(1.03);
 }
 
 .btn-check-history svg {

@@ -185,12 +185,11 @@ if (form) {
       if (!match) throw new Error('Could not determine consultation ID');
       consultationId = match[1];
       sessionId = null;  // Reset session for new consultation
-      successDiv.textContent = 'Consultation created! Starting transcription...';
+      successDiv.textContent = 'Consultation created! Click Start Recording, or Load Demo Transcript if you have no microphone.';
       successDiv.style.display = '';
       transcriptionUI.style.display = '';
       startBtn.disabled = false;
-      // Auto-start transcription
-      setTimeout(() => startBtn.click(), 500);
+      if (demoBtn) demoBtn.disabled = false;
     } catch (err) {
       errorDiv.textContent = err.message || err;
       errorDiv.style.display = '';
@@ -472,14 +471,14 @@ if (saveBtn) {
         return;
       }
       
-      transcriptionSaved.textContent = 'Transcription saved successfully!';
-      form.reset();
+      transcriptionSaved.textContent = 'Transcription saved! Opening review workflow...';
+      const reviewId = consultationId;
+      saveBtn.disabled = true;
       startBtn.disabled = true;
       stopBtn.disabled = true;
-      saveBtn.disabled = true;
+      if (demoBtn) demoBtn.disabled = true;
       if (transcriptArea) transcriptArea.value = '';
-      consultationId = null;
-      sessionId = null;
+      setTimeout(() => { window.location.href = `/review/${reviewId}`; }, 800);
     } catch (err) {
       console.error('[Save] Fetch error:', err);
       transcriptionError.textContent = err.message || err;
