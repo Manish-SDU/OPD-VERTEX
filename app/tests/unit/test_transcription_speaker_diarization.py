@@ -9,7 +9,9 @@ from app.domain.clinical_notes.models import (
     LlmPromptConfig,
     TranscriptNormalizationRequest,
 )
-from app.infrastructure.persistence.in_memory.repositories import MockTranscriptNormalizer
+from app.infrastructure.persistence.in_memory.repositories import (
+    MockTranscriptNormalizer,
+)
 
 
 # ── SpeakerTurn model ───────────────────────────────────────────────────────
@@ -207,7 +209,9 @@ class TestMockTranscriptNormalizerSpeakerTurns:
                 prompt=prompt,
             )
         )
-        assert "DOCTOR:" in result.normalized_text or "PATIENT:" in result.normalized_text
+        assert (
+            "DOCTOR:" in result.normalized_text or "PATIENT:" in result.normalized_text
+        )
 
     def test_consultation_id_stored(self, normalizer, prompt):
         result = normalizer.normalize(
@@ -229,7 +233,10 @@ class TestNormalizedTranscriptFromLlmOutput:
         llm_payload = {
             "cleaned_transcript": [
                 {"speaker": "DOCTOR", "utterance": "Good morning, how are you today?"},
-                {"speaker": "PATIENT", "utterance": "I have had a headache for two days."},
+                {
+                    "speaker": "PATIENT",
+                    "utterance": "I have had a headache for two days.",
+                },
                 {"speaker": "DOCTOR", "utterance": "Any fever or nausea?"},
                 {"speaker": "PATIENT", "utterance": "Some mild nausea but no fever."},
             ],

@@ -97,7 +97,7 @@ class ReportLabPdfGenerator(PdfGenerator):
         )
 
     def generate_report_pdf(
-            self, report_markdown: str, consultation_metadata: ConsultationMetadata
+        self, report_markdown: str, consultation_metadata: ConsultationMetadata
     ) -> str:
         """Generate a clinical report PDF from markdown."""
         if not report_markdown or report_markdown.strip() == "":
@@ -130,7 +130,7 @@ class ReportLabPdfGenerator(PdfGenerator):
         )
         flowables.append(Spacer(1, 0.2 * inch))
 
-         # Patient and Clinician Info Header
+        # Patient and Clinician Info Header
         header_data = [
             [
                 Paragraph(
@@ -185,7 +185,7 @@ class ReportLabPdfGenerator(PdfGenerator):
             raise IOError(f"Failed to create PDF at {file_path}")
 
         return str(file_path)
-    
+
     def _parse_and_render_markdown(self, markdown: str, flowables: list) -> None:
         """Parse markdown and convert sections to ReportLab flowables."""
         lines = markdown.split("\n")
@@ -218,16 +218,12 @@ class ReportLabPdfGenerator(PdfGenerator):
                 item = line.replace("- ", "").strip()
                 # Convert markdown bold/italic to ReportLab HTML
                 item = self._convert_markdown_formatting(item)
-                flowables.append(
-                    Paragraph(f"• {item}", self.styles["BodyText"])
-                )
+                flowables.append(Paragraph(f"• {item}", self.styles["BodyText"]))
             # Regular text (non-empty lines)
             elif line.strip():
                 # Convert markdown formatting to ReportLab HTML
                 formatted_line = self._convert_markdown_formatting(line.strip())
-                flowables.append(
-                    Paragraph(formatted_line, self.styles["BodyText"])
-                )
+                flowables.append(Paragraph(formatted_line, self.styles["BodyText"]))
 
             # Empty lines create spacing
             elif not line.strip():
@@ -235,9 +231,7 @@ class ReportLabPdfGenerator(PdfGenerator):
 
         # Flush final section
         if current_section and section_content:
-            self._render_section(
-                current_section, "\n".join(section_content), flowables
-            )
+            self._render_section(current_section, "\n".join(section_content), flowables)
 
     def _convert_markdown_formatting(self, text: str) -> str:
         """Convert markdown formatting (**bold**, *italic*) to ReportLab HTML."""
@@ -247,15 +241,12 @@ class ReportLabPdfGenerator(PdfGenerator):
         text = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", text)
         # `code` → <font name="Courier">code</font>
         text = re.sub(r"`([^`]+)`", r'<font name="Courier">\1</font>', text)
-        return text 
-    
-    def _render_section(
-        self, section_name: str, content: str, flowables: list
-    ) -> None:
+        return text
+
+    def _render_section(self, section_name: str, content: str, flowables: list) -> None:
         """Render a section with its content."""
         # This is a helper; content is rendered as we parse
         pass
-
 
     def generate_prescription_pdf(
         self, prescription: Prescription

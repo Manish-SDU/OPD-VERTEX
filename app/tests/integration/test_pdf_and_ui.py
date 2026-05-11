@@ -75,7 +75,11 @@ class TestReviewPagePdfButton:
     def test_review_detail_page_contains_pdf_link(self):
         resp = client.get("/review/1", cookies=_doctor_cookies())
         assert resp.status_code == 200
-        assert "/pdf" in resp.text or "Download PDF" in resp.text or "pdf" in resp.text.lower()
+        assert (
+            "/pdf" in resp.text
+            or "Download PDF" in resp.text
+            or "pdf" in resp.text.lower()
+        )
 
 
 # ── Generate report endpoint ─────────────────────────────────────────────────

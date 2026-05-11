@@ -31,7 +31,12 @@ def consultation_list(request: Request, user=Depends(get_current_user)) -> HTMLR
     return templates.TemplateResponse(
         request,
         "consultations/list.html",
-        {"consultations": consultations, "patients": patients, "page_title": "Consultations", "user": user},
+        {
+            "consultations": consultations,
+            "patients": patients,
+            "page_title": "Consultations",
+            "user": user,
+        },
     )
 
 
@@ -79,7 +84,11 @@ def consultation_detail(
     consultation_id: int, request: Request, user=Depends(get_current_user)
 ) -> HTMLResponse:
     consultation = get_consultation_app_service().get_consultation(consultation_id)
-    patient = get_patient_app_service().get_patient(consultation.patient_id) if consultation else None
+    patient = (
+        get_patient_app_service().get_patient(consultation.patient_id)
+        if consultation
+        else None
+    )
     return templates.TemplateResponse(
         request,
         "consultations/detail.html",

@@ -1,10 +1,8 @@
 # Email Setup
 
-The app sends emails via SMTP. Two options:
-
 ---
 
-## Option A — SendGrid (recommended, 100 free emails/day)
+## SendGrid (This is what I went with and what the .env is set-up with) - But u can use another service if u prefer
 
 1. Sign up at [sendgrid.com](https://sendgrid.com) (free tier)
 2. Go to **Settings → API Keys → Create API Key** (Full Access) → copy it
@@ -18,24 +16,6 @@ SMTP_USER=apikey
 SMTP_PASSWORD=SG.your-api-key-here
 SMTP_FROM=verified@youremail.com
 ```
-
----
-
-## Option B — Gmail
-
-1. Enable 2-Step Verification on your Google account
-2. Go to **Security → App passwords** → create one → copy the 16-character password
-3. Add to your `.env`:
-
-```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=you@gmail.com
-SMTP_PASSWORD=xxxx xxxx xxxx xxxx
-SMTP_FROM=you@gmail.com
-```
-
----
 
 ## Dev / local (no real delivery)
 

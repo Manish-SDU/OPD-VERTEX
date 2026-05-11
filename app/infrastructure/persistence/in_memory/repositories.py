@@ -936,6 +936,7 @@ class MockTranscriptNormalizer(TranscriptNormalizer):
     def normalize(self, request) -> NormalizedTranscript:
         """Return a mock normalized transcript with speaker-labeled turns."""
         import re
+
         raw = request.transcript_text or ""
         # Normalize whitespace first
         cleaned = re.sub(r"  +", " ", raw).strip()
@@ -950,7 +951,9 @@ class MockTranscriptNormalizer(TranscriptNormalizer):
         return NormalizedTranscript(
             raw_text=raw,
             cleaned_transcript=turns,
-            normalization_notes=["Mock normalization with alternating doctor/patient turns."],
+            normalization_notes=[
+                "Mock normalization with alternating doctor/patient turns."
+            ],
             language="en",
         )
 
@@ -968,13 +971,14 @@ class MockLlmHealthService(LocalLlmHealthService):
 
 
 class MockPdfGenerator(PdfGenerator):
-    def generate_report_pdf(
-        self, report_markdown: str, consultation_metadata
-    ) -> str:
+    def generate_report_pdf(self, report_markdown: str, consultation_metadata) -> str:
         import os
         import tempfile
+
         tmp_dir = tempfile.gettempdir()
-        file_path = os.path.join(tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf")
+        file_path = os.path.join(
+            tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf"
+        )
         # Write a minimal valid PDF so FileResponse can serve it
         with open(file_path, "wb") as fh:
             fh.write(

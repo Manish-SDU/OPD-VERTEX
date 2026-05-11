@@ -41,13 +41,13 @@ class ReportPdfApplicationService:
 
     def generate_report_pdf(self, consultation_id: int) -> ReportPdfArtifact:
         """Generate clinical report PDF.
-        
+
         Args:
             consultation_id: The consultation ID to generate PDF for
-            
+
         Returns:
             ReportPdfArtifact with file path and metadata
-            
+
         Raises:
             ValueError: If report markdown is empty or not found
             IOError: If PDF generation fails

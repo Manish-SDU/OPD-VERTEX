@@ -21,7 +21,9 @@ def _calculate_age(dob: date | None) -> str:
     if not dob:
         return "N/A"
     today = date.today()
-    return str(today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day)))
+    return str(
+        today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    )
 
 
 @router.get("", response_class=HTMLResponse)

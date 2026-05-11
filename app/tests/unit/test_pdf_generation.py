@@ -90,7 +90,9 @@ class TestReportLabPdfGeneratorGenerateReport:
         )
 
     def test_generates_pdf_file(self, generator, metadata):
-        path = generator.generate_report_pdf("# Clinical Report\n\nPatient is well.", metadata)
+        path = generator.generate_report_pdf(
+            "# Clinical Report\n\nPatient is well.", metadata
+        )
         assert Path(path).exists()
         assert path.endswith(".pdf")
 
@@ -136,7 +138,14 @@ class TestReportLabPdfGeneratorGeneratePrescription:
             doctor_id=6,
             patient_id=7,
             diagnosis="Test",
-            medications=[Medication(name="Amoxicillin", dosage="500mg", frequency="3x daily", duration="7 days")],
+            medications=[
+                Medication(
+                    name="Amoxicillin",
+                    dosage="500mg",
+                    frequency="3x daily",
+                    duration="7 days",
+                )
+            ],
             version=1,
         )
         artifact = generator.generate_prescription_pdf(rx)
@@ -145,7 +154,9 @@ class TestReportLabPdfGeneratorGeneratePrescription:
         assert artifact.storage_backend == "mongo_metadata"
 
     def test_prescription_pdf_storage_backend_is_mongo(self, generator):
-        rx = Prescription(id=1, consultation_id=1, doctor_id=1, patient_id=1, diagnosis="X")
+        rx = Prescription(
+            id=1, consultation_id=1, doctor_id=1, patient_id=1, diagnosis="X"
+        )
         artifact = generator.generate_prescription_pdf(rx)
         assert artifact.storage_backend == "mongo_metadata"
 

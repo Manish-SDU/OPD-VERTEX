@@ -70,7 +70,11 @@ class SmtpEmailService(EmailService):
                     server.login(self.username, self.password)
                 server.send_message(msg)
 
-        provider = "smtp-ssl" if self.port == 465 else ("smtp-tls" if self.port == 587 else "smtp-dev")
+        provider = (
+            "smtp-ssl"
+            if self.port == 465
+            else ("smtp-tls" if self.port == 587 else "smtp-dev")
+        )
         return {
             "status": "sent",
             "provider": provider,

@@ -120,7 +120,11 @@ class TestMockTranscriptNormalizer:
         assert "  " not in normalized.normalized_text
         # Should have at least one speaker turn
         assert len(normalized.cleaned_transcript) >= 1
-        assert normalized.cleaned_transcript[0].speaker in ("DOCTOR", "PATIENT", "UNKNOWN")
+        assert normalized.cleaned_transcript[0].speaker in (
+            "DOCTOR",
+            "PATIENT",
+            "UNKNOWN",
+        )
 
 
 class TestMockPdfGenerator:

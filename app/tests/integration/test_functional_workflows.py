@@ -186,4 +186,8 @@ class TestTranscriptNormalizationWorkflow:
         assert resp.status_code == 200
         html = resp.text
         # The review page should show either transcript or the recording section
-        assert "review" in html.lower() or "transcript" in html.lower() or "recording" in html.lower()
+        assert (
+            "review" in html.lower()
+            or "transcript" in html.lower()
+            or "recording" in html.lower()
+        )

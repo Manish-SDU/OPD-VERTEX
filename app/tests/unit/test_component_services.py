@@ -63,7 +63,9 @@ def _make_consultation(cid: int = 1, pid: int = 1, did: int = 2) -> Consultation
     )
 
 
-def _make_consultation_doc(cid: int = 1, text: str = "Doctor: Hello. Patient: Hi.") -> ConsultationDocument:
+def _make_consultation_doc(
+    cid: int = 1, text: str = "Doctor: Hello. Patient: Hi."
+) -> ConsultationDocument:
     return ConsultationDocument(
         consultation_id=cid,
         transcript=TranscriptDocument(full_text=text),
@@ -110,7 +112,9 @@ class TestConsultationApplicationServiceComponent:
     def test_create_consultation_without_complaint(self):
         repo = InMemoryConsultationRepository()
         svc = ConsultationApplicationService(repo)
-        c = svc.create_consultation(ConsultationCreateRequest(patient_id=5), doctor_id=3)
+        c = svc.create_consultation(
+            ConsultationCreateRequest(patient_id=5), doctor_id=3
+        )
         assert c.chief_complaint is None
 
     def test_list_consultations_returns_all(self):
@@ -123,7 +127,9 @@ class TestConsultationApplicationServiceComponent:
     def test_get_consultation_by_id(self):
         repo = InMemoryConsultationRepository()
         svc = ConsultationApplicationService(repo)
-        created = svc.create_consultation(ConsultationCreateRequest(patient_id=1), doctor_id=1)
+        created = svc.create_consultation(
+            ConsultationCreateRequest(patient_id=1), doctor_id=1
+        )
         fetched = svc.get_consultation(created.id)
         assert fetched.id == created.id
 
@@ -135,7 +141,9 @@ class TestConsultationApplicationServiceComponent:
     def test_consultation_status_is_recording_initially(self):
         repo = InMemoryConsultationRepository()
         svc = ConsultationApplicationService(repo)
-        c = svc.create_consultation(ConsultationCreateRequest(patient_id=1), doctor_id=1)
+        c = svc.create_consultation(
+            ConsultationCreateRequest(patient_id=1), doctor_id=1
+        )
         assert c.status == ConsultationStatus.RECORDING
 
 

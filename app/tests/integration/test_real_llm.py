@@ -62,6 +62,7 @@ def _ollama_available() -> bool:
 
 # ── Deterministic mock client (used when Ollama is not running) ────────
 
+
 class MockOllamaClient:
     """Simulates OllamaClient with deterministic, content-aware responses.
 
@@ -103,9 +104,15 @@ class MockOllamaClient:
         cleaned_transcript: list[dict] = []
         for i, sentence in enumerate(sentences):
             sl = sentence.lower()
-            if any(kw in sl for kw in ("doctor:", "i will prescribe", "i will give", "i am going")):
+            if any(
+                kw in sl
+                for kw in ("doctor:", "i will prescribe", "i will give", "i am going")
+            ):
                 speaker = "DOCTOR"
-            elif any(kw in sl for kw in ("patient:", "i have", "i feel", "i am allergic", "i had a")):
+            elif any(
+                kw in sl
+                for kw in ("patient:", "i have", "i feel", "i am allergic", "i had a")
+            ):
                 speaker = "PATIENT"
             else:
                 speaker = "DOCTOR" if i % 2 == 0 else "PATIENT"
@@ -135,26 +142,62 @@ class MockOllamaClient:
         if "sore throat" in up:
             diagnosis = "Acute pharyngitis"
             chief = "Sore throat since yesterday"
-            meds = [{"name": "Amoxicillin", "dosage": "500 mg", "frequency": "three times daily", "duration": "7 days", "route": "oral"}]
+            meds = [
+                {
+                    "name": "Amoxicillin",
+                    "dosage": "500 mg",
+                    "frequency": "three times daily",
+                    "duration": "7 days",
+                    "route": "oral",
+                }
+            ]
         elif "headache" in up:
             diagnosis = "Tension-type headache"
             chief = "Headache for two days"
             meds = (
-                [{"name": "Paracetamol", "dosage": "500 mg", "frequency": "every 6 hours", "duration": "3 days", "route": "oral"}]
-                if "paracetamol" in up else []
+                [
+                    {
+                        "name": "Paracetamol",
+                        "dosage": "500 mg",
+                        "frequency": "every 6 hours",
+                        "duration": "3 days",
+                        "route": "oral",
+                    }
+                ]
+                if "paracetamol" in up
+                else []
             )
         elif "lower back pain" in up or "back pain" in up:
             diagnosis = "Lumbar muscle strain"
             chief = "Lower back pain"
             meds = (
-                [{"name": "Ibuprofen", "dosage": "400 mg", "frequency": "three times daily", "duration": "5 days", "route": "oral"}]
-                if "ibuprofen" in up else []
+                [
+                    {
+                        "name": "Ibuprofen",
+                        "dosage": "400 mg",
+                        "frequency": "three times daily",
+                        "duration": "5 days",
+                        "route": "oral",
+                    }
+                ]
+                if "ibuprofen" in up
+                else []
             )
         elif "vancomycin" in up:
             diagnosis = "Severe infection requiring IV antibiotic therapy"
             chief = "Severe infection"
-            meds = [{"name": "Vancomycin", "dosage": "1 g", "frequency": "IV every 12 hours", "duration": "as directed", "route": "IV"}]
-        elif ("cold" in up and "no medications" in up) or ("cold" in up and "no medication" in up):
+            meds = [
+                {
+                    "name": "Vancomycin",
+                    "dosage": "1 g",
+                    "frequency": "IV every 12 hours",
+                    "duration": "as directed",
+                    "route": "IV",
+                }
+            ]
+        elif ("cold" in up and "no medications" in up) or (
+            "cold" in up and "no medication" in up
+        ):
             diagnosis = "Upper respiratory tract infection"
             chief = "Common cold"
             meds = []
@@ -258,7 +301,11 @@ class MockOllamaClient:
             "overall_risk_level": risk,
             "summary": (
                 f"Risk: {risk}. "
-                + ("Allergy contraindication detected." if risk == "RED" else "No concerns.")
+                + (
+                    "Allergy contraindication detected."
+                    if risk == "RED"
+                    else "No concerns."
+                )
             ),
         }
 

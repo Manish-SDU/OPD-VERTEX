@@ -381,6 +381,7 @@ def get_review_app_service() -> ReviewApplicationService:
 def get_report_pdf_app_service() -> ReportPdfApplicationService:
     """Provides the Report PDF application service with dependencies."""
     import logging
+
     return ReportPdfApplicationService(
         generated_repository=generated_repository(),
         consultation_repository=consultation_repository(),
