@@ -1,13 +1,179 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card">
-  <h2>Prescriptions</h2>
-  <ul>
-    {% for prescription in prescriptions %}
-    <li>{{ prescription.id }} | {{ prescription.status }} | consultation {{ prescription.consultation_id }}</li>
-    {% else %}
-    <li>No prescriptions available.</li>
+
+<style>
+.rx-page { max-width: 900px; margin: 0 auto; }
+
+.rx-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.rx-header h1 { margin: 0; font-size: 1.75rem; font-weight: 700; color: var(--text); }
+.rx-header p  { margin: .25rem 0 0; color: var(--muted); font-size: .9375rem; }
+
+.rx-list { display: grid; gap: 1.25rem; }
+
+.rx-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.rx-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: .75rem;
+}
+
+.rx-diagnosis {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.rx-meta {
+  font-size: .8125rem;
+  color: var(--muted);
+  margin: .2rem 0 0;
+}
+
+.rx-badges { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .65rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge-approved  { background: #dcfce7; color: #15803d; }
+.badge-pending   { background: #fef9c3; color: #a16207; }
+.badge-emailed   { background: var(--blue-50); color: var(--blue-700); }
+
+.rx-meds { margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem; }
+.rx-meds-title { font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 .5rem; }
+
+.med-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: .4rem 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: .9rem;
+  flex-wrap: wrap;
+}
+.med-row:last-child { border-bottom: none; }
+.med-name { font-weight: 600; color: var(--text); }
+.med-detail { color: var(--muted); font-size: .8125rem; }
+
+.rx-footer {
+  margin-top: .75rem;
+  font-size: .8125rem;
+  color: var(--muted);
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.empty-rx {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.empty-rx svg { width: 48px; height: 48px; margin-bottom: 1rem; opacity: .35; }
+.empty-rx h3  { margin: 0 0 .4rem; color: var(--text); }
+.empty-rx p   { margin: 0; font-size: .9375rem; }
+</style>
+
+<div class="rx-page">
+
+  <div class="rx-header">
+    <div>
+      <h1>Prescriptions</h1>
+      <p>{{ prescriptions|length }} prescription{{ 's' if prescriptions|length != 1 else '' }} on record</p>
+    </div>
+  </div>
+
+  {% if prescriptions %}
+  <div class="rx-list">
+    {% for rx in prescriptions %}
+    <div class="rx-card">
+      <div class="rx-card-top">
+        <div>
+          <p class="rx-diagnosis">{{ rx.diagnosis }}</p>
+          <p class="rx-meta">
+            Prescription #{{ rx.id }}
+            &nbsp;·&nbsp; Consultation #{{ rx.consultation_id }}
+          </p>
+        </div>
+        <div class="rx-badges">
+          {% if rx.is_approved %}
+          <span class="badge badge-approved">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Approved
+          </span>
+          {% else %}
+          <span class="badge badge-pending">Pending Approval</span>
+          {% endif %}
+          {% if rx.is_emailed %}
+          <span class="badge badge-emailed">Emailed</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if rx.medications %}
+      <div class="rx-meds">
+        <p class="rx-meds-title">Medications</p>
+        {% for med in rx.medications %}
+        <div class="med-row">
+          <span class="med-name">{{ med.name }}</span>
+          <span class="med-detail">{{ med.dosage }} &nbsp;·&nbsp; {{ med.frequency }} &nbsp;·&nbsp; {{ med.duration }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="rx-footer">
+        {% if rx.created_at %}
+        <span>Issued: {{ rx.created_at.strftime('%d %b %Y') }}</span>
+        {% endif %}
+        {% if rx.follow_up_date %}
+        <span>Follow-up: {{ rx.follow_up_date.strftime('%d %b %Y') }}</span>
+        {% endif %}
+        {% if rx.instructions %}
+        <span>Notes: {{ rx.instructions }}</span>
+        {% endif %}
+      </div>
+    </div>
     {% endfor %}
-  </ul>
-</section>
+  </div>
+
+  {% else %}
+  <div class="empty-rx">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+    </svg>
+    <h3>No prescriptions found</h3>
+    <p>Prescriptions will appear here once issued after a consultation.</p>
+  </div>
+  {% endif %}
+
+</div>
 {% endblock %}
+

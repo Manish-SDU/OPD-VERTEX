@@ -64,6 +64,8 @@ from app.domain.suggestive_mode.models import (
     SuggestiveReviewRequest,
 )
 from app.domain.transcriptions.models import (
+    StreamingTranscriptChunk,
+    StreamingTranscriptionService,
     TemporaryTranscriptChunk,
     TemporaryTranscriptChunkRepository,
     TranscriptResult,
@@ -1003,6 +1005,43 @@ class MockPdfGenerator(PdfGenerator):
             file_name=f"prescription_{prescription.id or 'draft'}.pdf",
             byte_size=0,
         )
+
+
+class MockStreamingTranscriptionService(StreamingTranscriptionService):
+    """In-memory stub: accepts audio, returns empty transcript. No Whisper API needed."""
+
+    def __init__(self) -> None:
+        self._sessions: dict[str, int] = {}  # session_id -> consultation_id
+        self._texts: dict[str, str] = {}  # session_id -> accumulated text
+
+    def start_streaming(self, consultation_id: int) -> str:
+        import uuid
+
+        session_id = str(uuid.uuid4())
+        self._sessions[session_id] = consultation_id
+        self._texts[session_id] = ""
+        return session_id
+
+    def add_audio_chunk(
+        self, session_id: str, audio_bytes: bytes
+    ) -> StreamingTranscriptChunk | None:
+        return None
+
+    def finalize_session(self, session_id: str) -> TranscriptResult:
+        consultation_id = self._sessions.get(session_id, 0)
+        text = self._texts.get(session_id, "")
+        self._sessions.pop(session_id, None)
+        self._texts.pop(session_id, None)
+        return TranscriptResult(
+            consultation_id=consultation_id,
+            full_text=text,
+        )
+
+    def get_current_text(self, session_id: str) -> str:
+        return self._texts.get(session_id, "")
+
+    def get_session_consultation_id(self, session_id: str) -> int:
+        return self._sessions.get(session_id, 0)
 
 
 class MockEmailService(EmailService):

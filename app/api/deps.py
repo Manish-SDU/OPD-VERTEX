@@ -397,16 +397,23 @@ def get_llm_health_app_service() -> LlmHealthApplicationService:
 
 
 def get_transcription_service() -> TranscriptionApplicationService:
-    from app.infrastructure.ai.transcription.faster_whisper_adapter import (
-        StreamingFasterWhisperService,
-    )
+    if _use_mock():
+        from app.infrastructure.persistence.in_memory.repositories import (
+            MockStreamingTranscriptionService,
+        )
 
-    settings = get_settings()
-    streaming_service = StreamingFasterWhisperService(
-        model_size=settings.whisper_model_name,
-        device="cpu",
-        chunk_duration=2.0,
-    )
+        streaming_service = MockStreamingTranscriptionService()
+    else:
+        from app.infrastructure.ai.transcription.faster_whisper_adapter import (
+            StreamingFasterWhisperService,
+        )
+
+        settings = get_settings()
+        streaming_service = StreamingFasterWhisperService(
+            model_size=settings.whisper_model_name,
+            device="cpu",
+            chunk_duration=2.0,
+        )
     return TranscriptionApplicationService(
         streaming_service=streaming_service,
         temp_chunk_repo=temp_transcript_chunk_repository(),
