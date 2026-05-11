@@ -45,8 +45,25 @@ async def transcription_websocket(
     try:
         while True:
             try:
-                # Wait for audio data with a timeout so we can also check for results
-                data = await asyncio.wait_for(websocket.receive_bytes(), timeout=1.0)
+                # Wait for any message (bytes or text) with a timeout
+                message = await asyncio.wait_for(websocket.receive(), timeout=1.0)
+
+                # Handle text control messages (e.g. FINALIZE)
+                if message.get("text") is not None:
+                    text_msg = message["text"]
+                    logger.info(
+                        "Received text control message session_id=%s msg=%s",
+                        session_id,
+                        text_msg,
+                    )
+                    if text_msg.strip().upper() == "FINALIZE":
+                        break
+                    continue
+
+                data = message.get("bytes")
+                if not data:
+                    continue
+
                 logger.debug(
                     "Received transcription audio chunk session_id=%s bytes=%s",
                     session_id,
