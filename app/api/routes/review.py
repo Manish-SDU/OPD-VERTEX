@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -11,9 +11,11 @@ from app.api.deps import (
     get_clinical_notes_app_service,
     get_current_user,
     get_review_app_service,
+    get_report_pdf_app_service,
     get_suggestive_review_app_service,
 )
 from app.application.clinical_notes.services import ClinicalNotesApplicationService
+from app.application.pdf.services import ReportPdfApplicationService
 from app.application.review.services import ReviewApplicationService
 from app.application.suggestive_mode.services import SuggestiveReviewApplicationService
 
@@ -26,7 +28,7 @@ class UpdateReportMarkdownRequest(BaseModel):
 
 
 # =========================
-# Report routes first
+# Report routes first (specific paths before generic /{consultation_id})
 # =========================
 
 
@@ -164,6 +166,28 @@ def review_page(
             "user": user,
         },
     )
+
+
+@router.get("/{consultation_id}/pdf")
+def download_report_pdf(
+    consultation_id: int,
+    user=Depends(get_current_user),
+    service: ReportPdfApplicationService = Depends(get_report_pdf_app_service),
+) -> FileResponse:
+    """Download clinical report as PDF via ReportLab."""
+    try:
+        artifact = service.generate_report_pdf(consultation_id)
+        return FileResponse(
+            path=artifact.file_path,
+            media_type="application/pdf",
+            filename=artifact.file_name,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except IOError as e:
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @router.post("/{consultation_id}/generate-report")

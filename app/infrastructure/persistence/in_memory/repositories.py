@@ -950,6 +950,11 @@ class MockLlmHealthService(LocalLlmHealthService):
 
 
 class MockPdfGenerator(PdfGenerator):
+    def generate_report_pdf(
+        self, report_markdown: str, consultation_metadata
+    ) -> str:
+        return f"/tmp/mock_report_{consultation_metadata.consultation_id}.pdf"
+
     def generate_prescription_pdf(
         self, prescription: Prescription
     ) -> PrescriptionArtifact:

@@ -4,27 +4,27 @@
     "mean_ms": 0.001,
     "p50_ms": 0.001,
     "p95_ms": 0.001,
-    "p99_ms": 0.003,
+    "p99_ms": 0.005,
     "min_ms": 0.001,
-    "max_ms": 0.027
+    "max_ms": 0.028
   },
   "patient_search_by_name": {
     "iterations": 200,
     "mean_ms": 0.002,
     "p50_ms": 0.002,
     "p95_ms": 0.002,
-    "p99_ms": 0.004,
+    "p99_ms": 0.017,
     "min_ms": 0.002,
-    "max_ms": 0.019
+    "max_ms": 0.022
   },
   "patient_create": {
     "iterations": 100,
     "mean_ms": 0.006,
     "p50_ms": 0.005,
-    "p95_ms": 0.008,
-    "p99_ms": 0.039,
+    "p95_ms": 0.007,
+    "p99_ms": 0.04,
     "min_ms": 0.004,
-    "max_ms": 0.039
+    "max_ms": 0.04
   },
   "consultation_list": {
     "iterations": 200,
@@ -33,60 +33,60 @@
     "p95_ms": 0.001,
     "p99_ms": 0.001,
     "min_ms": 0.001,
-    "max_ms": 0.008
+    "max_ms": 0.01
   },
   "consultation_create": {
     "iterations": 100,
-    "mean_ms": 0.003,
+    "mean_ms": 0.004,
     "p50_ms": 0.003,
     "p95_ms": 0.004,
-    "p99_ms": 0.028,
+    "p99_ms": 0.057,
     "min_ms": 0.002,
-    "max_ms": 0.028
+    "max_ms": 0.057
   },
   "consultation_get_by_id": {
     "iterations": 500,
     "mean_ms": 0.001,
     "p50_ms": 0.001,
     "p95_ms": 0.001,
-    "p99_ms": 0.002,
+    "p99_ms": 0.001,
     "min_ms": 0.001,
-    "max_ms": 0.02
+    "max_ms": 0.025
   },
   "mock_clinical_note_generation": {
     "iterations": 100,
-    "mean_ms": 0.011,
-    "p50_ms": 0.01,
-    "p95_ms": 0.012,
-    "p99_ms": 0.068,
-    "min_ms": 0.01,
-    "max_ms": 0.068
+    "mean_ms": 0.02,
+    "p50_ms": 0.018,
+    "p95_ms": 0.026,
+    "p99_ms": 0.093,
+    "min_ms": 0.015,
+    "max_ms": 0.093
   },
   "transcript_normalizer": {
     "iterations": 200,
     "mean_ms": 0.004,
-    "p50_ms": 0.003,
+    "p50_ms": 0.004,
     "p95_ms": 0.004,
-    "p99_ms": 0.009,
+    "p99_ms": 0.025,
     "min_ms": 0.003,
-    "max_ms": 0.032
+    "max_ms": 0.033
   },
   "document_edit_single_field": {
     "iterations": 100,
-    "mean_ms": 0.096,
-    "p50_ms": 0.091,
-    "p95_ms": 0.119,
-    "p99_ms": 0.248,
-    "min_ms": 0.088,
-    "max_ms": 0.248
+    "mean_ms": 0.099,
+    "p50_ms": 0.094,
+    "p95_ms": 0.118,
+    "p99_ms": 0.324,
+    "min_ms": 0.091,
+    "max_ms": 0.324
   },
   "version_history_retrieval": {
     "iterations": 500,
     "mean_ms": 0.001,
     "p50_ms": 0.001,
-    "p95_ms": 0.001,
-    "p99_ms": 0.001,
+    "p95_ms": 0.002,
+    "p99_ms": 0.002,
     "min_ms": 0.001,
-    "max_ms": 0.003
+    "max_ms": 0.007
   }
 }
