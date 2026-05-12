@@ -37,3 +37,13 @@ Componenetclass-week17_assignment/tools/
 
 # Raw pytest run captures (regenerable)
 Componenetclass-week17_assignment/runs/
+
+# Generated reports (regenerable from scripts/generate_*.py and pytest)
+reports/section7_validation.pdf
+reports/section7_charts/
+reports/test_report.pdf
+reports/test_report.json
+reports/benchmark_report.html
+reports/benchmark_results.json
+reports/benchmark_chart_*.svg
+scripts/generate_section7_validation_pdf.py
