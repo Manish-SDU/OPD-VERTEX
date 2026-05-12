@@ -427,7 +427,11 @@ class InMemoryGeneratedDocumentRepository(GeneratedDocumentRepository):
 
 
 class InMemoryPromptRepository(PromptRepository):
-    def list_prompts(self) -> list[LlmPromptConfig]:
+    def __init__(self) -> None:
+        self._prompts = {prompt.id: prompt for prompt in self._seed_prompts()}
+
+    @staticmethod
+    def _seed_prompts() -> list[LlmPromptConfig]:
         return [
             LlmPromptConfig(
                 id="transcript_normalization_v1",
@@ -500,26 +504,50 @@ class InMemoryPromptRepository(PromptRepository):
             ),
         ]
 
+    def list_prompts(self) -> list[LlmPromptConfig]:
+        return list(self._prompts.values())
+
     def get_by_id(self, prompt_id: str) -> LlmPromptConfig | None:
-        return next((p for p in self.list_prompts() if p.id == prompt_id), None)
+        return self._prompts.get(prompt_id)
+
+    def save(self, prompt: LlmPromptConfig) -> LlmPromptConfig:
+        self._prompts[prompt.id] = prompt
+        return prompt
 
 
 # ── email_templates (NoSQL mock) ───────────────────────────────────────
 
 
 class InMemoryEmailTemplateRepository(EmailTemplateRepository):
-    def list_templates(self) -> list[EmailTemplate]:
+    def __init__(self) -> None:
+        self._templates = {template.id: template for template in self._seed_templates()}
+
+    @staticmethod
+    def _seed_templates() -> list[EmailTemplate]:
         return [
             EmailTemplate(
                 id="prescription_delivery_v1",
                 template_name="Prescription Delivery Email",
                 subject_template="Your Prescription from Dr. {{doctor_name}}",
-                body_template="placeholder body",
+                body_template=(
+                    "Hello {{patient_name}},\n\n"
+                    "Your prescription from Dr. {{doctor_name}} is attached.\n\n"
+                    "Regards,\nOPD-Vertex"
+                ),
+                placeholders=["patient_name", "doctor_name"],
+                attachment_fields={"prescription_pdf": "required"},
             )
         ]
 
+    def list_templates(self) -> list[EmailTemplate]:
+        return list(self._templates.values())
+
     def get_by_id(self, template_id: str) -> EmailTemplate | None:
-        return next((t for t in self.list_templates() if t.id == template_id), None)
+        return self._templates.get(template_id)
+
+    def save(self, template: EmailTemplate) -> EmailTemplate:
+        self._templates[template.id] = template
+        return template
 
 
 # ── prescriptions ──────────────────────────────────────────────────────

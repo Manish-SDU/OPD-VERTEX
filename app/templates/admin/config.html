@@ -1,19 +1,161 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card">
-  <h2>Admin Configuration</h2>
-  <h3>Prompt Configs</h3>
-  <ul>
+<div class="admin-page">
+  <section class="dashboard-welcome">
+    <h2>Admin Configuration</h2>
+    <p>Edit LLM prompts and email templates. Every save is recorded in the audit trail.</p>
+  </section>
+
+  {% if status_message %}
+  <div class="alert alert-success" role="status">{{ status_message }}</div>
+  {% endif %}
+
+  <section class="card admin-section">
+    <div class="admin-section-header">
+      <div>
+        <h3>Prompt Configs</h3>
+        <p>These prompts are loaded by the transcript, clinical report and suggestive review flows.</p>
+      </div>
+      <span class="badge badge-blue">{{ prompts|length }} prompts</span>
+    </div>
+
     {% for prompt in prompts %}
-    <li>{{ prompt.prompt_name }} ({{ prompt.id }}) - model {{ prompt.model_target }}</li>
+    <details class="admin-editor">
+      <summary>
+        <span>
+          <strong>{{ prompt.prompt_name }}</strong>
+          <small>{{ prompt.id }}</small>
+        </span>
+        <span class="admin-editor-meta">v{{ prompt.version }} · {{ prompt.model_target }}</span>
+      </summary>
+      <form class="admin-form" method="post" action="/admin/prompts/{{ prompt.id }}">
+        <div class="form-grid two">
+          <div class="form-group">
+            <label for="prompt-name-{{ prompt.id }}">Name</label>
+            <input id="prompt-name-{{ prompt.id }}" name="prompt_name" value="{{ prompt.prompt_name }}" required>
+          </div>
+          <div class="form-group">
+            <label for="prompt-model-{{ prompt.id }}">Model</label>
+            <input id="prompt-model-{{ prompt.id }}" name="model_target" value="{{ prompt.model_target }}" required>
+          </div>
+          <div class="form-group">
+            <label for="prompt-temp-{{ prompt.id }}">Temperature</label>
+            <input id="prompt-temp-{{ prompt.id }}" name="temperature" type="number" min="0" max="2" step="0.1" value="{{ prompt.temperature }}" required>
+          </div>
+          <div class="form-group">
+            <label for="prompt-tokens-{{ prompt.id }}">Max tokens</label>
+            <input id="prompt-tokens-{{ prompt.id }}" name="max_tokens" type="number" min="1" step="1" value="{{ prompt.max_tokens }}" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="prompt-system-{{ prompt.id }}">System prompt</label>
+          <textarea id="prompt-system-{{ prompt.id }}" name="system_prompt" rows="5" required>{{ prompt.system_prompt }}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="prompt-user-{{ prompt.id }}">User prompt template</label>
+          <textarea id="prompt-user-{{ prompt.id }}" name="user_prompt_template" rows="7" required>{{ prompt.user_prompt_template }}</textarea>
+        </div>
+        <div class="admin-actions">
+          <button type="submit">Save prompt</button>
+        </div>
+      </form>
+    </details>
     {% endfor %}
-  </ul>
-  <h3>Email Templates</h3>
-  <ul>
+  </section>
+
+  <section class="card admin-section">
+    <div class="admin-section-header">
+      <div>
+        <h3>Email Templates</h3>
+        <p>These templates are used when approved prescriptions are sent to patients.</p>
+      </div>
+      <span class="badge badge-green">{{ email_templates|length }} templates</span>
+    </div>
+
     {% for template in email_templates %}
-    <li>{{ template.template_name }}: {{ template.subject_template }}</li>
+    <details class="admin-editor">
+      <summary>
+        <span>
+          <strong>{{ template.template_name }}</strong>
+          <small>{{ template.id }}</small>
+        </span>
+        <span class="admin-editor-meta">v{{ template.version }}</span>
+      </summary>
+      <form class="admin-form" method="post" action="/admin/email-templates/{{ template.id }}">
+        <div class="form-grid two">
+          <div class="form-group">
+            <label for="template-name-{{ template.id }}">Name</label>
+            <input id="template-name-{{ template.id }}" name="template_name" value="{{ template.template_name }}" required>
+          </div>
+          <div class="form-group">
+            <label for="template-subject-{{ template.id }}">Subject</label>
+            <input id="template-subject-{{ template.id }}" name="subject_template" value="{{ template.subject_template }}" required>
+          </div>
+          <div class="form-group">
+            <label for="template-from-{{ template.id }}">From email</label>
+            <input id="template-from-{{ template.id }}" name="from_email" value="{{ template.from_email }}">
+          </div>
+          <div class="form-group">
+            <label for="template-reply-{{ template.id }}">Reply to</label>
+            <input id="template-reply-{{ template.id }}" name="reply_to" value="{{ template.reply_to }}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="template-placeholders-{{ template.id }}">Placeholders</label>
+          <input id="template-placeholders-{{ template.id }}" name="placeholders" value="{{ template.placeholders|join(', ') }}">
+        </div>
+        <div class="form-group">
+          <label for="template-body-{{ template.id }}">Body template</label>
+          <textarea id="template-body-{{ template.id }}" name="body_template" rows="7" required>{{ template.body_template }}</textarea>
+        </div>
+        <div class="admin-actions">
+          <button type="submit">Save template</button>
+        </div>
+      </form>
+    </details>
     {% endfor %}
-  </ul>
-  <p>TODO: wire editable configs to Mongo-backed repositories and admin forms.</p>
-</section>
+  </section>
+
+  <section class="card admin-section">
+    <div class="admin-section-header">
+      <div>
+        <h3>Audit Trail</h3>
+        <p>Recent configuration and system actions.</p>
+      </div>
+      <span class="badge badge-amber">{{ audit_entries|length }} entries</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>User</th>
+            <th>Target</th>
+            <th>Details</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in audit_entries %}
+          <tr>
+            <td>{{ entry.action }}</td>
+            <td>{{ entry.user_role }} #{{ entry.user_id }}</td>
+            <td>{{ entry.target_table or '-' }}</td>
+            <td>
+              {% if entry.details %}
+                {{ entry.details.get('prompt_id') or entry.details.get('template_id') or entry.details.get('prompt_name') or entry.details.get('template_name') }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ entry.timestamp.strftime('%d %b %Y %H:%M') if entry.timestamp else '-' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">No audit entries yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
 {% endblock %}

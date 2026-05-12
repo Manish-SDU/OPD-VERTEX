@@ -742,6 +742,132 @@ button, .button {
 .badge-green  { background: #dcfce7; color: #166534; }
 .badge-amber  { background: #fef3c7; color: #92400e; }
 
+/* -- Admin configuration -- */
+.admin-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-section-header h3 {
+  margin-bottom: .15rem;
+}
+
+.admin-section-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .875rem;
+}
+
+.admin-editor {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: .75rem;
+  overflow: hidden;
+}
+
+.admin-editor:last-child {
+  margin-bottom: 0;
+}
+
+.admin-editor summary {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: .85rem 1rem;
+  list-style: none;
+}
+
+.admin-editor summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-editor[open] summary {
+  border-bottom: 1px solid var(--border);
+  background: var(--blue-50);
+}
+
+.admin-editor small,
+.admin-editor-meta {
+  display: block;
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 500;
+}
+
+.admin-form {
+  padding: 1rem;
+}
+
+.form-grid.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.form-group label {
+  color: var(--muted);
+  font-size: .8125rem;
+  font-weight: 600;
+}
+
+.admin-form textarea {
+  min-height: 7rem;
+  resize: vertical;
+  font-family: Consolas, "Liberation Mono", monospace;
+  line-height: 1.45;
+}
+
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.alert {
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.alert-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+@media (max-width: 760px) {
+  .admin-section-header,
+  .admin-editor summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .form-grid.two {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Links ── */
 a {
   color: var(--blue-600);

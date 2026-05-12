@@ -33,6 +33,10 @@ class EmailTemplateRepository(ABC):
     def get_by_id(self, template_id: str) -> "EmailTemplate | None":
         """Return a single email template."""
 
+    @abstractmethod
+    def save(self, template: "EmailTemplate") -> "EmailTemplate":
+        """Persist an email template."""
+
 
 class EmailAttachment(BaseModel):
     filename: str

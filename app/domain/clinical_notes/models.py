@@ -574,6 +574,9 @@ class PromptRepository(ABC):
     @abstractmethod
     def get_by_id(self, prompt_id: str) -> LlmPromptConfig | None: ...
 
+    @abstractmethod
+    def save(self, prompt: LlmPromptConfig) -> LlmPromptConfig: ...
+
 
 class ClinicalNoteGenerator(ABC):
     @abstractmethod

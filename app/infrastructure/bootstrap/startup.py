@@ -8,6 +8,7 @@ from app.core.config import Settings
 from app.infrastructure.bootstrap.mock_consultation_seed import (
     MockConsultationBootstrapSeeder,
 )
+from app.infrastructure.bootstrap.email_template_seed import EmailTemplateBootstrapSeeder
 from app.infrastructure.bootstrap.prompt_seed import PromptBootstrapSeeder
 from app.infrastructure.db.mongo.connection import get_database
 from app.infrastructure.db.sql.connection import get_session
@@ -32,6 +33,7 @@ class StartupBootstrapper:
         try:
             if self.settings.seed_prompts_on_startup:
                 PromptBootstrapSeeder(mongo_db).seed()
+                EmailTemplateBootstrapSeeder(mongo_db).seed()
             else:
                 logger.info("Prompt bootstrap skipped by environment configuration.")
 

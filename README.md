@@ -23,7 +23,7 @@ pip install -e .[dev]
 uvicorn app.main:app --reload
 ```
 
-Open http://localhost:8000 and log in with `doctor@example.local` / `password`.
+Open http://localhost:8000 and use the demo credentials below.
 
 ### Full stack with Docker
 
@@ -54,19 +54,9 @@ Copy `.env.example` to `.env`. Key variables:
 
 ## Credentials
 
-**Mock mode** (default — no DB required):
+Mock mode: doctor `doctor@example.local` / `password`; admin `admin@example.local` / `password`.
 
-| Role | Email | Password |
-|---|---|---|
-| Doctor | `doctor@example.local` | `password` |
-| Admin | `admin@example.local` | `password` |
-
-**Real mode** (`USE_MOCK_ADAPTERS=false`, `SEED_MOCK_CONSULTATIONS_ON_STARTUP=true`):
-
-| Role | Email | Password |
-|---|---|---|
-| Doctor | `harper.cole@example.local` | `password` |
-| Patients | `ava.miller@example.local` … | `password` |
+Real seeded mode: doctor `harper.cole@example.local` / `password`; patients like `ava.miller@example.local` / `password`.
 
 ## AI Workflow
 

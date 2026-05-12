@@ -60,6 +60,12 @@ from app.infrastructure.logging import apply_logging_aspect
 TemporaryTranscriptChunk.model_rebuild()
 
 
+def _document_filter(document_id: str) -> dict:
+    if ObjectId.is_valid(document_id):
+        return {"_id": ObjectId(document_id)}
+    return {"_id": document_id}
+
+
 @apply_logging_aspect("repository", "email_templates")
 class MongoEmailTemplateRepository(EmailTemplateRepository):
     def __init__(self, db: Database) -> None:
@@ -75,16 +81,25 @@ class MongoEmailTemplateRepository(EmailTemplateRepository):
         ]
 
     def get_by_id(self, template_id: str) -> EmailTemplate | None:
-        doc = (
-            self.collection.find_one({"_id": ObjectId(template_id)})
-            if ObjectId.is_valid(template_id)
-            else self.collection.find_one({"_id": template_id})
-        )
+        doc = self.collection.find_one(_document_filter(template_id))
         if doc:
             return EmailTemplate(
                 id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}
             )
         return None
+
+    def save(self, template: EmailTemplate) -> EmailTemplate:
+        now = datetime.now(UTC)
+        existing = self.collection.find_one(_document_filter(template.id))
+        data = template.model_dump(exclude={"id"}, exclude_none=True)
+        data["created_at"] = existing.get("created_at", now) if existing else now
+        data["updated_at"] = now
+
+        self.collection.replace_one(_document_filter(template.id), data, upsert=True)
+        saved = self.collection.find_one(_document_filter(template.id))
+        return EmailTemplate(
+            id=str(saved["_id"]), **{k: v for k, v in saved.items() if k != "_id"}
+        )
 
 
 @apply_logging_aspect("repository", "prompts")
@@ -102,16 +117,25 @@ class MongoPromptRepository(PromptRepository):
         ]
 
     def get_by_id(self, prompt_id: str) -> LlmPromptConfig | None:
-        doc = (
-            self.collection.find_one({"_id": ObjectId(prompt_id)})
-            if ObjectId.is_valid(prompt_id)
-            else self.collection.find_one({"_id": prompt_id})
-        )
+        doc = self.collection.find_one(_document_filter(prompt_id))
         if doc:
             return LlmPromptConfig(
                 id=str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}
             )
         return None
+
+    def save(self, prompt: LlmPromptConfig) -> LlmPromptConfig:
+        now = datetime.now(UTC)
+        existing = self.collection.find_one(_document_filter(prompt.id))
+        data = prompt.model_dump(exclude={"id"}, exclude_none=True)
+        data["created_at"] = existing.get("created_at", now) if existing else now
+        data["updated_at"] = now
+
+        self.collection.replace_one(_document_filter(prompt.id), data, upsert=True)
+        saved = self.collection.find_one(_document_filter(prompt.id))
+        return LlmPromptConfig(
+            id=str(saved["_id"]), **{k: v for k, v in saved.items() if k != "_id"}
+        )
 
 
 @apply_logging_aspect("repository", "generated_documents")
