@@ -44,7 +44,9 @@ class TestAdminConfiguration:
         assert "Audit Trail" in response.text
 
     def test_non_admin_cannot_open_admin_config(self):
-        response = client.get("/admin/config", cookies=_cookies(user_id="1", role="doctor"))
+        response = client.get(
+            "/admin/config", cookies=_cookies(user_id="1", role="doctor")
+        )
 
         assert response.status_code == 403
 
