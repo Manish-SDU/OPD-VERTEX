@@ -23,24 +23,32 @@
       </a>
       <nav>
         <a href="/dashboard">Dashboard</a>
-        {% if user is defined and user and user.role == 'doctor' %}
-        <a href="/patients">Patients</a>
-        <a href="/consultations">Consultations</a>
-        <a href="/prescriptions">Prescriptions</a>
-        <a href="/profile"> Profile</a>
-        {% elif user is defined and user and user.role == 'patient' %}
-        <a href="/consultations">My Consultations</a>
-        <a href="/prescriptions">My Prescriptions</a>
-        <a href="/profile"> Profile</a>
-        {% endif %}
-        {% if user is defined and user and user.role == 'admin' %}
-        <a href="/admin/config">Admin</a>
-        {% endif %}
+
         {% if user is defined and user %}
-        <a href="/logout" class="btn-logout">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Logout
-        </a>
+          {% if user.role == 'doctor' %}
+            <a href="/patients">Patients</a>
+            <a href="/consultations">Consultations</a>
+            <a href="/prescriptions">Prescriptions</a>
+            <a href="/profile">Profile</a>
+          {% elif user.role == 'admin' %}
+            <a href="/patients">Patients</a>
+            <a href="/consultations">Consultations</a>
+            <a href="/prescriptions">Prescriptions</a>
+            <a href="/profile">Profile</a>
+            <a href="/admin/config">Admin</a>
+          {% elif user.role == 'patient' %}
+            <a href="/prescriptions">My Prescriptions</a>
+            <a href="/profile">Profile</a>
+          {% else %}
+            <a href="/profile">Profile</a>
+          {% endif %}
+        {% endif %}
+
+        {% if user is defined and user %}
+          <a href="/logout" class="btn-logout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Logout
+          </a>
         {% endif %}
       </nav>
     </div>
