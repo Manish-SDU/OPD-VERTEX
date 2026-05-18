@@ -994,22 +994,162 @@ class MockLlmHealthService(LocalLlmHealthService):
 class MockPdfGenerator(PdfGenerator):
     def generate_report_pdf(self, report_markdown: str, consultation_metadata) -> str:
         import os
+        import re
+        from pathlib import Path
         import tempfile
+        # Prefer configured pdf output dir so files are easy to find in the repo.
+        try:
+            from app.core.config import get_settings
 
-        tmp_dir = tempfile.gettempdir()
-        file_path = os.path.join(
-            tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf"
-        )
-        # Write a minimal valid PDF so FileResponse can serve it
-        with open(file_path, "wb") as fh:
-            fh.write(
-                b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-                b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
-                b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\n"
-                b"xref\n0 4\n0000000000 65535 f \n"
-                b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n0\n%%EOF\n"
+            settings = get_settings()
+            out_dir = Path(settings.pdf_output_dir)
+        except Exception:
+            out_dir = None
+
+        if out_dir:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            file_path = str(out_dir / f"mock_report_{consultation_metadata.consultation_id}.pdf")
+        else:
+            tmp_dir = tempfile.gettempdir()
+            file_path = os.path.join(tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf")
+        
+        # Try to produce a real, viewable PDF using ReportLab with markdown content.
+        try:
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.units import inch
+            from reportlab.lib import colors
+            from reportlab.lib.enums import TA_CENTER
+
+            doc = SimpleDocTemplate(
+                str(file_path),
+                pagesize=A4,
+                rightMargin=0.75 * inch,
+                leftMargin=0.75 * inch,
+                topMargin=0.75 * inch,
+                bottomMargin=0.75 * inch,
             )
-        return file_path
+            
+            styles = getSampleStyleSheet()
+            
+            # Create custom styles similar to ReportLabPdfGenerator
+            title_style = ParagraphStyle(
+                'ReportTitle',
+                parent=styles['Heading1'],
+                fontSize=16,
+                textColor=colors.HexColor("#1a1a1a"),
+                spaceAfter=12,
+                alignment=TA_CENTER,
+                fontName="Helvetica-Bold",
+            )
+            section_style = ParagraphStyle(
+                'SectionHeading',
+                parent=styles['Heading2'],
+                fontSize=12,
+                textColor=colors.HexColor("#2c3e50"),
+                spaceAfter=8,
+                spaceBefore=12,
+                fontName="Helvetica-Bold",
+            )
+            
+            flowables = [
+                Paragraph(
+                    f"Clinical Report - Consultation #{consultation_metadata.consultation_id}",
+                    title_style
+                ),
+                Spacer(1, 0.2 * inch),
+            ]
+            
+            # Add metadata table
+            header_data = [
+                [
+                    Paragraph(
+                        f"<b>Patient:</b> {consultation_metadata.patient_name}",
+                        styles['Normal']
+                    ),
+                    Paragraph(
+                        f"<b>Date:</b> {consultation_metadata.consultation_date.strftime('%Y-%m-%d %H:%M')}",
+                        styles['Normal']
+                    ),
+                ],
+                [
+                    Paragraph(
+                        f"<b>Clinician:</b> {consultation_metadata.clinician_name}",
+                        styles['Normal']
+                    ),
+                    Paragraph(
+                        f"<b>Visit Type:</b> {consultation_metadata.visit_type or 'General'}",
+                        styles['Normal']
+                    ),
+                ],
+            ]
+            header_table = Table(header_data, colWidths=[3.5 * inch, 3.5 * inch])
+            header_table.setStyle(
+                TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#ecf0f1")),
+                    ("TOPPADDING", (0, 0), (-1, -1), 6),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ])
+            )
+            flowables.append(header_table)
+            flowables.append(Spacer(1, 0.2 * inch))
+            
+            # Parse and render markdown content
+            if report_markdown and report_markdown.strip():
+                lines = report_markdown.split("\n")
+                for line in lines:
+                    # Section headers (## Section Name or similar)
+                    if line.startswith("## "):
+                        flowables.append(
+                            Paragraph(line.replace("## ", "").strip(), section_style)
+                        )
+                    # Subsection headers (### Subsection)
+                    elif line.startswith("### "):
+                        flowables.append(
+                            Paragraph(
+                                f"<b>{line.replace('### ', '').strip()}</b>",
+                                styles['Normal']
+                            )
+                        )
+                    # List items (- item)
+                    elif line.strip().startswith("- "):
+                        item = line.replace("- ", "").strip()
+                        # Convert markdown formatting
+                        item = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", item)
+                        item = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", item)
+                        flowables.append(
+                            Paragraph(f"• {item}", styles['Normal'])
+                        )
+                    # Regular text
+                    elif line.strip():
+                        text = line.strip()
+                        # Convert markdown formatting
+                        text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
+                        text = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", text)
+                        flowables.append(Paragraph(text, styles['Normal']))
+                    # Empty lines
+                    elif not line.strip():
+                        flowables.append(Spacer(1, 0.1 * inch))
+            
+            doc.build(flowables)
+            return file_path
+        except Exception as e:
+            # Fallback: write a minimal PDF so FileResponse can serve it
+            import traceback
+            traceback.print_exc()
+            with open(file_path, "wb") as fh:
+                fh.write(
+                    b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+                    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+                    b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\n"
+                    b"xref\n0 4\n0000000000 65535 f \n"
+                    b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n0\n%%EOF\n"
+                )
+            return file_path
 
     def generate_prescription_pdf(
         self, prescription: Prescription
