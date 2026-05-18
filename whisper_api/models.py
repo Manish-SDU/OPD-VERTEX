@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class StartSessionRequest(BaseModel):
     """Request to start a new transcription session."""
+
     consultation_id: int
     chunk_duration: float = 2.0
     sample_rate: int = 16000
@@ -12,12 +13,14 @@ class StartSessionRequest(BaseModel):
 
 class StartSessionResponse(BaseModel):
     """Response when session starts."""
+
     session_id: str
     status: str = "started"
 
 
 class TranscriptChunk(BaseModel):
     """A chunk of transcribed audio."""
+
     chunk_id: int
     text: str
     timestamp: float
@@ -26,6 +29,7 @@ class TranscriptChunk(BaseModel):
 
 class TranscriptResult(BaseModel):
     """Final transcription result."""
+
     consultation_id: int
     full_text: str
     language: str = "en"
@@ -33,4 +37,5 @@ class TranscriptResult(BaseModel):
 
 class PartialTranscript(BaseModel):
     """Partial transcription result."""
+
     partial_text: str

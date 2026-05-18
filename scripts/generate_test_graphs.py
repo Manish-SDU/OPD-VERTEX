@@ -279,7 +279,9 @@ def main() -> None:
 
     # SVG charts
     svg_p95 = _make_svg_bar_chart(results, "p95_ms", "p95 Latency per Operation (ms)")
-    svg_p50 = _make_svg_bar_chart(results, "p50_ms", "Median (p50) Latency per Operation (ms)")
+    svg_p50 = _make_svg_bar_chart(
+        results, "p50_ms", "Median (p50) Latency per Operation (ms)"
+    )
     svg_p99 = _make_svg_bar_chart(results, "p99_ms", "p99 Latency per Operation (ms)")
 
     (REPORTS / "benchmark_chart_p95.svg").write_text(svg_p95, encoding="utf-8")

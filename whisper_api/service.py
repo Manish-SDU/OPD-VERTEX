@@ -21,7 +21,7 @@ logger = logging.getLogger("opd_vertex.whisper_api.service")
 def init_model(model_size: str = "large-v3", device: str = "cuda"):
     """Initialize Whisper model."""
     models_dir = Path(__file__).parent.parent / "models"
-    os.environ['HF_HOME'] = str(models_dir)
+    os.environ["HF_HOME"] = str(models_dir)
     return WhisperModel(model_size, device=device)
 
 
@@ -29,7 +29,9 @@ def init_model(model_size: str = "large-v3", device: str = "cuda"):
 model = None
 
 
-def start_streaming_session(consultation_id: int, chunk_duration: float = 2.0, sample_rate: int = 16000) -> str:
+def start_streaming_session(
+    consultation_id: int, chunk_duration: float = 2.0, sample_rate: int = 16000
+) -> str:
     """Initialize a streaming session."""
     global _sessions
     session_id = str(uuid.uuid4())
@@ -56,7 +58,9 @@ def add_audio_chunk(session_id: str, audio_bytes: bytes) -> dict:
 
         session = _sessions[session_id]
 
-        audio_data = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+        audio_data = (
+            np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+        )
         session["buffer"].append(audio_data)
 
         total_samples = sum(len(chunk) for chunk in session["buffer"])
@@ -114,7 +118,7 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
         frame_size = int(sample_rate * frame_duration / 1000)
         voiced_audio = []
         for start in range(0, len(norm_audio), frame_size):
-            frame = norm_audio[start:start+frame_size]
+            frame = norm_audio[start : start + frame_size]
             if len(frame) < frame_size:
                 break
             # Convert to 16-bit PCM for VAD
@@ -198,7 +202,8 @@ def get_current_text(session_id: str) -> str:
         non_empty = [r.strip() for r in results if r and r.strip()]
         combined = " ".join(non_empty)
         return combined
-    
+
+
 def get_session_consultation_id(session_id: str) -> int:
     """Get consultation_id for a session."""
     global _sessions

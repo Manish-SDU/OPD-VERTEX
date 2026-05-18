@@ -210,7 +210,9 @@ def upgrade() -> None:
         sa.Column("target_id", sa.Integer(), nullable=True),
         sa.Column("details", sa.JSON(), nullable=True),
         sa.Column("ip_address", sa.String(length=45), nullable=True),
-        sa.Column("timestamp", sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "timestamp", sa.DateTime(), server_default=sa.func.now(), nullable=False
+        ),
         sa.PrimaryKeyConstraint("log_id"),
     )
     op.create_index("ix_audit_logs_user_id", "audit_logs", ["user_id"])

@@ -997,6 +997,7 @@ class MockPdfGenerator(PdfGenerator):
         import re
         from pathlib import Path
         import tempfile
+
         # Prefer configured pdf output dir so files are easy to find in the repo.
         try:
             from app.core.config import get_settings
@@ -1008,14 +1009,24 @@ class MockPdfGenerator(PdfGenerator):
 
         if out_dir:
             out_dir.mkdir(parents=True, exist_ok=True)
-            file_path = str(out_dir / f"mock_report_{consultation_metadata.consultation_id}.pdf")
+            file_path = str(
+                out_dir / f"mock_report_{consultation_metadata.consultation_id}.pdf"
+            )
         else:
             tmp_dir = tempfile.gettempdir()
-            file_path = os.path.join(tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf")
-        
+            file_path = os.path.join(
+                tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf"
+            )
+
         # Try to produce a real, viewable PDF using ReportLab with markdown content.
         try:
-            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+            from reportlab.platypus import (
+                SimpleDocTemplate,
+                Paragraph,
+                Spacer,
+                Table,
+                TableStyle,
+            )
             from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
             from reportlab.lib.pagesizes import A4
             from reportlab.lib.units import inch
@@ -1030,13 +1041,13 @@ class MockPdfGenerator(PdfGenerator):
                 topMargin=0.75 * inch,
                 bottomMargin=0.75 * inch,
             )
-            
+
             styles = getSampleStyleSheet()
-            
+
             # Create custom styles similar to ReportLabPdfGenerator
             title_style = ParagraphStyle(
-                'ReportTitle',
-                parent=styles['Heading1'],
+                "ReportTitle",
+                parent=styles["Heading1"],
                 fontSize=16,
                 textColor=colors.HexColor("#1a1a1a"),
                 spaceAfter=12,
@@ -1044,60 +1055,62 @@ class MockPdfGenerator(PdfGenerator):
                 fontName="Helvetica-Bold",
             )
             section_style = ParagraphStyle(
-                'SectionHeading',
-                parent=styles['Heading2'],
+                "SectionHeading",
+                parent=styles["Heading2"],
                 fontSize=12,
                 textColor=colors.HexColor("#2c3e50"),
                 spaceAfter=8,
                 spaceBefore=12,
                 fontName="Helvetica-Bold",
             )
-            
+
             flowables = [
                 Paragraph(
                     f"Clinical Report - Consultation #{consultation_metadata.consultation_id}",
-                    title_style
+                    title_style,
                 ),
                 Spacer(1, 0.2 * inch),
             ]
-            
+
             # Add metadata table
             header_data = [
                 [
                     Paragraph(
                         f"<b>Patient:</b> {consultation_metadata.patient_name}",
-                        styles['Normal']
+                        styles["Normal"],
                     ),
                     Paragraph(
                         f"<b>Date:</b> {consultation_metadata.consultation_date.strftime('%Y-%m-%d %H:%M')}",
-                        styles['Normal']
+                        styles["Normal"],
                     ),
                 ],
                 [
                     Paragraph(
                         f"<b>Clinician:</b> {consultation_metadata.clinician_name}",
-                        styles['Normal']
+                        styles["Normal"],
                     ),
                     Paragraph(
                         f"<b>Visit Type:</b> {consultation_metadata.visit_type or 'General'}",
-                        styles['Normal']
+                        styles["Normal"],
                     ),
                 ],
             ]
             header_table = Table(header_data, colWidths=[3.5 * inch, 3.5 * inch])
             header_table.setStyle(
-                TableStyle([
-                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#ecf0f1")),
-                    ("TOPPADDING", (0, 0), (-1, -1), 6),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                ])
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#ecf0f1")),
+                        ("TOPPADDING", (0, 0), (-1, -1), 6),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ]
+                )
             )
             flowables.append(header_table)
             flowables.append(Spacer(1, 0.2 * inch))
-            
+
             # Parse and render markdown content
             if report_markdown and report_markdown.strip():
                 lines = report_markdown.split("\n")
@@ -1112,7 +1125,7 @@ class MockPdfGenerator(PdfGenerator):
                         flowables.append(
                             Paragraph(
                                 f"<b>{line.replace('### ', '').strip()}</b>",
-                                styles['Normal']
+                                styles["Normal"],
                             )
                         )
                     # List items (- item)
@@ -1121,25 +1134,24 @@ class MockPdfGenerator(PdfGenerator):
                         # Convert markdown formatting
                         item = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", item)
                         item = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", item)
-                        flowables.append(
-                            Paragraph(f"• {item}", styles['Normal'])
-                        )
+                        flowables.append(Paragraph(f"• {item}", styles["Normal"]))
                     # Regular text
                     elif line.strip():
                         text = line.strip()
                         # Convert markdown formatting
                         text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
                         text = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", text)
-                        flowables.append(Paragraph(text, styles['Normal']))
+                        flowables.append(Paragraph(text, styles["Normal"]))
                     # Empty lines
                     elif not line.strip():
                         flowables.append(Spacer(1, 0.1 * inch))
-            
+
             doc.build(flowables)
             return file_path
         except Exception:
             # Fallback: write a minimal PDF so FileResponse can serve it
             import traceback
+
             traceback.print_exc()
             with open(file_path, "wb") as fh:
                 fh.write(
