@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 from datetime import datetime
@@ -20,10 +19,10 @@ from pathlib import Path
 
 # ReportLab imports
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm, mm
+from reportlab.lib.units import cm
 from reportlab.platypus import (
     HRFlowable,
     Paragraph,
@@ -149,7 +148,7 @@ def run_pytest_json(output_json: Path) -> dict:
     cmd = [
         sys.executable, "-m", "pytest",
         "app/tests/",
-        f"--json-report",
+        "--json-report",
         f"--json-report-file={output_json}",
         "-q", "--tb=no", "--no-header",
     ]

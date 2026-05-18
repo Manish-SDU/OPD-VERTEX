@@ -1137,7 +1137,7 @@ class MockPdfGenerator(PdfGenerator):
             
             doc.build(flowables)
             return file_path
-        except Exception as e:
+        except Exception:
             # Fallback: write a minimal PDF so FileResponse can serve it
             import traceback
             traceback.print_exc()

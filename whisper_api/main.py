@@ -8,7 +8,6 @@ from fastapi import FastAPI, HTTPException, Request
 from .models import (
     StartSessionRequest,
     StartSessionResponse,
-    TranscriptChunk,
     TranscriptResult,
     PartialTranscript,
 )

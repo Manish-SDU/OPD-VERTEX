@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     smtp_user: str = Field(default="", alias="SMTP_USER")
     smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
     smtp_from: str = Field(default="noreply@example.local", alias="SMTP_FROM")
-    pdf_output_dir: str = Field(default="./pdfs", alias="PDF_OUTPUT_DIR")
+    pdf_output_dir: str = Field(default="./storage/pdfs", alias="PDF_OUTPUT_DIR")
     transcripts_dir: str = Field(
         default="./storage/transcripts", alias="TRANSCRIPTS_DIR"
     )

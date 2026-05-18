@@ -96,7 +96,6 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
         import tempfile
         import soundfile as sf
         import webrtcvad
-        import scipy.signal
 
         logger.debug(
             "Transcribing audio chunk session_id=%s samples=%s duration_seconds=%.2f",
@@ -164,7 +163,7 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
             # Clean up temp file
             try:
                 os.unlink(f.name)
-            except:
+            except Exception:
                 pass
 
     except Exception:
