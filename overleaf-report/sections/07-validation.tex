@@ -33,7 +33,53 @@ Manual UI & 10 & Login, PDF download, speaker layout, logout, and browser-level 
 \label{tab:validation-tiers}
 \end{table}
 
-The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw benchmark numbers are listed in Appendix~\ref{app:benchmark-results}, the manual browser checklist in Appendix~\ref{app:manual-ui}, the hallucination matrix in Appendix~\ref{app:hallucination-matrix}, and the hardware envelope in Appendix~\ref{app:hardware-envelope}.
+The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw benchmark numbers are listed in Appendix~\ref{app:benchmark-results}, the manual browser checklist in Appendix~\ref{app:manual-ui}, the AI safety matrix in Appendix~\ref{app:ai-safety-matrix}, and the hardware envelope in Appendix~\ref{app:hardware-envelope}.
+
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=0.78\textwidth]{assets/charts/test_distribution.png}
+\caption{Automated validation distribution across unit, integration, smoke, stress, and benchmark tiers.}
+\label{fig:test-distribution}
+\end{figure}
+
+\subsection{Requirements Coverage}
+
+The validation evidence is tied back to the requirements from Section~4 in Table~\ref{tab:requirements-coverage}. The table distinguishes requirements that were fully implemented from requirements that were deliberately left as deployment hardening or future work, so the report does not overclaim beyond the implemented system.
+
+\begingroup
+\scriptsize
+\begin{longtable}{@{}P{0.15\textwidth}P{0.18\textwidth}P{0.18\textwidth}P{0.37\textwidth}@{}}
+\caption{Requirements traceability and validation evidence.}\label{tab:requirements-coverage}\\
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\VertexTableHead{Requirement} & \VertexTableHead{Status} & \VertexTableHead{Evidence} & \VertexTableHead{How the report addresses it} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+F-1 & Implemented & Sections 5--7 & Doctor dashboard, patient selection, consultation creation, and list views support the consultation queue. \\
+F-2--F-3 & Implemented & Sections 5--7 & Browser audio capture and the Faster-Whisper sidecar provide local speech-to-text processing. \\
+\rowcolor{VertexTableStripe}
+F-4--F-5 & Implemented & Sections 5--7 & Local LLM orchestration generates structured clinical notes and prescription drafts for doctor review. \\
+F-6 & Implemented & Sections 5--7, Appendix~\ref{app:manual-ui} & The review page lets doctors edit, approve, or reject generated clinical content. \\
+\rowcolor{VertexTableStripe}
+F-7--F-8 & Implemented with deployment caveat & Sections 6--7 & ReportLab PDF generation and SMTP email delivery are implemented; production security depends on configured SMTP/TLS infrastructure. \\
+F-9--F-10 & Implemented & Sections 5--7 & Live transcript handling and past-consultation views are covered by the consultation and UI workflows. \\
+\rowcolor{VertexTableStripe}
+F-11 & Future extension & Section 8 & Cross-doctor sharing is supported conceptually by PDF/email boundaries but was not a primary implemented workflow. \\
+NF-1, NF-10 & Implemented & Sections 3, 5, 7 & Whisper and Ollama run locally, keeping AI processing away from third-party cloud services. \\
+\rowcolor{VertexTableStripe}
+NF-2 & Implemented & Sections 5--7 & JWT authentication, HTTP-only cookies, role checks, and security tests cover access control. \\
+NF-3 & Partially addressed & Sections 5, 8 & Password hashing and token handling are implemented; TLS termination, at-rest encryption, and service-to-service protection remain deployment hardening items. \\
+\rowcolor{VertexTableStripe}
+NF-4 & Implemented & Sections 5--6 & Ports, adapters, application services, repositories, and sidecar AI services keep components replaceable. \\
+NF-5--NF-6 & Implemented & Sections 5--7 & MySQL/MongoDB persistence, versioning, and audit logging support reliable storage and traceability. \\
+\rowcolor{VertexTableStripe}
+NF-7--NF-8 & Implemented and measured & Table~\ref{tab:validation-tiers}, Appendix~\ref{app:benchmark-results} & Manual UI checks and benchmark/hardware results validate usability concerns and performance limits. \\
+NF-9 & Future extension & Section 8 & Retention configuration and secure deletion are identified as governance extensions. \\
+\rowcolor{VertexTableStripe}
+NF-11 & Implemented by workflow design & Sections 1, 5, 8 & The doctor remains the final decision-maker before approval, PDF export, or patient communication. \\
+\TableBottomRule
+\end{longtable}
+\endgroup
 
 \subsection{LLM Hallucination Resistance}
 
@@ -47,13 +93,7 @@ Three failure classes are explicitly guarded:
   \item \textbf{Cross-consultation leakage:} text from a previous patient surfacing in the current note is prevented by stateless per-call prompts and verified by isolation tests that interleave generations from two synthetic patients.
 \end{enumerate}
 
-\texttt{test\_real\_llm.py} re-asserts the same invariants against the live Ollama daemon and falls back gracefully to the mock when the daemon is unreachable.
-
-\begin{figure}[htbp]
-\centering
-\optionalgraphic[width=0.72\textwidth]{assets/charts/hallucination_matrix.png}
-\caption{Hallucination guard matrix.}
-\end{figure}
+\texttt{test\_real\_llm.py} re-asserts the same invariants against the live Ollama daemon and falls back gracefully to the mock when the daemon is unreachable. The detailed AI and ASR safety matrix is kept in Appendix~\ref{app:ai-safety-matrix}.
 
 \subsection{ASR Robustness}
 
@@ -88,6 +128,13 @@ qwen3:4b & 4.0 B & 3.2 GB & 3.6 s & 71\% & 6/30 & Fast fallback, but too small f
 \label{tab:model-selection}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=0.82\textwidth]{assets/charts/model_comparison.png}
+\caption{Model comparison visualization for the evaluated local Ollama candidates.}
+\label{fig:model-comparison}
+\end{figure}
+
 Qwen3:8b was selected because it achieved 100\% JSON validity and zero hallucinations within the 8 GB VRAM budget. Phi3:medium was more accurate than smaller models but exceeded the budget, while the 4B model traded too much accuracy for speed. The choice is not hard-wired: the deployed model is read from \texttt{OLLAMA\_MODEL}, and \texttt{test\_real\_llm.py} re-validates whichever model Ollama is currently serving.
 
 \subsection{Hardware Constraints and Deployment Envelope}
@@ -102,7 +149,14 @@ Latency varies by host, and the Surface and MacBook are roughly three to four ti
 
 The benchmark suite uses Python's \texttt{time.perf\_counter} to time 10 hot paths over 100 to 500 iterations each, recording p50, p95, and p99 latency. Each measurement has an explicit upper-bound assertion so a regression fails the build instead of silently degrading performance.
 
-The numerical results are listed in Appendix~\ref{app:benchmark-results}, which keeps the evidence inspectable without adding another chart to the main report.
+The numerical results are listed in Appendix~\ref{app:benchmark-results}, and Figure~\ref{fig:benchmark-latency} summarizes the latency distribution visually.
+
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=0.84\textwidth]{assets/charts/benchmark_latency.png}
+\caption{Benchmark latency distribution for the measured hot-path operations.}
+\label{fig:benchmark-latency}
+\end{figure}
 
 The results are favorable: every operation finishes in well under a millisecond at the 99th percentile. This indicates that the application layer is not the bottleneck. Production latency will be higher because real MySQL and MongoDB adapters add network and disk I/O, but the benchmark establishes that the domain logic imposes negligible overhead.
 
