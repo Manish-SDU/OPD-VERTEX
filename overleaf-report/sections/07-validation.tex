@@ -1,12 +1,15 @@
 \section{Validation}
+\label{sec:validation}
 
 \subsection{Validation Strategy}
+\label{subsec:validation-strategy}
 
 The validation process follows a five-tier automated test pyramid plus a focused manual UI checklist. Unit tests exercise pure domain logic and the in-memory adapter layer. Integration tests drive FastAPI routes through Starlette's \texttt{TestClient} with a deterministic LLM mock, so HTTP behavior, validation, and persistence wiring are covered without external services. Smoke tests boot the full ASGI application and assert that critical-path endpoints, including login, dashboard, consultation list, and health checks, return successful responses.
 
 Stress tests apply concurrent and sustained load to the in-memory repositories to surface ID collisions, race conditions, and memory growth. Benchmark tests measure per-operation latency. Two non-functional risks receive dedicated suites: LLM hallucination resistance and ASR artifact suppression. Both run hermetically against mocks in CI and can re-run live against a CUDA GPU when the local Ollama daemon and Whisper service are reachable.
 
 \subsection{Test Inventory and Outcome}
+\label{subsec:test-inventory-outcome}
 
 The most recent suite execution reported in the source report ran 326 automated tests in 18.0 seconds, yielding a 100.0\% pass rate with 326 passed, 0 failed, and 0 skipped. Live-service tests gate themselves on the availability of Ollama or the Whisper microservice. On a developer workstation with both running, the live tier also passes.
 
@@ -43,45 +46,47 @@ The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw
 \end{figure}
 
 \subsection{Requirements Coverage}
+\label{subsec:requirements-coverage}
 
-The validation evidence is tied back to the requirements from Section~4 in Table~\ref{tab:requirements-coverage}. The table distinguishes requirements that were fully implemented from requirements that were deliberately left as deployment hardening or future work, so the report does not overclaim beyond the implemented system.
+The validation evidence is tied back to the requirements from Section~\ref{sec:requirements} in Table~\ref{tab:requirements-coverage}. The table distinguishes requirements that were fully implemented from requirements that were deliberately left as deployment hardening or future work, so the report does not overclaim beyond the implemented system.
 
 \begingroup
 \scriptsize
-\begin{longtable}{@{}P{0.15\textwidth}P{0.18\textwidth}P{0.18\textwidth}P{0.37\textwidth}@{}}
+\begin{longtable}{@{}P{0.13\textwidth}P{0.13\textwidth}P{0.34\textwidth}P{0.28\textwidth}@{}}
 \caption{Requirements traceability and validation evidence.}\label{tab:requirements-coverage}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\VertexTableHead{Requirement} & \VertexTableHead{Status} & \VertexTableHead{Evidence} & \VertexTableHead{How the report addresses it} \\
+\VertexTableHead{Requirement} & \VertexTableHead{Status} & \VertexTableHead{Achieved in report} & \VertexTableHead{Appendix / validation evidence} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-F-1 & Implemented & Sections 5--7 & Doctor dashboard, patient selection, consultation creation, and list views support the consultation queue. \\
-F-2--F-3 & Implemented & Sections 5--7 & Browser audio capture and the Faster-Whisper sidecar provide local speech-to-text processing. \\
+F-1 & Implemented & Doctor queue and consultation creation are described in Section~\ref{subsec:actors-use-cases}, Section~\ref{subsec:system-overview}, Section~\ref{subsec:main-workflow-ai-pipeline}, and Section~\ref{subsec:api-layer}. & Appendix~\ref{app:test-inventory} lists workflow and API tests; Appendix~\ref{app:manual-ui} includes TC003 and TC004. \\
+F-2--F-3 & Implemented & Local audio capture and speech-to-text are covered in Section~\ref{subsec:main-workflow-ai-pipeline} and Section~\ref{subsec:transcription-module}. & Appendix~\ref{app:test-inventory} lists transcription and ASR tests; Appendix~\ref{app:hardware-envelope} documents the local runtime envelope. \\
 \rowcolor{VertexTableStripe}
-F-4--F-5 & Implemented & Sections 5--7 & Local LLM orchestration generates structured clinical notes and prescription drafts for doctor review. \\
-F-6 & Implemented & Sections 5--7, Appendix~\ref{app:manual-ui} & The review page lets doctors edit, approve, or reject generated clinical content. \\
+F-4--F-5 & Implemented & Structured notes and prescription drafts are addressed in Section~\ref{subsec:llm-orchestration}, Section~\ref{subsec:main-workflow-ai-pipeline}, and Section~\ref{subsec:model-selection}. & Appendix~\ref{app:test-inventory} lists LLM and workflow tests; Appendix~\ref{app:ai-safety-matrix} maps generation risks to controls. \\
+F-6 & Implemented & Doctor editing and approval are described in Section~\ref{subsec:main-workflow-ai-pipeline}, Section~\ref{subsec:ui-overview}, and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:manual-ui} includes TC009; Appendix~\ref{app:test-inventory} includes versioning and workflow tests. \\
 \rowcolor{VertexTableStripe}
-F-7--F-8 & Implemented with deployment caveat & Sections 6--7 & ReportLab PDF generation and SMTP email delivery are implemented; production security depends on configured SMTP/TLS infrastructure. \\
-F-9--F-10 & Implemented & Sections 5--7 & Live transcript handling and past-consultation views are covered by the consultation and UI workflows. \\
+F-7--F-8 & Implemented with deployment caveat & PDF generation and email follow-up are covered in Section~\ref{subsec:pdf-generation}, Section~\ref{subsec:email-notification-service}, and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:test-inventory} lists PDF/UI tests; Appendix~\ref{app:manual-ui} includes TC006. Production SMTP/TLS configuration remains a deployment concern. \\
+F-9--F-10 & Implemented & Live transcript handling and past-consultation access are described in Section~\ref{subsec:transcription-module}, Section~\ref{subsec:main-workflow-ai-pipeline}, and Section~\ref{subsec:ui-overview}. & Appendix~\ref{app:test-inventory} lists transcription and workflow tests; Appendix~\ref{app:manual-ui} includes browser checks for consultation views. \\
 \rowcolor{VertexTableStripe}
-F-11 & Future extension & Section 8 & Cross-doctor sharing is supported conceptually by PDF/email boundaries but was not a primary implemented workflow. \\
-NF-1, NF-10 & Implemented & Sections 3, 5, 7 & Whisper and Ollama run locally, keeping AI processing away from third-party cloud services. \\
+F-11 & Future extension & Cross-doctor sharing is discussed as a possible extension in Section~\ref{subsec:scope-decisions} and Section~\ref{sec:discussion}. & No appendix claims completion for this item; it remains outside the primary workflow. \\
+NF-1, NF-10 & Implemented & Local AI processing is justified in Section~\ref{subsec:ai-healthcare-security-privacy}, designed in Section~\ref{subsec:design-goals-principles}, and validated in Section~\ref{subsec:model-selection}. & Appendix~\ref{app:ai-safety-matrix} and Appendix~\ref{app:hardware-envelope} support the local model and hardware claims. \\
 \rowcolor{VertexTableStripe}
-NF-2 & Implemented & Sections 5--7 & JWT authentication, HTTP-only cookies, role checks, and security tests cover access control. \\
-NF-3 & Partially addressed & Sections 5, 8 & Password hashing and token handling are implemented; TLS termination, at-rest encryption, and service-to-service protection remain deployment hardening items. \\
+NF-2 & Implemented & Authentication and role-based access are described in Section~\ref{subsec:authentication-authorization} and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:test-inventory} lists auth and security tests; Appendix~\ref{app:manual-ui} includes TC001, TC002, and TC010. \\
+NF-3 & Partially addressed & Password hashing, JWT cookies, and error boundaries are covered in Section~\ref{subsec:authentication-authorization} and Section~\ref{subsec:privacy-security-error-handling}; deployment hardening is discussed in Section~\ref{sec:discussion}. & Appendix~\ref{app:test-inventory} lists security tests. TLS termination, at-rest encryption, and service-to-service protection are future deployment work. \\
 \rowcolor{VertexTableStripe}
-NF-4 & Implemented & Sections 5--6 & Ports, adapters, application services, repositories, and sidecar AI services keep components replaceable. \\
-NF-5--NF-6 & Implemented & Sections 5--7 & MySQL/MongoDB persistence, versioning, and audit logging support reliable storage and traceability. \\
+NF-4 & Implemented & Replaceable components are described in Section~\ref{subsec:architectural-challenges}, Section~\ref{subsec:component-based-design}, and Section~\ref{sec:implementation}. & Appendix~\ref{app:test-inventory} lists component service, repository, and mock-service tests. \\
+NF-5--NF-6 & Implemented & Persistence, versioning, and auditability are described in Section~\ref{subsec:data-design}, Section~\ref{subsec:database-integration}, Section~\ref{subsec:aop-cross-cutting}, and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:test-inventory} lists persistence alignment, repository, document-versioning, and logging tests. \\
 \rowcolor{VertexTableStripe}
-NF-7--NF-8 & Implemented and measured & Table~\ref{tab:validation-tiers}, Appendix~\ref{app:benchmark-results} & Manual UI checks and benchmark/hardware results validate usability concerns and performance limits. \\
-NF-9 & Future extension & Section 8 & Retention configuration and secure deletion are identified as governance extensions. \\
+NF-7--NF-8 & Implemented and measured & Usability is described in Section~\ref{subsec:ui-overview} and Section~\ref{subsec:manual-ui-validation}; performance is evaluated in Section~\ref{subsec:performance-benchmarking} and Section~\ref{subsec:hardware-deployment-envelope}. & Appendix~\ref{app:manual-ui}, Appendix~\ref{app:benchmark-results}, and Appendix~\ref{app:hardware-envelope} provide supporting evidence. \\
+NF-9 & Future extension & Retention configuration and secure deletion are identified as governance extensions in Section~\ref{subsec:scope-decisions} and Section~\ref{sec:discussion}. & No appendix claims completion for this item; it remains future work. \\
 \rowcolor{VertexTableStripe}
-NF-11 & Implemented by workflow design & Sections 1, 5, 8 & The doctor remains the final decision-maker before approval, PDF export, or patient communication. \\
+NF-11 & Implemented by workflow design & The human-in-the-loop boundary is stated in Section~\ref{subsec:delimitation}, designed in Section~\ref{subsec:main-workflow-ai-pipeline}, and discussed in Section~\ref{sec:discussion}. & Appendix~\ref{app:manual-ui} includes TC009; Appendix~\ref{app:ai-safety-matrix} documents safety controls that support doctor review. \\
 \TableBottomRule
 \end{longtable}
 \endgroup
 
 \subsection{LLM Hallucination Resistance}
+\label{subsec:llm-hallucination-resistance}
 
 Every LLM-backed component runs on open-source weights served locally by Ollama. The reference model is Qwen3:8b under the Apache 2.0 license. No proprietary cloud APIs are used, which keeps patient data on-premises and makes validation reproducible without a billing account.
 
@@ -96,12 +101,14 @@ Three failure classes are explicitly guarded:
 \texttt{test\_real\_llm.py} re-asserts the same invariants against the live Ollama daemon and falls back gracefully to the mock when the daemon is unreachable. The detailed AI and ASR safety matrix is kept in Appendix~\ref{app:ai-safety-matrix}.
 
 \subsection{ASR Robustness}
+\label{subsec:asr-robustness}
 
 Faster-Whisper is tuned for clinical dictation with beam size 5, temperature 0, and the setting \path{condition_on_previous_text=False}. This reduces the decoder's tendency to echo earlier captions on silent or noisy audio. A WebRTC VAD at level 3 strips silence before the encoder, so the model does not receive empty buffers.
 
 The Faster-Whisper hallucination test suite asserts four invariants: silence results in an empty transcript, known artifact strings such as ``Thanks for watching!'' and ``[Music]'' are dropped, word error rate stays below 0.15 on a synthetic clinical fixture, and two concurrent sessions never share partial-transcript state.
 
 \subsection{Open-Source Model Selection}
+\label{subsec:model-selection}
 
 Six open-source models served by Ollama were ranked on four criteria: JSON-schema adherence, hallucination rate, end-to-end note latency at p95, and peak VRAM footprint. All candidates were quantized to \texttt{Q4\_K\_M} to fit the 8 GB VRAM envelope, evaluated on $n = 30$ synthetic consultations, and run at temperature 0.2.
 
@@ -138,6 +145,7 @@ qwen3:4b & 4.0 B & 3.2 GB & 3.6 s & 71\% & 6/30 & Fast fallback, but too small f
 Qwen3:8b was selected because it achieved 100\% JSON validity and zero hallucinations within the 8 GB VRAM budget. Phi3:medium was more accurate than smaller models but exceeded the budget, while the 4B model traded too much accuracy for speed. The choice is not hard-wired: the deployed model is read from \texttt{OLLAMA\_MODEL}, and \texttt{test\_real\_llm.py} re-validates whichever model Ollama is currently serving.
 
 \subsection{Hardware Constraints and Deployment Envelope}
+\label{subsec:hardware-deployment-envelope}
 
 The application was tested across the team's personal laptops to confirm that it runs on realistic consumer hardware rather than a single tuned reference machine. The tested devices included a Microsoft Surface Pro 11 with Snapdragon X Plus and 16 GB unified memory, a MINISFORUM UM890 Pro mini-PC with 32 GB DDR5 memory, an ASUS Vivobook 15 F1504VA with Intel Core 7 150U and 16 GB RAM, and an Apple MacBook Air 13-inch with 16 GB unified memory.
 
@@ -146,6 +154,7 @@ None of these devices has a discrete GPU, so the model stack is sized for a shar
 Latency varies by host, and the Surface and MacBook are roughly three to four times slower than a CUDA workstation. The application remains usable end-to-end. Reference latency numbers were collected separately on a CUDA workstation with an RTX 4060 Laptop GPU and 8 GB VRAM; the hardware profiles are detailed in Appendix~\ref{app:hardware-envelope}.
 
 \subsection{Performance Benchmarking}
+\label{subsec:performance-benchmarking}
 
 The benchmark suite uses Python's \texttt{time.perf\_counter} to time 10 hot paths over 100 to 500 iterations each, recording p50, p95, and p99 latency. Each measurement has an explicit upper-bound assertion so a regression fails the build instead of silently degrading performance.
 
@@ -161,18 +170,21 @@ The numerical results are listed in Appendix~\ref{app:benchmark-results}, and Fi
 The results are favorable: every operation finishes in well under a millisecond at the 99th percentile. This indicates that the application layer is not the bottleneck. Production latency will be higher because real MySQL and MongoDB adapters add network and disk I/O, but the benchmark establishes that the domain logic imposes negligible overhead.
 
 \subsection{Stress and Concurrency}
+\label{subsec:stress-concurrency}
 
 Stress testing verifies that the in-memory layer behaves correctly under load beyond what a single clinic shift would normally generate. Three scenarios run: 1,000 sequential patient creations to check for ID collisions and unbounded memory growth, 500 list-after-mutation invariant checks to confirm repository snapshots remain consistent, and concurrent consultation creation through \texttt{ThreadPoolExecutor} to expose race conditions in the create/list path.
 
 All scenarios complete within their wall-clock budgets and assert post-conditions on count, uniqueness, and ordering.
 
 \subsection{Manual UI Validation}
+\label{subsec:manual-ui-validation}
 
 Browser-level concerns that are awkward to automate with the current toolchain are covered by a 10-case manual checklist executed before each release. These concerns include cookie lifecycle, file downloads, CSS rendering of speaker turns, and layout responsiveness.
 
 Each case is recorded with a unique identifier from TC001 to TC010, the scenario under test, reproduction steps, expected result, observed result, and status. At the time of writing, every case is passing. Future work proposes replacing this checklist with a Playwright end-to-end suite once the test infrastructure stabilizes.
 
 \subsection{Threats to Validity}
+\label{subsec:threats-to-validity}
 
 Three threats temper the conclusions drawn from the validation results. First, benchmark figures use in-memory adapters, so production latency on MySQL and MongoDB will be higher. These numbers should be read as a lower bound that proves the domain code is not the bottleneck, not as production service-level objectives.
 
@@ -181,5 +193,6 @@ Second, live LLM tests are opportunistic. When Ollama is unavailable, they fall 
 Third, the WER fixture is synthetic. The published Faster-Whisper large-v3 envelope is used as ground truth for accuracy claims, and a real annotated clinical corpus is the most important validation improvement.
 
 \subsection{Future Validation Work}
+\label{subsec:future-validation-work}
 
 Future validation work includes WER measurement on a real annotated clinical corpus, mutation testing with \texttt{mutmut} on the domain core, property-based testing with \texttt{hypothesis} on status transitions, Playwright end-to-end tests replacing the manual UI checklist, and JMeter-based load testing for the deployed HTTP API.

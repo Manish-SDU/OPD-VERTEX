@@ -1,6 +1,8 @@
 \section{Problem Analysis}
+\label{sec:problem-analysis}
 
 \subsection{Risks and Limitations of Manual Documentation}
+\label{subsec:manual-documentation-risks}
 
 A large-scale descriptive study of outpatient encounters found that physicians spent a substantial amount of time using Electronic Health Records during each visit, with an average of about 16 minutes per encounter~[1]. In a consultation context, this means documentation can compete directly with time spent listening, explaining, and making clinical decisions.
 
@@ -9,6 +11,7 @@ Risk-management guidance for AI medical scribes confirms that automated document
 To reduce these bottlenecks, the system should capture information passively through audio rather than relying entirely on manual input. The automation must function as a decision-support tool by generating editable drafts and real-time suggestions while ensuring that the doctor keeps final clinical responsibility and oversight.
 
 \subsection{Security and Privacy in AI-Assisted Healthcare}
+\label{subsec:ai-healthcare-security-privacy}
 
 Under Article 9 of the General Data Protection Regulation (GDPR), data concerning health belongs to a special category of personal data, meaning it requires a clear lawful basis and appropriate safeguards before processing~[3]. In comparable health privacy guidance, HIPAA also treats individually identifiable health information as protected information that must be limited, safeguarded, and disclosed only under defined conditions~[4].
 
@@ -17,6 +20,7 @@ Many AI documentation tools rely on transmitting audio, transcripts, or draft no
 To reduce these risks, Med Flow is designed as a locally hosted system using open-source models deployed inside the clinic environment. This follows the general risk-management direction recommended by NIST for AI systems: map the context, measure risks, manage controls, and keep governance explicit throughout the system lifecycle~[5].
 
 \subsection{Architectural Challenges}
+\label{subsec:architectural-challenges}
 
 Traditional EHR systems are often built as monolithic or tightly coupled structures. This creates a major problem because updating a single feature can require modifying and risking the stability of the entire system. This becomes especially challenging when working with AI and speech-to-text components, which evolve quickly and need to be replaceable independently.
 
@@ -27,6 +31,7 @@ Forcing these conflicting data types into one database model can create performa
 The same architectural lesson appears in other data-intensive engineering domains: sensing and hyperspectral systems often separate acquisition hardware, preprocessing, model evaluation, and user-facing analysis instead of treating them as one undifferentiated block~[8,9,11]. Med Flow applies that principle to a healthcare-documentation workflow by separating audio capture, transcription, LLM orchestration, review, PDF generation, email, persistence, and audit concerns.
 
 \subsection{Problem Statement}
+\label{subsec:problem-statement}
 
 Modern medical documentation tools place a heavy administrative burden on doctors, yet many cloud-based AI automation tools introduce data privacy risks and operational vulnerabilities. Traditional monolithic architectures and strict database structures are also poorly suited to the rapid evolution of local AI tools and the combination of structured and unstructured clinical datasets.
 

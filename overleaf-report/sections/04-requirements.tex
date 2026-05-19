@@ -1,8 +1,12 @@
 \section{Requirements}
+\label{sec:requirements}
 
 The requirements were organized with a MoSCoW-style priority structure. Must-have requirements define the minimum useful consultation-support system. Should-have and could-have requirements describe important improvements and possible extensions. Will-not-have requirements clarify the boundaries of the implementation.
 
+Their implementation and validation evidence is traced in Section~\ref{subsec:requirements-coverage}, where each requirement is linked to the report sections and appendices that demonstrate it.
+
 \subsection{Actors and Use Cases}
+\label{subsec:actors-use-cases}
 
 The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates.
 
@@ -31,8 +35,10 @@ UC-6 & Administrator & Maintain configurable content. & Administrator edits prom
 \end{table}
 
 \subsection{Must-Have Requirements}
+\label{subsec:must-have-requirements}
 
 \subsubsection{Functional Requirements}
+\label{subsubsec:functional-requirements}
 
 \begingroup
 \small
@@ -57,6 +63,7 @@ F-8 & The system must send prescriptions securely by email. \\
 \endgroup
 
 \subsubsection{Non-Functional Requirements}
+\label{subsubsec:non-functional-requirements}
 
 \begingroup
 \small
@@ -79,6 +86,7 @@ NF-6 & Auditability: the system must log important actions and edits. \\
 \endgroup
 
 \subsection{Should-Have Requirements}
+\label{subsec:should-have-requirements}
 
 \begingroup
 \small
@@ -99,6 +107,7 @@ NF-8 & Performance: on the target machine, local transcription should operate wi
 \endgroup
 
 \subsection{Could-Have Requirements}
+\label{subsec:could-have-requirements}
 
 \begingroup
 \small
@@ -116,6 +125,7 @@ NF-9 & The system could allow administrators to configure how long consultation 
 \endgroup
 
 \subsection{Will-Not-Have Requirements}
+\label{subsec:will-not-have-requirements}
 
 \begingroup
 \small

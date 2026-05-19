@@ -1,8 +1,10 @@
 \section{Design}
+\label{sec:design}
 
 This chapter describes the design of Med Flow, focusing on the principles used to structure the system, the main components and their interactions, the data model, and the cross-cutting concerns of the application.
 
 \subsection{Design Goals and Principles}
+\label{subsec:design-goals-principles}
 
 Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. Five principles guided the design decisions:
 
@@ -17,6 +19,7 @@ Med Flow was designed as a privacy-first, locally hosted clinical assistant for 
 These principles keep the system maintainable through a layered architecture and make it easier to extend because each component can be replaced without rewriting the core.
 
 \subsection{System Overview and Architecture}
+\label{subsec:system-overview}
 
 Before writing code, the team sketched the main user journeys and screen layouts in Figma. The mockups were intentionally lightweight because UI design was not the main focus. They were used to agree on the doctor login, doctor dashboard, consultation page with audio recording, draft review page, and patient view. The three implemented user roles were doctor, administrator, and patient. The review page evolved during development and was split into view, editor, and print modes after the team decided to support Markdown editing.
 
@@ -24,6 +27,7 @@ Before writing code, the team sketched the main user journeys and screen layouts
 \centering
 \optionalgraphic[width=0.96\textwidth]{assets/img/FigmaMockUp.png}
 \caption{Initial Figma mockup of the doctor dashboard and consultation screens.}
+\label{fig:figma-mockup}
 \end{figure}
 
 The target architecture is a set of cooperating services organized around the clinical workflow: identity, patient, consultation, transcription, LLM orchestration, suggestive review, PDF generation, notification, and audit. Public endpoints sit behind an API gateway, while AI components run on dedicated local services. Each service owns its own datastore to preserve loose coupling.
@@ -31,6 +35,7 @@ The target architecture is a set of cooperating services organized around the cl
 In the implemented system, this design is realized on a smaller scale. The logical components live as Python modules inside a single FastAPI application. The transcription module runs as a separate Whisper sidecar, the LLM runs in Ollama, MySQL stores relational data, and MongoDB stores AI documents. All services are packaged as Docker containers and orchestrated with Docker Compose, giving the project a reproducible setup and a clear migration path toward the target architecture.
 
 \subsection{Component-Based System Design}
+\label{subsec:component-based-design}
 
 The system was decomposed into loosely coupled components. Each component has a single responsibility and can be developed, tested, or replaced independently. In the current implementation, many of these components live as modules inside the local backend app, while the diagram represents the logical boundaries that the architecture is intended to support.
 
@@ -38,6 +43,7 @@ The system was decomposed into loosely coupled components. Each component has a 
 \centering
 \optionalgraphic[width=0.98\textwidth]{assets/img/ComponentDiagram.png}
 \caption{Logical component diagram showing Med Flow components and interfaces.}
+\label{fig:component-diagram}
 \end{figure}
 
 The final architecture and sequence diagrams can replace the slots below. Keeping them as dedicated spaces makes the report ready for the polished C4-style architecture view and the consultation-flow sequence diagram without mixing them with partial sketches.
@@ -53,6 +59,7 @@ Authentication and authorization validate credentials, issue JWT tokens, and enf
 The AI pipeline starts with local audio capture, which sends consultation audio to the Faster-Whisper transcription module. The LLM Orchestrator manages prompts, retries, and structured output validation. Generation is delegated to the local LLM runtime through Ollama or vLLM, and ReportLab renders approved Markdown reports into printable PDFs.
 
 \subsection{Aspect-Oriented Programming for Cross-Cutting Concerns}
+\label{subsec:aop-cross-cutting}
 
 Logging, performance measurement, error capture, and request tracing touch almost every layer of the system, but they do not belong to the business logic of any single module. To avoid scattering logging statements throughout the codebase, these concerns are handled with an Aspect-Oriented Programming approach.
 
@@ -85,6 +92,7 @@ class ConsultationApplicationService:
 \end{figure}
 
 \subsection{Data Design and Dual-Database Architecture}
+\label{subsec:data-design}
 
 Med Flow uses a dual-database design to separate the system of record from iterative AI artifacts. The relational store provides consistency for clinically meaningful data, while the document store provides flexibility for evolving AI outputs.
 
@@ -111,6 +119,7 @@ MySQL stores doctors and administrators with roles, hashed passwords, license da
 MongoDB stores semi-structured artifacts from the AI pipeline: transcripts and working notes, drafted reports, suggestive reviews, generated PDFs, versioned prompt templates, and editable patient communication templates. The iterative and fast-changing artifacts remain in MongoDB, while the legally meaningful approved prescription is moved into MySQL only after doctor approval.
 
 \subsection{Main Workflow and AI Pipeline}
+\label{subsec:main-workflow-ai-pipeline}
 
 The consultation flow is implemented as three smaller workflows: consultation creation, AI processing, and prescription approval. The doctor opens the patient list, selects a patient, and starts a consultation. The system creates a new record with status \texttt{recording}; audio is captured in the browser and streamed to the backend through a WebSocket, which forwards chunks to the Whisper sidecar in near real time. Partial transcripts are stored so the session can survive a disconnect. When the doctor stops recording, the consultation moves to \texttt{processing} and the AI pipeline starts.
 
@@ -121,6 +130,7 @@ Suggestive Mode then performs a second pass. An LLM-based clinical safety review
 After generation, the doctor opens the review page, optionally edits the Markdown report, and either approves or rejects the draft. If approved, the system builds a prescription, saves it in MySQL with \texttt{is\_approved = true} and the next version number, marks the generated document as approved, and updates the consultation status. After approval, the doctor can download the PDF and send a plain-text summary email to the patient.
 
 \subsection{Privacy, Security and Error Handling}
+\label{subsec:privacy-security-error-handling}
 
 The design treats clinical data as information that must not leave the local environment. Speech-to-text and LLM services run locally, so there is no path that sends transcripts or reports to a remote provider. Login is handled with bcrypt password hashing and short-lived JWT tokens stored in an HTTP-only cookie. Role-based access control protects routes that mutate clinical content, and patients can see only their own consultations and prescriptions.
 
@@ -131,12 +141,14 @@ Error handling follows a small predictable model. Domain-level problems raise a 
 The implementation does not claim full regulatory compliance. TLS termination, stronger authorization tests, and at-rest encryption are treated as future deployment requirements.
 
 \subsection{UI Overview}
+\label{subsec:ui-overview}
 
 The UI is intentionally simple and task-focused. Each screen serves one role and one job, and every page shares a common base layout and CSS bundle. The doctor dashboard is the role-aware home page for clinicians. The consultation page hosts live recording and transcription. The review page is the core human-in-the-loop screen because it shows the AI draft, structured fields, suggestive-mode alerts, Markdown editor, and approve, reject, print, and email actions.
 
 The patient portal is read-only with respect to clinical data. The admin configuration view lets administrators edit prompts and email templates while maintaining an audit trail.
 
 \subsection{Scope Decisions and Future Enhancements}
+\label{subsec:scope-decisions}
 
 The project specification mentioned a patient booking system, but after discussion with the supervisor the team decided not to build an in-house scheduler. Clinics usually already have scheduling solutions, often connected to national identity and e-health infrastructure. Duplicating this functionality would not add much value to the system.
 

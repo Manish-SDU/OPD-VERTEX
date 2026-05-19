@@ -1,8 +1,10 @@
 \section{Implementation}
+\label{sec:implementation}
 
 This chapter outlines the implementation approach for Med Flow. It covers the development process, core components, and technologies used. The system follows a component-based architecture with a FastAPI backend, MySQL and MongoDB databases, Faster-Whisper for transcription, Ollama or vLLM for clinical summarization, ReportLab for PDF generation, and SMTP for email delivery. The application is containerized with Docker for consistent deployment across environments. Configuration and logging are managed with Pydantic and the project's logging infrastructure.
 
 \subsection{API Layer and Routing}
+\label{subsec:api-layer}
 
 The API layer is built using FastAPI. It defines and serves HTTP endpoints and acts as the main entry point for user interactions.
 
@@ -11,6 +13,7 @@ The main API gateway is defined in \texttt{router.py}. This file creates the cen
 FastAPI dependency injection is used to manage authentication, database sessions, and shared resources. Dependencies are defined in \texttt{deps.py} and injected into endpoint functions. Each domain has its own router module where endpoints are defined as functions using decorators such as \texttt{@router.get} and \texttt{@router.post}.
 
 \subsection{Authentication and Authorization}
+\label{subsec:authentication-authorization}
 
 Authentication ensures secure access control using role-based authorization. The system uses FastAPI dependency injection, JWT tokens, and a modular service structure.
 
@@ -25,6 +28,7 @@ The main authentication logic is implemented in \texttt{AuthApplicationService},
 After successful authentication, the system assigns a JWT to the user. The token is used for later authenticated requests and includes user identity and role. Authentication checks are enforced through FastAPI dependencies that validate JWTs from incoming requests and ensure that only authenticated users can reach protected endpoints.
 
 \subsection{Transcription Module}
+\label{subsec:transcription-module}
 
 The transcription component enables live conversion of audio into text, which can then be processed into clinical documentation. It is designed to be scalable, replaceable, and integrated with the other components.
 
@@ -38,6 +42,7 @@ The workflow is orchestrated by \texttt{TranscriptionApplicationService}, which 
 \end{enumerate}
 
 \subsection{LLM Orchestration}
+\label{subsec:llm-orchestration}
 
 The LLM orchestration component enables clinical note creation, report generation, and suggestions using the locally integrated Ollama model. The core logic lives in LLM client and adapter classes, such as \texttt{ollama\_client.py} and \texttt{ollama\_adapter.py}. These classes provide an interface for sending prompts, receiving completions, validating structured output, and handling model health checks.
 
@@ -53,12 +58,14 @@ The orchestration workflow is:
 \end{enumerate}
 
 \subsection{PDF Generation}
+\label{subsec:pdf-generation}
 
 The PDF generation module creates structured PDF documents from clinical data produced by consultations and prescriptions. This feature is important for shareable and printable records.
 
 PDF generation is implemented with ReportLab. An adapter class encapsulates formatting and creation logic, while the service orchestrates data retrieval, PDF creation, and storage. The workflow starts with collecting consultation, patient, staff, and prescription data from repositories. The \texttt{ReportLabPdfGenerator} then formats the data into a document with page layouts, styles, tables, and visual elements. The resulting file is stored and made available for download or email attachment after approval.
 
 \subsection{Email Notification Service}
+\label{subsec:email-notification-service}
 
 The email notification service sends emails to patients containing consultation summaries and prescription information. It supports communication between the application and its users after doctor approval.
 
@@ -67,6 +74,7 @@ Email sending is handled by \texttt{SmtpEmailService}. It constructs and sends e
 During development, MailHog was used as the SMTP server. MailHog captures outgoing emails so developers can view and verify email content without sending real messages. The email workflow constructs an email message, connects to the SMTP server, sends the email, and then allows developers to inspect the captured message through MailHog's web interface.
 
 \subsection{Database Integration}
+\label{subsec:database-integration}
 
 The system uses a dual-database architecture to manage structured and unstructured data. MySQL is used for structured data such as user accounts, patient records, consultations, prescriptions, and audit logs. MongoDB is used for semi-structured data such as clinical documents, consultation transcripts, generated reports, and finalized AI artifacts.
 
