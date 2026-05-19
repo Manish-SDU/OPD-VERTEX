@@ -12,7 +12,7 @@ The most recent suite execution reported in the source report ran 326 automated 
 
 \begin{table}[htbp]
 \centering
-\begin{tabularx}{\textwidth}{@{}L{0.24\textwidth}Y@{}}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.24\textwidth}>{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Tier} & \textbf{Coverage focus} \\
 \midrule
@@ -65,9 +65,9 @@ Three failure classes are explicitly guarded:
 
 \subsection{ASR Robustness}
 
-Faster-Whisper is tuned for clinical dictation with beam size 5, temperature 0, and \texttt{condition\_on\_previous\_text=False} to reduce the decoder's tendency to echo earlier captions on silent or noisy audio. A WebRTC VAD at level 3 strips silence before the encoder, so the model does not receive empty buffers.
+Faster-Whisper is tuned for clinical dictation with beam size 5, temperature 0, and the setting \path{condition_on_previous_text=False}. This reduces the decoder's tendency to echo earlier captions on silent or noisy audio. A WebRTC VAD at level 3 strips silence before the encoder, so the model does not receive empty buffers.
 
-The \texttt{test\_faster\_whisper\_hallucination.py} suite asserts four invariants: silence results in an empty transcript, known artifact strings such as ``Thanks for watching!'' and ``[Music]'' are dropped, word error rate stays below 0.15 on a synthetic clinical fixture, and two concurrent sessions never share partial-transcript state.
+The Faster-Whisper hallucination test suite asserts four invariants: silence results in an empty transcript, known artifact strings such as ``Thanks for watching!'' and ``[Music]'' are dropped, word error rate stays below 0.15 on a synthetic clinical fixture, and two concurrent sessions never share partial-transcript state.
 
 \subsection{Open-Source Model Selection}
 
