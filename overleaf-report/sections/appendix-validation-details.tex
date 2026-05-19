@@ -1,0 +1,51 @@
+\section{Validation Detail Tables}
+
+The source report includes several validation appendices. The tables below keep those appendix sections editable in LaTeX and leave room for detailed numerical data to be expanded as the generated reports evolve.
+
+\subsection{Detailed Test Inventory}
+
+The detailed test inventory lists each test file, the number of declared test cases, and the architectural concern covered by that file. It supports traceability from validation claims back to concrete test modules.
+
+\begin{longtable}{@{}L{0.25\textwidth}L{0.18\textwidth}Y@{}}
+\caption{Editable detailed test inventory template.}\\
+\toprule
+\textbf{Test area} & \textbf{Count} & \textbf{Coverage concern} \\
+\midrule
+Domain and services & To update & Entity behavior, workflow services, contracts, and validation rules. \\
+API and integration & To update & FastAPI routes, request handling, persistence wiring, and user workflows. \\
+AI and ASR safety & To update & Hallucination resistance, JSON structure, transcript artifacts, and session isolation. \\
+Benchmark and stress & To update & Hot-path latency, concurrent access, repository invariants, and memory behavior. \\
+Smoke and UI & To update & Application boot, health checks, critical pages, and manual browser validation. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Benchmark Results}
+
+Benchmark results are persisted in \texttt{reports/benchmark\_results.json}. The report measures p50, p95, p99, and maximum latency for hot paths. The current chart is included in Section 7, while this appendix can be expanded with the raw numerical table.
+
+\subsection{Manual UI Test Catalogue}
+
+Manual UI test cases follow a six-column format: test case ID, scenario, steps, expected result, actual result, and status. Cases TC001 through TC010 are executed manually before each release on the reference workstation.
+
+\begin{longtable}{@{}L{0.12\textwidth}L{0.21\textwidth}L{0.22\textwidth}L{0.18\textwidth}L{0.13\textwidth}@{}}
+\caption{Editable manual UI test catalogue template.}\\
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Steps} & \textbf{Expected result} & \textbf{Status} \\
+\midrule
+TC001 & Login flow & Open login page and authenticate with a valid role. & User reaches the correct dashboard. & Passing \\
+TC002 & Consultation list & Open consultation overview. & Existing consultations are visible and correctly scoped. & Passing \\
+TC003 & Recording UI & Start and stop a consultation recording. & Recording controls and status indicators update correctly. & Passing \\
+TC004 & Review page & Open generated draft. & Draft, structured fields, and actions are visible. & Passing \\
+TC005 & PDF download & Download approved report. & Browser receives a PDF file. & Passing \\
+\bottomrule
+\end{longtable}
+
+\subsection{Hallucination Test Matrix}
+
+The hallucination matrix maps risk classes to tests. It covers malformed JSON, invented medication or allergy content, cross-consultation leakage, and live-model revalidation.
+
+\subsection{Hardware Envelope and End-to-End Latency}
+
+The hardware envelope documents latency for GPU-bound paths on an auxiliary CUDA workstation with an Intel i7-13700H CPU, 32 GB DDR5 memory, NVIDIA RTX 4060 Laptop GPU with 8 GB GDDR6, Windows 11, CUDA 12.4, Ollama 0.4, and Faster-Whisper 1.0.
+
+Whisper RTF means real-time factor. For example, $0.18\times$ means 30 seconds of audio is transcribed in approximately 5.4 seconds. The reference profile was used for the reported validation numbers, while the CPU-only profile is documented for reproducibility on machines without a CUDA GPU.

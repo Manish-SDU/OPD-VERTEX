@@ -1,0 +1,27 @@
+\section{Introduction}
+
+OPD-Vertex is a web-based platform for supporting outpatient medical consultations. The application helps doctors capture consultation audio, transcribe spoken dialogue, generate structured draft documentation, review the result, create PDFs, and send approved follow-up material to patients.
+
+The project builds on the original OPD-Vertex proposal, which emphasized local processing, privacy-aware handling of medical data, and loosely coupled system design. The resulting system demonstrates how software can support documentation and communication in medical consultation settings while keeping sensitive data within the local environment.
+
+\subsection{Motivation}
+
+Medical consultations often require doctors to divide their attention between interacting with patients and documenting notes, prescriptions, and other relevant information. This can reduce consultation efficiency, increase the risk of missing important details, and delay the preparation of post-consultation documentation.
+
+At the same time, the growing use of digital and AI-assisted healthcare tools raises concerns about privacy, legal compliance, protection of sensitive patient data, and dependence on external cloud services. OPD-Vertex is motivated by the need for a more efficient and privacy-conscious documentation workflow during medical consultations.
+
+By supporting consultation recording, transcription, draft generation, and follow-up communication in a single system, the application aims to reduce administrative overhead while improving the quality and accessibility of consultation-related documentation. The project also explores how AI-assisted tools can support doctors without removing clinical responsibility from the final decision-making process.
+
+\subsection{Objective}
+
+The objective of this project is to design and implement a secure web-based consultation support system that assists doctors during and after medical consultations. The system records consultation audio, converts spoken dialogue into text, and generates a draft PDF containing consultation-related information and suggestions that the doctor can review, edit, approve, or decline before further processing.
+
+Once approved by the doctor, the system supports continued handling of the consultation outcome by allowing relevant information, such as prescription details and follow-up material, to be sent to the patient by email. The system also provides functionality for viewing patient details, accessing doctor information, downloading generated PDF documents, and presenting relevant information through a dashboard.
+
+\subsection{Delimitation}
+
+The application is not intended to provide a complete medical administration system. It does not include full clinical record management, long-term clinical testing, user studies with external patients or healthcare providers, live medical deployment, advanced compliance certification, large-scale deployment, or full integration with existing healthcare systems.
+
+The project focuses on supporting activities during and after an ongoing consultation. In the intended deployment context, healthcare providers are assumed to already rely on established scheduling systems. In line with the system's component-based architecture, scheduling is treated as an external concern that can be integrated through well-defined interfaces.
+
+The generated transcription, summaries, suggestions, and PDF drafts are decision-support material for the doctor. They are not autonomous medical outputs. Final responsibility for reviewing, editing, approving, or declining generated content remains with the doctor before information is processed further or shared with the patient.

@@ -1,19 +1,31 @@
-\documentclass{article}
+\documentclass[11pt,a4paper]{article}
 
-\usepackage{pdfpages}
-\usepackage[hidelinks]{hyperref}
-
-\hypersetup{
-	pdftitle={OPD-Vertex Original PDF},
-	pdfauthor={Manish SDU}
-}
+\input{config/metadata}
+\input{config/preamble}
 
 \begin{document}
 
-\includepdf[
-	pages=-,
-	fitpaper=true,
-	pagecommand={}
-]{assets/pdfs/source.pdf}
+\input{frontmatter/titlepage}
+
+\pagenumbering{roman}
+\input{sections/00-abstract}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\input{sections/01-introduction}
+\input{sections/02-methodology}
+\input{sections/03-problem-analysis}
+\input{sections/04-requirements}
+\input{sections/05-design}
+\input{sections/06-implementation}
+\input{sections/07-validation}
+\input{sections/08-conclusion}
+\input{sections/references}
+
+\clearpage
+\appendix
+\input{sections/appendix-validation-details}
+\input{sections/appendix-generated-reports}
 
 \end{document}

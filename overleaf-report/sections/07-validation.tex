@@ -1,0 +1,126 @@
+\section{Validation}
+
+\subsection{Validation Strategy}
+
+The validation process follows a five-tier test pyramid. Unit tests exercise pure domain logic and the in-memory adapter layer. Integration tests drive FastAPI routes through Starlette's \texttt{TestClient} with a deterministic LLM mock, so HTTP behavior, validation, and persistence wiring are covered without external services. Smoke tests boot the full ASGI application and assert that critical-path endpoints, including login, dashboard, consultation list, and health checks, return successful responses.
+
+Stress tests apply concurrent and sustained load to the in-memory repositories to surface ID collisions, race conditions, and memory growth. Benchmark tests measure per-operation latency. Two non-functional risks receive dedicated suites: LLM hallucination resistance and ASR artifact suppression. Both run hermetically against mocks in CI and can re-run live against a CUDA GPU when the local Ollama daemon and Whisper service are reachable.
+
+\subsection{Test Inventory and Outcome}
+
+The most recent suite execution reported in the source report ran 326 automated tests in 18.0 seconds, yielding a 100.0\% pass rate with 326 passed, 0 failed, and 0 skipped. Live-service tests gate themselves on the availability of Ollama or the Whisper microservice. On a developer workstation with both running, the live tier also passes.
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{0.24\textwidth}Y@{}}
+\toprule
+\textbf{Tier} & \textbf{Coverage focus} \\
+\midrule
+Unit & Pure domain logic, entities, services, and in-memory adapters. \\
+Integration & FastAPI routes, request validation, persistence wiring, and deterministic LLM behavior. \\
+Smoke & Application boot and critical-path HTTP endpoint availability. \\
+Stress & Concurrent writes, repeated mutations, list invariants, ID uniqueness, and memory growth. \\
+Benchmark & p50, p95, and p99 latency for hot application paths. \\
+Specialized AI/ASR & Hallucination resistance, structured output validation, ASR artifact suppression, and isolation checks. \\
+Manual UI & Cookie lifecycle, downloads, CSS rendering, speaker turns, layout responsiveness, and release checklist validation. \\
+\bottomrule
+\end{tabularx}
+\caption{Automated and manual validation tiers.}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \optionalgraphic[width=\linewidth]{assets/charts/pass_rate.png}
+  \caption{Pass rate}
+\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \optionalgraphic[width=\linewidth]{assets/charts/test_distribution.png}
+  \caption{Test distribution}
+\end{subfigure}
+\caption{Validation overview charts.}
+\end{figure}
+
+\subsection{LLM Hallucination Resistance}
+
+Every LLM-backed component runs on open-source weights served locally by Ollama. The reference model is Qwen3:8b under the Apache 2.0 license. No proprietary cloud APIs are used, which keeps patient data on-premises and makes validation reproducible without a billing account.
+
+Three failure classes are explicitly guarded:
+
+\begin{enumerate}
+  \item \textbf{Structural hallucinations:} malformed JSON, missing required keys, or a literal \texttt{None} rendered into a clinical field are caught by Pydantic validation in \texttt{OllamaClient.generate\_json}. The client retries once and then raises an error.
+  \item \textbf{Content hallucinations:} invented allergies, diagnoses, or medications absent from the transcript are guarded by prompt-level grounding instructions and a post-generation contradiction check enforced in \texttt{test\_llm\_hallucination.py}.
+  \item \textbf{Cross-consultation leakage:} text from a previous patient surfacing in the current note is prevented by stateless per-call prompts and verified by isolation tests that interleave generations from two synthetic patients.
+\end{enumerate}
+
+\texttt{test\_real\_llm.py} re-asserts the same invariants against the live Ollama daemon and falls back gracefully to the mock when the daemon is unreachable.
+
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=0.72\textwidth]{assets/charts/hallucination_matrix.png}
+\caption{Hallucination guard matrix.}
+\end{figure}
+
+\subsection{ASR Robustness}
+
+Faster-Whisper is tuned for clinical dictation with beam size 5, temperature 0, and \texttt{condition\_on\_previous\_text=False} to reduce the decoder's tendency to echo earlier captions on silent or noisy audio. A WebRTC VAD at level 3 strips silence before the encoder, so the model does not receive empty buffers.
+
+The \texttt{test\_faster\_whisper\_hallucination.py} suite asserts four invariants: silence results in an empty transcript, known artifact strings such as ``Thanks for watching!'' and ``[Music]'' are dropped, word error rate stays below 0.15 on a synthetic clinical fixture, and two concurrent sessions never share partial-transcript state.
+
+\subsection{Open-Source Model Selection}
+
+Six open-source models served by Ollama were ranked on four criteria: JSON-schema adherence, hallucination rate, end-to-end note latency at p95, and peak VRAM footprint. All candidates were quantized to \texttt{Q4\_K\_M} to fit the 8 GB VRAM envelope, evaluated on $n = 30$ synthetic consultations, and run at temperature 0.2.
+
+Qwen3:8b was selected because it achieved 100\% JSON validity and zero hallucinations within the 8 GB VRAM budget. Phi3:medium was more accurate but exceeded the budget, while the 4B models traded too much accuracy for speed. The choice is not hard-wired: the deployed model is read from \texttt{OLLAMA\_MODEL}, and \texttt{test\_real\_llm.py} re-validates whichever model Ollama is currently serving.
+
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=0.78\textwidth]{assets/charts/model_comparison.png}
+\caption{Model comparison on the OPD-Vertex prompt set.}
+\end{figure}
+
+\subsection{Hardware Constraints and Deployment Envelope}
+
+The application was tested across the team's personal laptops to confirm that it runs on realistic consumer hardware rather than a single tuned reference machine. The tested devices included a Microsoft Surface Pro 11 with Snapdragon X Plus and 16 GB unified memory, a MINISFORUM UM890 Pro mini-PC with 32 GB DDR5 memory, an ASUS Vivobook 15 F1504VA with Intel Core 7 150U and 16 GB RAM, and an Apple MacBook Air 13-inch with 16 GB unified memory.
+
+None of these devices has a discrete GPU, so the model stack is sized for a shared-memory profile. Whisper large-v3 in int8 uses approximately 3.0 GB and runs on CPU or NPU through \texttt{compute\_type=int8}. Qwen3:8b is served by Ollama at \texttt{Q4\_K\_M}, using approximately 6.1 GB peak memory, which fits within the 16 GB envelope of every device.
+
+Latency varies by host, and the Surface and MacBook are roughly three to four times slower than a CUDA workstation. The application remains usable end-to-end. Reference latency numbers were collected separately on a CUDA workstation with an RTX 4060 Laptop GPU and 8 GB VRAM.
+
+\subsection{Performance Benchmarking}
+
+The benchmark suite uses Python's \texttt{time.perf\_counter} to time 10 hot paths over 100 to 500 iterations each, recording p50, p95, and p99 latency. Each measurement has an explicit upper-bound assertion so a regression fails the build instead of silently degrading performance.
+
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=0.82\textwidth]{assets/charts/benchmark_latency.png}
+\caption{p50, p95, and p99 latency for benchmarked operations against in-memory adapters.}
+\end{figure}
+
+The results are favorable: every operation finishes in well under a millisecond at the 99th percentile. This indicates that the application layer is not the bottleneck. Production latency will be higher because real MySQL and MongoDB adapters add network and disk I/O, but the benchmark establishes that the domain logic imposes negligible overhead.
+
+\subsection{Stress and Concurrency}
+
+Stress testing verifies that the in-memory layer behaves correctly under load beyond what a single clinic shift would normally generate. Three scenarios run: 1,000 sequential patient creations to check for ID collisions and unbounded memory growth, 500 list-after-mutation invariant checks to confirm repository snapshots remain consistent, and concurrent consultation creation through \texttt{ThreadPoolExecutor} to expose race conditions in the create/list path.
+
+All scenarios complete within their wall-clock budgets and assert post-conditions on count, uniqueness, and ordering.
+
+\subsection{Manual UI Validation}
+
+Browser-level concerns that are awkward to automate with the current toolchain are covered by a 10-case manual checklist executed before each release. These concerns include cookie lifecycle, file downloads, CSS rendering of speaker turns, and layout responsiveness.
+
+Each case is recorded with a unique identifier from TC001 to TC010, the scenario under test, reproduction steps, expected result, observed result, and status. At the time of writing, every case is passing. Future work proposes replacing this checklist with a Playwright end-to-end suite once the test infrastructure stabilizes.
+
+\subsection{Threats to Validity}
+
+Three threats temper the conclusions drawn from the validation results. First, benchmark figures use in-memory adapters, so production latency on MySQL and MongoDB will be higher. These numbers should be read as a lower bound that proves the domain code is not the bottleneck, not as production service-level objectives.
+
+Second, live LLM tests are opportunistic. When Ollama is unavailable, they fall back to a deterministic mock and are reported as passing. A green CI run alone therefore does not prove that the live model still satisfies the hallucination guards; the live tier must be re-run on a developer workstation before each release.
+
+Third, the WER fixture is synthetic. The published Faster-Whisper large-v3 envelope is used as ground truth for accuracy claims, and a real annotated clinical corpus is the most important validation improvement.
+
+\subsection{Future Validation Work}
+
+Future validation work includes WER measurement on a real annotated clinical corpus, mutation testing with \texttt{mutmut} on the domain core, property-based testing with \texttt{hypothesis} on status transitions, Playwright end-to-end tests replacing the manual UI checklist, and JMeter-based load testing for the deployed HTTP API.

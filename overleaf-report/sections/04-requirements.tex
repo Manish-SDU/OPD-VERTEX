@@ -1,0 +1,77 @@
+\section{Requirements}
+
+The requirements were organized with a MoSCoW-style priority structure. Must-have requirements define the minimum useful consultation-support system. Should-have and could-have requirements describe important improvements and possible extensions. Will-not-have requirements clarify the boundaries of the prototype.
+
+\subsection{Must-Have Requirements}
+
+\subsubsection{Functional Requirements}
+
+\begin{longtable}{@{}L{0.16\textwidth}L{0.76\textwidth}@{}}
+\caption{Must-have functional requirements.}\\
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+F-1 & The system must manage a doctor consultation queue. \\
+F-2 & The system must capture consultation audio locally. \\
+F-3 & The system must transcribe speech to text locally. \\
+F-4 & The system must generate structured clinical notes. \\
+F-5 & The system must generate prescription drafts. \\
+F-6 & The system must allow doctors to edit and approve clinical notes and prescriptions. \\
+F-7 & The system must generate prescription PDFs. \\
+F-8 & The system must send prescriptions securely by email. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Non-Functional Requirements}
+
+\begin{longtable}{@{}L{0.16\textwidth}L{0.76\textwidth}@{}}
+\caption{Must-have non-functional requirements.}\\
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+NF-1 & Privacy: all AI processing must be performed locally. \\
+NF-2 & Security: the system must use authentication and role-based access. \\
+NF-3 & Encryption: the system must ensure encryption for sensitive data. \\
+NF-4 & Modularity: components must be loosely coupled and replaceable. \\
+NF-5 & Reliability: consultation data must be stored safely. \\
+NF-6 & Auditability: the system must log important actions and edits. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Should-Have Requirements}
+
+\begin{longtable}{@{}L{0.16\textwidth}L{0.76\textwidth}@{}}
+\caption{Should-have requirements.}\\
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+F-9 & The system should display a live transcript during consultation. \\
+F-10 & The system should allow doctors to view past consultations. \\
+NF-7 & Usability: the interface should be user-friendly and efficient. \\
+NF-8 & Performance: on the target machine, local transcription should operate with RTF $\leq 1.0$. For a typical consultation transcript, the system should generate structured notes, prescription draft, and clinical alerts within $\leq 40$ seconds on recommended hardware and within $\leq 120$ seconds on minimum hardware. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Could-Have Requirements}
+
+\begin{longtable}{@{}L{0.16\textwidth}L{0.76\textwidth}@{}}
+\caption{Could-have requirements.}\\
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+F-11 & The system could support multiple doctors for sharing documents, such as a shareable report sent to a doctor other than the family doctor. \\
+NF-9 & The system could allow administrators to configure how long consultation data, transcripts, and prescriptions are stored, and must support secure deletion of expired records. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Will-Not-Have Requirements}
+
+\begin{longtable}{@{}L{0.16\textwidth}L{0.76\textwidth}@{}}
+\caption{Will-not-have requirements.}\\
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+NF-10 & The system will not use cloud-based AI services. \\
+NF-11 & The system alone, excluding the doctor, is not enough for diagnosis. \\
+\bottomrule
+\end{longtable}

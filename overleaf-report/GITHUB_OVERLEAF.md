@@ -1,8 +1,8 @@
-# Connecting This Exact PDF Project to Overleaf with GitHub
+# Connecting This Editable Report Project to Overleaf with GitHub
 
 Use this guide after the local files are ready.
 
-The main document is `main.tex`. It embeds `assets/pdfs/source.pdf` exactly, so Overleaf produces the same visual result as the original PDF.
+The main document is `main.tex`. It compiles editable LaTeX files from `sections/`, so the report can be edited normally in Overleaf.
 
 ## Option A: Standalone GitHub repository
 
@@ -20,6 +20,8 @@ git remote add origin https://github.com/Manish-SDU/opd-vertex-overleaf-report.g
 git branch -M main
 git push -u origin main
 ```
+
+Use GitHub's normal credential flow. Do not paste a Git token into chat; if Git prompts for a token, type it directly into the terminal prompt.
 
 3. In Overleaf, open `https://www.overleaf.com/project`.
 4. Choose `New Project`.

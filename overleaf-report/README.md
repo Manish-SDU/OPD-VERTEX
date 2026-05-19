@@ -1,19 +1,19 @@
-# OPD-Vertex Exact PDF Overleaf Project
+# OPD-Vertex Editable Overleaf Project
 
-This folder is a standalone Overleaf project that reproduces the original PDF exactly by embedding it with LaTeX's `pdfpages` package.
+This folder is a standalone Overleaf project for the OPD-Vertex fourth semester report. The report content has been extracted from `4th_Semester_OPDVertex_Report.pdf` and rewritten into editable LaTeX section files.
 
-The main file is intentionally simple: it does not redesign the report. It includes `assets/pdfs/source.pdf` page-for-page so the Overleaf output matches the PDF layout. The current `source.pdf` is copied from `docs/4th_Semester_OPDVertex_Report.pdf`.
+`main.tex` no longer embeds the source report PDF. It compiles normal LaTeX content so the text, tables, figures, and structure can be edited directly in Overleaf.
 
 ## Files
 
-- `main.tex` is the Overleaf main file and exact-PDF wrapper.
-- `assets/pdfs/source.pdf` is the PDF that Overleaf will reproduce exactly.
-- `editable-report.tex` is the earlier editable LaTeX draft, kept only as a backup/reference.
+- `main.tex` is the Overleaf main file.
+- `editable-report.tex` mirrors the same editable document structure and is kept as a compatibility entry point.
 - `config/metadata.tex` stores title, author, date, and repository metadata.
 - `config/preamble.tex` stores layout, colors, tables, figures, and PDF settings.
 - `sections/` stores the editable report chapters.
 - `assets/charts/` stores chart images used in the validation section.
-- `assets/pdfs/` stores generated PDF appendices.
+- `assets/pdfs/` stores optional generated validation PDF appendices, not the source report body.
+- `assets/extracted/4th_semester_report.txt` is the plain-text extraction used as conversion source.
 
 ## Compile on Overleaf
 
@@ -23,11 +23,11 @@ The main file is intentionally simple: it does not redesign the report. It inclu
 4. Set the compiler to `pdfLaTeX`.
 5. Recompile.
 
-If you want a different PDF to be reproduced, replace `assets/pdfs/source.pdf` with that PDF and keep the same file name.
+The original PDF is kept only as a reference. To edit the report, change the files in `sections/` instead of replacing a PDF.
 
-## Important note
+## SDU template note
 
-This method preserves the PDF appearance exactly. It does not make the PDF text editable as normal LaTeX paragraphs. An exact visual match and fully editable LaTeX source are different goals; exact matching is done by embedding the original PDF.
+The chat attachment `SDU_Template.zip` was not visible as a workspace file during conversion. If you place that zip in this folder or extract it into the workspace, the editable report content can be moved into the exact SDU template structure.
 
 ## Recommended GitHub flow
 
@@ -40,7 +40,7 @@ git add .
 git commit -m "Create OPD-Vertex Overleaf report"
 ```
 
-Then create a GitHub repository, add it as `origin`, and push:
+Then create a GitHub repository, add it as `origin`, and push. Do not paste personal access tokens into chat; use GitHub's normal browser login or type credentials directly into the terminal if Git asks for them.
 
 ```powershell
 git remote add origin https://github.com/Manish-SDU/opd-vertex-overleaf-report.git

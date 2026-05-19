@@ -89,12 +89,16 @@
   bottom=2mm
 }
 
-\newcommand{\optionalgraphic}[3][]{%
+\newcommand{\optionalgraphic}[2][]{%
   \IfFileExists{#2}{%
     \includegraphics[#1]{#2}%
   }{%
     \fbox{\parbox{0.86\linewidth}{Missing figure: \texttt{\detokenize{#2}}. Copy the asset into the project before compiling.}}%
   }%
+}
+
+\newcommand{\placeholderfigure}[1]{%
+  \fbox{\parbox{0.86\linewidth}{\centering #1}}%
 }
 
 \newcommand{\metric}[2]{\textbf{#1}\hfill\textcolor{VertexMuted}{#2}}

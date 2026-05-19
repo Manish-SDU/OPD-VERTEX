@@ -8,19 +8,24 @@
 \input{frontmatter/titlepage}
 
 \pagenumbering{roman}
+\input{sections/00-abstract}
 \tableofcontents
 \clearpage
 
 \pagenumbering{arabic}
-\input{sections/01-executive-summary}
-\input{sections/02-system-overview}
-\input{sections/03-architecture}
-\input{sections/04-implementation}
-\input{sections/05-testing-validation}
-\input{sections/06-conclusion}
+\input{sections/01-introduction}
+\input{sections/02-methodology}
+\input{sections/03-problem-analysis}
+\input{sections/04-requirements}
+\input{sections/05-design}
+\input{sections/06-implementation}
+\input{sections/07-validation}
+\input{sections/08-conclusion}
+\input{sections/references}
 
 \clearpage
 \appendix
+\input{sections/appendix-validation-details}
 \input{sections/appendix-generated-reports}
 
 \end{document}

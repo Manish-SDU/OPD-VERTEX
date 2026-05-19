@@ -1,12 +1,11 @@
 # PDF Appendices
 
-This directory stores PDF files used by the Overleaf project.
+This directory stores optional generated PDF appendices used by the Overleaf project.
 
-`source.pdf` is the PDF reproduced exactly by `main.tex`. It currently mirrors `docs/4th_Semester_OPDVertex_Report.pdf`. Replace `source.pdf` if you want Overleaf to reproduce a different original PDF.
+The original report PDF is kept only as a reference. The main report body is editable LaTeX in `sections/` and is not reproduced by embedding `source.pdf`.
 
 Expected files:
 
-- `source.pdf`
 - `test_report.pdf`
 - `section7_validation.pdf`
 - `OPD_VERTEX_Schema_and_DataFlow.pdf`

@@ -1,0 +1,35 @@
+\section{Problem Analysis}
+
+\subsection{Risks and Limitations of Manual Documentation}
+
+A large-scale descriptive study analysing approximately 100 million patient encounters with about 155 thousand physicians found that the average time spent on Electronic Health Records (EHR) is about 16 minutes per encounter. When contrasted with a typical 15 to 20 minute patient consultation, this indicates that administrative work can take almost as much time as the medical evaluation itself.
+
+The American Medical Association has also highlighted that administrative tasks can occupy a large part of a standard shift. This forces doctors to multitask by actively listening while typing summaries. Divided focus increases the risk of documentation errors and missed diagnostic verbal cues.
+
+To reduce these bottlenecks, the system should capture information passively through audio rather than relying entirely on manual input. The automation must function as a decision-support tool by generating editable drafts and real-time suggestions while ensuring that the doctor keeps final clinical responsibility and oversight.
+
+\subsection{Security and Privacy in AI-Assisted Healthcare}
+
+According to Article 9 of the General Data Protection Regulation (GDPR), medical data such as clinical notes, transcriptions, and prescriptions is classified as a special category of personal data. This classification significantly restricts how it can be collected, stored, and processed.
+
+Many AI documentation tools rely on transmitting data to external cloud servers, which creates concerns around data sovereignty and purpose limitation. Cloud dependency also introduces operational vulnerability if the external network fails.
+
+To reduce the risk of data leaks and internet dependency, OPD-Vertex is designed as a locally hosted system using open-source LLMs deployed on the clinic's internal network. This architecture aims to keep audio processing, transcription, and document generation local, ensuring that sensitive data remains private and under the clinic's control.
+
+\subsection{Architectural Challenges}
+
+Traditional EHR systems are often built as monolithic or tightly coupled structures. This creates a major problem because updating a single feature can require modifying and risking the stability of the entire system. This becomes especially challenging when working with AI and speech-to-text components, which evolve quickly and need to be replaceable independently.
+
+The system also handles diverse data types: live audio metadata, raw speech-to-text transcriptions, generated reports, user authentication, patient records, prescriptions, and audit logs. User and patient records require relational consistency, while transcripts and AI-generated artifacts require schema flexibility.
+
+Forcing these conflicting data types into one database model can create performance and maintainability problems. The system must therefore balance strict relational consistency for user administration and patient records with dynamic schema flexibility for AI data processing.
+
+\subsection{Problem Statement}
+
+Modern medical documentation tools place a heavy administrative burden on doctors, yet many cloud-based AI automation tools introduce data privacy risks and operational vulnerabilities. Traditional monolithic architectures and strict database structures are also poorly suited to the rapid evolution of local AI tools and the combination of structured and unstructured clinical datasets.
+
+This project therefore seeks to answer the following question:
+
+\begin{summarybox}
+How can a software system be designed and implemented to automate medical consultation documentation using local AI assistance, while ensuring data privacy, security, and architectural flexibility?
+\end{summarybox}

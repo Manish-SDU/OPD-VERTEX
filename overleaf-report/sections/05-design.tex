@@ -1,0 +1,177 @@
+\section{Design}
+
+This chapter describes the design of OPD-Vertex, focusing on the principles used to structure the system, the main components and their interactions, the data model, and the cross-cutting concerns of the application.
+
+\subsection{Design Goals and Principles}
+
+OPD-Vertex was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. Five principles guided the design decisions:
+
+\begin{itemize}
+  \item \textbf{Local-first execution:} sensitive processing runs inside the clinic environment, so no consultation data is sent to a third-party cloud LLM.
+  \item \textbf{Component-based design:} the system is split into bounded modules, each with its own application service and domain contracts.
+  \item \textbf{Loose coupling through ports and adapters:} external dependencies are exposed as domain ports and implemented by adapters, so application logic does not depend on concrete libraries.
+  \item \textbf{Replaceability of AI components:} transcription, LLM generation, and suggestive review are independent ports, allowing them to be swapped without changing core application logic.
+  \item \textbf{Human-in-the-loop approval:} no AI output is written to the relational database without doctor approval.
+\end{itemize}
+
+These principles keep the system maintainable through a layered architecture and make it easier to extend because each component can be replaced without rewriting the core.
+
+\subsection{System Overview and Architecture}
+
+Before writing code, the team sketched the main user journeys and screen layouts in Figma. The mockups were intentionally lightweight because UI design was not the main focus. They were used to agree on the doctor login, doctor dashboard, consultation page with audio recording, draft review page, and patient view. The three implemented user roles were doctor, administrator, and patient. The review page evolved during development and was split into view, editor, and print modes after the team decided to support Markdown editing.
+
+\begin{figure}[htbp]
+\centering
+\placeholderfigure{Insert Figma prototype screenshot for doctor dashboard and consultation screens.}
+\caption{Initial Figma prototype of the doctor dashboard and consultation screens.}
+\end{figure}
+
+The target architecture is a set of cooperating services organized around the clinical workflow: identity, patient, consultation, transcription, LLM orchestration, suggestive review, PDF generation, notification, and audit. Public endpoints sit behind an API gateway, while AI components run on dedicated local services. Each service owns its own datastore to preserve loose coupling.
+
+In the implemented prototype, this design is realized on a smaller scale. The logical components live as Python modules inside a single FastAPI application. The transcription module runs as a separate Whisper sidecar, the LLM runs in Ollama, MySQL stores relational data, and MongoDB stores AI documents. All services are packaged as Docker containers and orchestrated with Docker Compose, giving the project a reproducible setup and a clear migration path toward the target architecture.
+
+\subsection{Component-Based System Design}
+
+The system was decomposed into loosely coupled components. Each component has a single responsibility and can be developed, tested, or replaced independently. In the current implementation, many of these components live as modules inside the local backend app, while the diagram represents the logical boundaries that the architecture is intended to support.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  component/.style={rectangle,rounded corners=2mm,draw=VertexBlue,fill=white,thick,align=center,text width=3.2cm,minimum height=0.9cm},
+  adapter/.style={rectangle,rounded corners=2mm,draw=VertexTeal,fill=VertexPanel,thick,align=center,text width=3cm,minimum height=0.8cm},
+  arrow/.style={-{Latex[length=2.2mm]},draw=VertexMuted,thick}
+]
+\node[component] (doctor) {Doctor Dashboard\\UI};
+\node[component,right=0.6cm of doctor] (patient) {Patient Portal\\UI};
+\node[component,below=0.7cm of doctor,xshift=1.9cm] (gateway) {Gateway API};
+\node[component,below=0.7cm of gateway] (backend) {Local Backend App};
+\node[adapter,below left=0.8cm and 1.2cm of backend] (auth) {Authentication\\Authorization};
+\node[adapter,below=0.8cm of backend] (ai) {Transcription\\LLM\\Suggestive Review};
+\node[adapter,below right=0.8cm and 1.2cm of backend] (doc) {PDF\\Email\\Versioning};
+\node[adapter,below=0.7cm of ai,xshift=-1.7cm] (mysql) {MySQL\\System of Record};
+\node[adapter,below=0.7cm of ai,xshift=1.7cm] (mongo) {MongoDB\\AI Artifacts};
+\draw[arrow] (doctor) -- (gateway);
+\draw[arrow] (patient) -- (gateway);
+\draw[arrow] (gateway) -- (backend);
+\draw[arrow] (backend) -- (auth);
+\draw[arrow] (backend) -- (ai);
+\draw[arrow] (backend) -- (doc);
+\draw[arrow] (backend) -- (mysql);
+\draw[arrow] (backend) -- (mongo);
+\end{tikzpicture}
+\caption{Logical component diagram showing OPD-Vertex components and interfaces.}
+\end{figure}
+
+On the user-facing side, the Doctor Dashboard is the main interface for doctors and gives access to the patient list, consultation recording, draft review, and prescription approval. The Patient Portal is used by patients to log in and read their own consultations and prescriptions. Both interfaces are server-rendered with Jinja2 templates and communicate with the backend through the Gateway API.
+
+Authentication and authorization validate credentials, issue JWT tokens, and enforce role-based access control. The Email Notification Service sends patient summaries through SMTP. The Document Editing and Versioning service manages generated report lifecycle, Markdown edits, and version history so every revision made by a doctor can be traced.
+
+The AI pipeline starts with local audio capture, which sends consultation audio to the Faster-Whisper transcription module. The LLM Orchestrator manages prompts, retries, and structured output validation. Generation is delegated to the local LLM runtime through Ollama or vLLM, and ReportLab renders approved Markdown reports into printable PDFs.
+
+\subsection{Aspect-Oriented Programming for Cross-Cutting Concerns}
+
+Logging, performance measurement, error capture, and request tracing touch almost every layer of the system, but they do not belong to the business logic of any single module. To avoid scattering logging statements throughout the codebase, these concerns are handled with an Aspect-Oriented Programming approach.
+
+The AOP layer is based on a class-level decorator that automatically wraps every public method of a class with entry, exit, and error logging while measuring wall-clock duration. Middleware logs every HTTP request, including method, path, client IP, status code, and duration, without changing route handlers.
+
+This keeps application services and repository classes free of observability boilerplate while producing uniform log entries with consistent duration units. A future migration to tracing or metrics infrastructure would require changing one focused area instead of refactoring the entire codebase.
+
+\subsection{Data Design and Dual-Database Architecture}
+
+OPD-Vertex uses a dual-database design to separate the system of record from iterative AI artifacts. The relational store provides consistency for clinically meaningful data, while the document store provides flexibility for evolving AI outputs.
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{0.22\textwidth}Y@{}}
+\toprule
+\textbf{Database} & \textbf{Responsibility} \\
+\midrule
+MySQL 8.4 & Stores staff, patients, consultations, approved prescriptions, and audit logs. It acts as the structured system of record. \\
+MongoDB 7 & Stores consultation documents, generated documents, prescription artifacts, LLM prompts, and email templates. It acts as the flexible document store for AI artifacts. \\
+Shared linkage & The \texttt{consultation\_id} connects relational records to document records across the two stores. \\
+\bottomrule
+\end{tabularx}
+\caption{Dual-database ownership model.}
+\end{table}
+
+MySQL stores doctors and administrators with roles, hashed passwords, license data, and specialization; patients with demographics, allergies, medical history, and hashed passwords; consultations with status transitions from recording to transcribing, processing, review, approved, rejected, or cancelled; prescriptions with versioning; and append-only audit logs.
+
+MongoDB stores semi-structured artifacts from the AI pipeline: transcripts and working notes, drafted reports, suggestive reviews, generated PDFs, versioned prompt templates, and editable patient communication templates. The iterative and fast-changing artifacts remain in MongoDB, while the legally meaningful approved prescription is moved into MySQL only after doctor approval.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  store/.style={rectangle,rounded corners=2mm,draw=VertexBlue,fill=white,thick,align=center,text width=4.5cm,minimum height=0.9cm},
+  item/.style={rectangle,draw=VertexLine,fill=VertexPanel,align=center,text width=4.2cm,minimum height=0.55cm},
+  arrow/.style={-{Latex[length=2.2mm]},draw=VertexMuted,thick}
+]
+\node[store] (mysql) {MySQL\\System of Record};
+\node[item,below=0.25cm of mysql] (staff) {staff, patients, consultations};
+\node[item,below=0.15cm of staff] (presc) {prescriptions, audit\_logs};
+\node[store,right=1.4cm of mysql] (mongo) {MongoDB\\Document Store};
+\node[item,below=0.25cm of mongo] (docs) {consultation\_documents};
+\node[item,below=0.15cm of docs] (gen) {generated\_documents, prompts};
+\node[item,below=0.15cm of gen] (email) {artifacts, email\_templates};
+\draw[arrow] (mysql) -- node[above]{\texttt{consultation\_id}} (mongo);
+\end{tikzpicture}
+\caption{Relational schema and document collections connected by consultation identity.}
+\end{figure}
+
+\subsection{Main Workflow and AI Pipeline}
+
+The consultation flow is implemented as three smaller workflows: consultation creation, AI processing, and prescription approval. The doctor opens the patient list, selects a patient, and starts a consultation. The system creates a new record with status \texttt{recording}; audio is captured in the browser and streamed to the backend through a WebSocket, which forwards chunks to the Whisper sidecar in near real time. Partial transcripts are stored so the session can survive a disconnect. When the doctor stops recording, the consultation moves to \texttt{processing} and the AI pipeline starts.
+
+The AI pipeline contains two LLM calls followed by a safety pass. The transcript normalizer converts the raw transcript into structured JSON and filters speech artifacts. The clinical-note generator combines the normalized transcript with patient context, including age, allergies, and medical history, and asks Qwen3:8b to produce a structured object containing diagnosis, medications, instructions, follow-up date, lab tests, imaging, and a Markdown rendering of the full report.
+
+Suggestive Mode then performs a second pass. An LLM-based clinical safety review is merged with deterministic rule-based checks, such as missing dose, frequency, duration, allergy conflicts, and contraindication conflicts. The combined output is shown to the doctor as advisory alerts. Nothing is written to the prescription unless the doctor accepts it during editing.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  stage/.style={rectangle,rounded corners=2mm,draw=VertexBlue,fill=white,thick,align=center,text width=2.4cm,minimum height=0.8cm},
+  arrow/.style={-{Latex[length=2.2mm]},draw=VertexMuted,thick}
+]
+\node[stage] (audio) {Audio capture};
+\node[stage,right=0.35cm of audio] (asr) {Faster-Whisper transcription};
+\node[stage,right=0.35cm of asr] (normalizer) {Transcript normalizer};
+\node[stage,below=0.6cm of normalizer] (llm) {Clinical note generator};
+\node[stage,left=0.35cm of llm] (suggest) {Suggestive Mode};
+\node[stage,left=0.35cm of suggest] (review) {Doctor review};
+\node[stage,below=0.6cm of review] (approve) {Approve or reject};
+\node[stage,right=0.35cm of approve] (pdf) {PDF and email};
+\draw[arrow] (audio) -- (asr);
+\draw[arrow] (asr) -- (normalizer);
+\draw[arrow] (normalizer) -- (llm);
+\draw[arrow] (llm) -- (suggest);
+\draw[arrow] (suggest) -- (review);
+\draw[arrow] (review) -- (approve);
+\draw[arrow] (approve) -- (pdf);
+\end{tikzpicture}
+\caption{End-to-end consultation workflow from audio capture to approved output.}
+\end{figure}
+
+After generation, the doctor opens the review page, optionally edits the Markdown report, and either approves or rejects the draft. If approved, the system builds a prescription, saves it in MySQL with \texttt{is\_approved = true} and the next version number, marks the generated document as approved, and updates the consultation status. After approval, the doctor can download the PDF and send a plain-text summary email to the patient.
+
+\subsection{Privacy, Security and Error Handling}
+
+The design treats clinical data as information that must not leave the local environment. Speech-to-text and LLM services run locally, so there is no path that sends transcripts or reports to a remote provider. Login is handled with bcrypt password hashing and short-lived JWT tokens stored in an HTTP-only cookie. Role-based access control protects routes that mutate clinical content, and patients can see only their own consultations and prescriptions.
+
+The audit log records significant actions, including user, role, action, target, IP address, timestamp, and JSON details. Administrative changes to prompts and templates are also audited. The manual approval gate ensures that no AI output is written into the relational prescriptions table without explicit doctor approval, and email gating ensures that patient summaries are sent only after approval.
+
+Error handling follows a small predictable model. Domain-level problems raise a \texttt{ValueError}, which the API translates into 400 or 404 responses. Unexpected failures become 500 responses. Transcription errors leave the consultation in its current state so the doctor can retry. LLM errors are caught by validation and drafts are left unchanged. PDF and email failures return 500 without altering the underlying record.
+
+The prototype does not claim full regulatory compliance. TLS termination, stronger authorization tests, and at-rest encryption are treated as future deployment requirements.
+
+\subsection{UI Overview}
+
+The UI is intentionally simple and task-focused. Each screen serves one role and one job, and every page shares a common base layout and CSS bundle. The doctor dashboard is the role-aware home page for clinicians. The consultation page hosts live recording and transcription. The review page is the core human-in-the-loop screen because it shows the AI draft, structured fields, suggestive-mode alerts, Markdown editor, and approve, reject, print, and email actions.
+
+The patient portal is read-only with respect to clinical data. The admin configuration view lets administrators edit prompts and email templates while maintaining an audit trail.
+
+\subsection{Scope Decisions and Future Enhancements}
+
+The project specification mentioned a patient booking system, but after discussion with the supervisor the team decided not to build an in-house scheduler. Clinics usually already have scheduling solutions, often connected to national identity and e-health infrastructure. Duplicating this functionality would not add much value to the prototype.
+
+The component-based architecture makes it possible to defer scheduling cleanly. Patients and consultations are independent modules with stable contracts, so an external scheduler can pre-create consultations through the same APIs. Doctors currently create consultations directly from the patient list, and the AI pipeline works end-to-end from there.
+
+Future enhancements include a queued retry layer for transient Whisper or Ollama failures, hardened deployment security, expanded Suggestive Mode rules with a broader interaction database, and a booking component with patient-facing calendar, slot management, and reminders.
