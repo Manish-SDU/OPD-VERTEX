@@ -1,6 +1,8 @@
-# Connecting This LaTeX Report to Overleaf with GitHub
+# Connecting This Exact PDF Project to Overleaf with GitHub
 
 Use this guide after the local files are ready.
+
+The main document is `main.tex`. It embeds `assets/pdfs/source.pdf` exactly, so Overleaf produces the same visual result as the original PDF.
 
 ## Option A: Standalone GitHub repository
 

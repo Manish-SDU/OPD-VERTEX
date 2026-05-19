@@ -1,10 +1,14 @@
-# OPD-Vertex Overleaf Report
+# OPD-Vertex Exact PDF Overleaf Project
 
-This folder is a standalone LaTeX project for Overleaf. It contains an editable technical report, validation charts, and generated PDF appendices for OPD-Vertex.
+This folder is a standalone Overleaf project that reproduces the original PDF exactly by embedding it with LaTeX's `pdfpages` package.
+
+The main file is intentionally simple: it does not redesign the report. It includes `assets/pdfs/source.pdf` page-for-page so the Overleaf output matches the PDF layout.
 
 ## Files
 
-- `main.tex` is the Overleaf main file.
+- `main.tex` is the Overleaf main file and exact-PDF wrapper.
+- `assets/pdfs/source.pdf` is the PDF that Overleaf will reproduce exactly.
+- `editable-report.tex` is the earlier editable LaTeX draft, kept only as a backup/reference.
 - `config/metadata.tex` stores title, author, date, and repository metadata.
 - `config/preamble.tex` stores layout, colors, tables, figures, and PDF settings.
 - `sections/` stores the editable report chapters.
@@ -18,6 +22,12 @@ This folder is a standalone LaTeX project for Overleaf. It contains an editable 
 3. Set the main document to `main.tex`.
 4. Set the compiler to `pdfLaTeX`.
 5. Recompile.
+
+If you want a different PDF to be reproduced, replace `assets/pdfs/source.pdf` with that PDF and keep the same file name.
+
+## Important note
+
+This method preserves the PDF appearance exactly. It does not make the PDF text editable as normal LaTeX paragraphs. An exact visual match and fully editable LaTeX source are different goals; exact matching is done by embedding the original PDF.
 
 ## Recommended GitHub flow
 
