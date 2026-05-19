@@ -6,7 +6,7 @@ This chapter describes the design of Med Flow, focusing on the principles used t
 \subsection{Design Goals and Principles}
 \label{subsec:design-goals-principles}
 
-Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. Five principles guided the design decisions:
+Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. The design principles translate the privacy and AI-governance concerns from the problem analysis into implementation boundaries\refcite{3,5,12}. Five principles guided the design decisions:
 
 \begin{itemize}
   \item \textbf{Local-first execution:} sensitive processing runs inside the clinic environment, so no consultation data is sent to a third-party cloud LLM.
@@ -56,7 +56,7 @@ On the user-facing side, the Doctor Dashboard is the main interface for doctors 
 
 Authentication and authorization validate credentials, issue JWT tokens, and enforce role-based access control. The Email Notification Service sends patient summaries through SMTP. The Document Editing and Versioning service manages generated report lifecycle, Markdown edits, and version history so every revision made by a doctor can be traced.
 
-The AI pipeline starts with local audio capture, which sends consultation audio to the Faster-Whisper transcription module. The LLM Orchestrator manages prompts, retries, and structured output validation. Generation is delegated to the local LLM runtime through Ollama or vLLM, and ReportLab renders approved Markdown reports into printable PDFs.
+The AI pipeline starts with local audio capture, which sends consultation audio to the Faster-Whisper transcription module\refcite{11}. The LLM Orchestrator manages prompts, retries, and structured output validation. Generation is delegated to the local Ollama runtime configured for Qwen3:8b, and ReportLab renders approved Markdown reports into printable PDFs.
 
 \subsection{Aspect-Oriented Programming for Cross-Cutting Concerns}
 \label{subsec:aop-cross-cutting}
@@ -138,7 +138,7 @@ The audit log records significant actions, including user, role, action, target,
 
 Error handling follows a small predictable model. Domain-level problems raise a \texttt{ValueError}, which the API translates into 400 or 404 responses. Unexpected failures become 500 responses. Transcription errors leave the consultation in its current state so the doctor can retry. LLM errors are caught by validation and drafts are left unchanged. PDF and email failures return 500 without altering the underlying record.
 
-The implementation does not claim full regulatory compliance. TLS termination, stronger authorization tests, and at-rest encryption are treated as future deployment requirements.
+The implementation does not claim full regulatory compliance. TLS termination, stronger service-to-service protection, retention enforcement, and at-rest encryption are treated as future deployment requirements in line with service-security guidance\refcite{13}.
 
 \subsection{UI Overview}
 \label{subsec:ui-overview}

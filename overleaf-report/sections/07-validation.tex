@@ -142,7 +142,7 @@ qwen3:4b & 4.0 B & 3.2 GB & 3.6 s & 71\% & 6/30 & Fast fallback, but too small f
 \label{fig:model-comparison}
 \end{figure}
 
-Qwen3:8b was selected because it achieved 100\% JSON validity and zero hallucinations within the 8 GB VRAM budget. Phi3:medium was more accurate than smaller models but exceeded the budget, while the 4B model traded too much accuracy for speed. The choice is not hard-wired: the deployed model is read from \texttt{OLLAMA\_MODEL}, and \texttt{test\_real\_llm.py} re-validates whichever model Ollama is currently serving.
+Qwen3:8b was selected because it achieved 100\% JSON validity and zero hallucinations within the 8 GB VRAM budget. Phi3:medium was more accurate than smaller models but exceeded the budget, while the 4B model traded too much accuracy for speed. In the current implementation, the deployed model is read from \texttt{LLM\_MODEL\_NAME} and validated as \texttt{qwen3:8b} in \texttt{app/core/config.py}. Replacing it with another model would therefore require updating the configuration validator, prompt targets, and live LLM validation suite rather than only changing an environment variable.
 
 \subsection{Hardware Constraints and Deployment Envelope}
 \label{subsec:hardware-deployment-envelope}

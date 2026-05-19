@@ -12,23 +12,12 @@ In Sprint 3, the team implemented audio capture and speech-to-text transcription
 
 GitHub was used to share and manage the code, allowing the team to collaborate efficiently while keeping all contributions organized in one place. The team met around twice per week to review progress, coordinate tasks, and resolve blockers. WhatsApp was used mainly for daily updates, while Discord was used for sharing files, data, and other project resources.
 
-\begin{figure}[htbp]
-\centering
-\fbox{%
-	\begin{minipage}{0.86\linewidth}
-	\centering
-	Insert Trello sprint overview screenshots here.
-	\end{minipage}%
-}
-\caption{Sprint planning and Trello workflow overview.}
-\end{figure}
-
 \subsection{Scope Context and Source Selection}
 \label{subsec:scope-context-source-selection}
 
-During early scoping, the project was narrowed around clinical documentation rather than general medical administration, image analysis, or unrelated laboratory AI. This direction is supported by studies showing that physicians spend a large amount of time on electronic records and clerical work during and after consultations\refcite{1,6,7}. The team therefore selected a problem where software engineering could address a concrete workflow: capturing consultation audio, converting it to text, generating a draft note, and keeping the doctor in control of review and approval.
+During early scoping, the project was narrowed around clinical documentation rather than general medical administration, image analysis, or unrelated laboratory AI. This direction is supported by studies showing that physicians spend a large amount of time on electronic records and clerical work during and after consultations\refcite{1,6,7}. The team therefore selected a problem where software engineering could address a concrete workflow: capturing consultation audio, converting it to text, generating a draft note, and supporting a structured review step.
 
-The Danish context also shaped the scope. The Danish digital health strategy describes a healthcare system that should feel coherent and trustworthy for patients while making daily workflows easier for healthcare professionals\refcite{8}. At SDU and Odense University Hospital, CAI-X presents clinical AI as a collaboration between healthcare staff, researchers, and engineers, with solutions chosen from the needs and challenges clinicians face in daily work\refcite{9}. This is directly aligned with Med Flow's design choice to treat AI as workflow support rather than as an autonomous decision-maker.
+The Danish context also shaped the scope. The Danish digital health strategy describes a healthcare system that should feel coherent and trustworthy for patients while making daily workflows easier for healthcare professionals\refcite{8}. At SDU and Odense University Hospital, CAI-X presents clinical AI as a collaboration between healthcare staff, researchers, and engineers, with solutions chosen from the needs and challenges clinicians face in daily work\refcite{9}. This gave the project a useful local reference point for treating AI as workflow support instead of as a replacement for clinical judgement.
 
 The most directly related Danish example found during source selection is CAI-X's AID\_NOTE project, which evaluates Ambient Scribe speech-to-text solutions across clinical settings and measures documentation quality, time consumption, user experience, and economic impact\refcite{10}. Med Flow is not a deployment of that project, but it addresses a comparable type of problem at semester-project scale. The technical source selection therefore focused on robust local speech recognition\refcite{11}, responsible AI governance\refcite{5,12}, and risk guidance for AI medical scribes\refcite{2}.
 

@@ -5,7 +5,7 @@
 \usepackage{fancyhdr}
 \usepackage{colortbl}
 
-\usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric}
+\usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric,calc}
 
 \definecolor{VertexBlue}{HTML}{1D4ED8}
 \definecolor{VertexTeal}{HTML}{0F766E}
@@ -16,9 +16,8 @@
 \definecolor{VertexGreen}{HTML}{15803D}
 \definecolor{VertexAmber}{HTML}{B45309}
 \definecolor{VertexRed}{HTML}{B91C1C}
-\definecolor{VertexTableBlue}{HTML}{EEF5FF}
-\definecolor{VertexTableStripe}{HTML}{F8FBFF}
-\definecolor{VertexTableRule}{HTML}{9CBCE8}
+\definecolor{VertexTableBlue}{gray}{0}
+\definecolor{VertexTableStripe}{gray}{0.96}
 
 \hypersetup{
   colorlinks=true,
@@ -39,10 +38,10 @@
 
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
-\newcommand{\VertexTableHead}[1]{\bfseries #1}
-\newcommand{\TableTopRule}{\arrayrulecolor{VertexTableRule}\toprule}
-\newcommand{\TableMidRule}{\arrayrulecolor{VertexTableRule}\midrule}
-\newcommand{\TableBottomRule}{\arrayrulecolor{VertexTableRule}\bottomrule\arrayrulecolor{black}}
+\newcommand{\VertexTableHead}[1]{\bfseries\color{white}#1}
+\newcommand{\TableTopRule}{\arrayrulecolor{black}\toprule}
+\newcommand{\TableMidRule}{\arrayrulecolor{black}\midrule}
+\newcommand{\TableBottomRule}{\arrayrulecolor{black}\bottomrule\arrayrulecolor{black}}
 \newcommand{\refcite}[1]{\textsuperscript{[#1]}}
 
 \setlength{\headheight}{14pt}
@@ -101,7 +100,7 @@
   \begin{tcolorbox}[
     enhanced,
     colback=VertexPanel,
-    colframe=VertexBlue,
+    colframe=black,
     boxrule=0.7pt,
     arc=2mm,
     left=4mm,

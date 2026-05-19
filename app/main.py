@@ -1,4 +1,4 @@
-"""FastAPI entrypoint for OPD-Vertex scaffold."""
+"""FastAPI entrypoint for Med Flow."""
 
 from __future__ import annotations
 

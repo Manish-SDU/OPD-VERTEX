@@ -23,7 +23,7 @@ EMAIL_TEMPLATE_DOCUMENTS: tuple[dict[str, Any], ...] = (
         "body_template": (
             "Hello {{patient_name}},\n\n"
             "Your prescription from Dr. {{doctor_name}} is attached.\n\n"
-            "Regards,\nOPD-Vertex"
+            "Regards,\nMed Flow"
         ),
         "placeholders": ["patient_name", "doctor_name"],
         "from_email": "",

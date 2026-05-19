@@ -1,21 +1,68 @@
 \section{Implementation}
 \label{sec:implementation}
 
-This chapter outlines the implementation approach for Med Flow. It covers the development process, core components, and technologies used. The system follows a component-based architecture with a FastAPI backend, MySQL and MongoDB databases, Faster-Whisper for transcription, Ollama or vLLM for clinical summarization, ReportLab for PDF generation, and SMTP for email delivery. The application is containerized with Docker for consistent deployment across environments. Configuration and logging are managed with Pydantic and the project's logging infrastructure.
+This chapter describes how the design was implemented in the codebase. The system follows a component-based architecture with a FastAPI backend, MySQL and MongoDB persistence, Faster-Whisper transcription\refcite{11}, local Ollama/Qwen3:8b generation, ReportLab PDF generation, and SMTP email delivery. The application is containerized with Docker Compose for repeatable local deployment. Runtime settings are loaded through Pydantic settings, while logging and request tracing are handled by the project's middleware and aspect infrastructure.
 
 \subsection{API Layer and Routing}
 \label{subsec:api-layer}
 
-The API layer is built using FastAPI. It defines and serves HTTP endpoints and acts as the main entry point for user interactions.
+The API layer is built using FastAPI. It defines and serves HTTP endpoints and acts as the main entry point for browser and API interactions. The central registration point is \texttt{app/api/router.py}, which includes the actual route modules \texttt{auth}, \texttt{dashboard}, \texttt{llm}, \texttt{patients}, \texttt{consultations}, \texttt{review}, \texttt{prescriptions}, \texttt{admin}, \texttt{transcriptions}, and \texttt{profile}. PDF download and email sending are not standalone routers in the current implementation; they are actions inside the review workflow.
 
-The main API gateway is defined in \texttt{router.py}. This file creates the central API router and includes sub-routers for each domain, such as authentication, patients, consultations, transcriptions, review, prescriptions, PDF, email, audit, and administration. Each sub-router is responsible for a specific set of endpoints, which keeps the system separated by concern and easier to extend.
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}P{0.27\textwidth}Y@{}}
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\VertexTableHead{Route module} & \VertexTableHead{Implemented responsibility} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+\texttt{auth.py}, \texttt{dashboard.py}, \texttt{profile.py} & Login, logout, role-aware dashboard rendering, and profile access. \\
+\texttt{patients.py}, \texttt{consultations.py} & Patient lookup, patient detail pages, consultation creation, and consultation detail views. \\
+\rowcolor{VertexTableStripe}
+\texttt{transcriptions.py} & Session start, WebSocket audio streaming, demo-text injection, completion, and transcript persistence. \\
+\texttt{review.py} & Report viewing, Markdown editing, PDF download, report generation, suggestive review, approval, rejection, and email sending. \\
+\rowcolor{VertexTableStripe}
+\texttt{prescriptions.py}, \texttt{admin.py}, \texttt{llm.py} & Prescription listing, prompt and email-template administration, and local LLM health checks. \\
+\TableBottomRule
+\end{tabularx}
+\caption{Implemented FastAPI route modules and their concrete responsibilities.}
+\label{tab:implemented-route-modules}
+\end{table}
 
-FastAPI dependency injection is used to manage authentication, database sessions, and shared resources. Dependencies are defined in \texttt{deps.py} and injected into endpoint functions. Each domain has its own router module where endpoints are defined as functions using decorators such as \texttt{@router.get} and \texttt{@router.post}.
+FastAPI dependency injection is used to manage authentication, repositories, adapters, and shared services. Dependencies are defined in \texttt{app/api/deps.py}; for example, \texttt{get\_clinical\_notes\_app\_service()} wires the consultation repositories, prompt repository, transcript normalization service, and note generator into \texttt{ClinicalNotesApplicationService}. This keeps route functions focused on HTTP concerns while application services own workflow orchestration.
+
+\subsection{Service and Adapter Boundaries}
+\label{subsec:service-adapter-boundaries}
+
+The implementation uses application services to coordinate use cases and infrastructure adapters to isolate external tools. This gives the codebase a direct mapping from the component design to Python modules.
+
+\begin{table}[htbp]
+\centering
+\scriptsize
+\begin{tabularx}{\textwidth}{@{}P{0.20\textwidth}P{0.27\textwidth}Y@{}}
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\VertexTableHead{Workflow} & \VertexTableHead{Application service} & \VertexTableHead{Infrastructure / adapter examples} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+Authentication & \texttt{AuthApplicationService} & JWT security helpers, bcrypt password verification, and staff/patient repositories. \\
+Consultation capture & \texttt{ConsultationApplicationService}, \texttt{TranscriptionApplicationService} & \texttt{StreamingFasterWhisperService}, temporary transcript chunk repository, and Mongo-backed consultation documents. \\
+\rowcolor{VertexTableStripe}
+Clinical generation & \texttt{TranscriptNormalizationApplicationService}, \texttt{ClinicalNotesApplicationService} & \texttt{OllamaTranscriptNormalizer}, \texttt{OllamaClinicalNoteGenerator}, prompt repositories, and \texttt{OllamaClient}. \\
+Suggestive review & \texttt{SuggestiveReviewApplicationService} & \texttt{OllamaSuggestiveModeService} plus deterministic rules in \texttt{app/application/suggestive\_mode/rules.py}. \\
+\rowcolor{VertexTableStripe}
+Approval, PDF, email & \texttt{ReviewApplicationService}, \texttt{ReportPdfApplicationService} & \texttt{ReportLabPdfGenerator}, \texttt{SmtpEmailService}, prescription repositories, and generated-document repositories. \\
+\TableBottomRule
+\end{tabularx}
+\caption{Concrete service and adapter boundaries in the implementation.}
+\label{tab:service-adapter-boundaries}
+\end{table}
 
 \subsection{Authentication and Authorization}
 \label{subsec:authentication-authorization}
 
-Authentication ensures secure access control using role-based authorization. The system uses FastAPI dependency injection, JWT tokens, and a modular service structure.
+Authentication ensures secure access control using role-based authorization. The system uses FastAPI dependency injection, JWT tokens, bcrypt password verification, and a modular service structure.
 
 The main authentication logic is implemented in \texttt{AuthApplicationService}, which bridges the API layer and domain logic. Domain models represent users, login requests, and the authentication interface, creating a consistent contract between application and infrastructure layers.
 
@@ -25,14 +72,14 @@ The main authentication logic is implemented in \texttt{AuthApplicationService},
   \item \textbf{AuthService:} defines an abstract interface for authentication logic and allows alternative implementations.
 \end{itemize}
 
-After successful authentication, the system assigns a JWT to the user. The token is used for later authenticated requests and includes user identity and role. Authentication checks are enforced through FastAPI dependencies that validate JWTs from incoming requests and ensure that only authenticated users can reach protected endpoints.
+After successful authentication, the system assigns a JWT to the user. The token is used for later authenticated requests and includes user identity and role. Authentication checks are enforced through FastAPI dependencies that validate JWTs from incoming requests and ensure that only authenticated users can reach protected endpoints. Route-level checks then restrict sensitive actions such as report editing, approval, and email sending to doctors and administrators.
 
 \subsection{Transcription Module}
 \label{subsec:transcription-module}
 
 The transcription component enables live conversion of audio into text, which can then be processed into clinical documentation. It is designed to be scalable, replaceable, and integrated with the other components.
 
-The workflow is orchestrated by \texttt{TranscriptionApplicationService}, which handles streaming audio data, temporary audio and text chunks, and finalization of the complete transcription. The actual speech-to-text conversion is handled by Faster-Whisper through a dedicated adapter. The adapter communicates with a local Whisper microservice using HTTP.
+The workflow is orchestrated by \texttt{TranscriptionApplicationService}, which handles streaming audio data, temporary audio and text chunks, and finalization of the complete transcription. The route module \texttt{transcriptions.py} exposes \texttt{/transcriptions/session/start}, the WebSocket endpoint \texttt{/transcriptions/ws/\{session\_id\}}, completion endpoints, and demo-text injection for presentations. The actual speech-to-text conversion is handled by Faster-Whisper through \texttt{StreamingFasterWhisperService}, which communicates with the local Whisper microservice configured by \texttt{WHISPER\_API\_URL}.
 
 \begin{enumerate}
   \item \textbf{Session initialization:} temporary storage is created for incoming audio data through \texttt{start\_transcription\_session}.
@@ -44,16 +91,16 @@ The workflow is orchestrated by \texttt{TranscriptionApplicationService}, which 
 \subsection{LLM Orchestration}
 \label{subsec:llm-orchestration}
 
-The LLM orchestration component enables clinical note creation, report generation, and suggestions using the locally integrated Ollama model. The core logic lives in LLM client and adapter classes, such as \texttt{ollama\_client.py} and \texttt{ollama\_adapter.py}. These classes provide an interface for sending prompts, receiving completions, validating structured output, and handling model health checks.
+The LLM orchestration component enables transcript normalization, clinical note generation, and suggestions using the locally integrated Ollama model. The implementation uses \texttt{OllamaClient} for low-level HTTP communication and adapter classes in \texttt{ollama\_adapter.py} for domain-specific tasks. \texttt{OllamaTranscriptNormalizer} returns a structured normalized transcript, \texttt{OllamaClinicalNoteGenerator} returns validated clinical notes, and \texttt{OllamaSuggestiveModeService} returns a structured suggestive review.
 
-The \texttt{OllamaClient} handles HTTP communication with the local Ollama or vLLM runtime. Application services or endpoints use predefined prompt templates stored in the prompt directory. These templates are populated with clinical context, patient data, transcript content, and other inputs before being sent to the model runtime.
+The configured runtime endpoint and model are read from \texttt{LOCAL\_LLM\_ENDPOINT} and \texttt{LLM\_MODEL\_NAME}. In the current implementation, \texttt{app/core/config.py} validates \texttt{LLM\_MODEL\_NAME} as \texttt{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{5,12}.
 
 The orchestration workflow is:
 
 \begin{enumerate}
   \item \textbf{Prompt construction:} templates are populated with patient context and consultation content.
   \item \textbf{Request dispatch:} the prompt is sent through \texttt{OllamaClient}, which handles retries, timeouts, and errors.
-  \item \textbf{Response handling:} the response is returned to the calling service and can be displayed directly or processed further by Suggestive Mode.
+  \item \textbf{Response handling:} \texttt{OllamaClient.generate\_json} extracts JSON, attempts one repair pass for malformed JSON, and returns structured data to the calling service.
   \item \textbf{Error handling:} network errors, model unavailability, and malformed responses are handled by the orchestration layer to provide informative errors.
 \end{enumerate}
 
@@ -62,16 +109,14 @@ The orchestration workflow is:
 
 The PDF generation module creates structured PDF documents from clinical data produced by consultations and prescriptions. This feature is important for shareable and printable records.
 
-PDF generation is implemented with ReportLab. An adapter class encapsulates formatting and creation logic, while the service orchestrates data retrieval, PDF creation, and storage. The workflow starts with collecting consultation, patient, staff, and prescription data from repositories. The \texttt{ReportLabPdfGenerator} then formats the data into a document with page layouts, styles, tables, and visual elements. The resulting file is stored and made available for download or email attachment after approval.
+PDF generation is implemented with ReportLab. The review route \texttt{/review/\{consultation\_id\}/pdf} calls \texttt{ReportPdfApplicationService.generate\_report\_pdf()}, which loads the generated Markdown report from the document repository, fetches consultation, patient, and clinician metadata, and delegates rendering to \texttt{ReportLabPdfGenerator}. The resulting file is stored in the configured PDF output directory and returned to the browser as an \texttt{application/pdf} response.
 
 \subsection{Email Notification Service}
 \label{subsec:email-notification-service}
 
-The email notification service sends emails to patients containing consultation summaries and prescription information. It supports communication between the application and its users after doctor approval.
+The email notification service sends patient-friendly follow-up information after doctor approval. The implemented endpoint is \texttt{/review/report/\{consultation\_id\}/send-email}, which calls \texttt{ReviewApplicationService.send\_report\_to\_patient()}. That service refuses to send unapproved generated reports, loads the patient email address, builds a summary containing prescription, follow-up, and suggestions, and passes an \texttt{EmailMessage} to \texttt{SmtpEmailService}.
 
-Email sending is handled by \texttt{SmtpEmailService}. It constructs and sends emails using the SMTP library \texttt{smtplib}. The service supports plain text and HTML emails, as well as attachments such as PDF files. Multipart messages are built with Python's \texttt{email.mime} package.
-
-During development, MailHog was used as the SMTP server. MailHog captures outgoing emails so developers can view and verify email content without sending real messages. The email workflow constructs an email message, connects to the SMTP server, sends the email, and then allows developers to inspect the captured message through MailHog's web interface.
+Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart messages using Python's \texttt{email.mime} package and sends them with \texttt{smtplib}. The SMTP adapter supports plain text, optional HTML, and optional attachments, but the current patient follow-up workflow sends a plain-text summary without attaching the PDF. During development, MailHog was used as the SMTP server so outgoing emails could be inspected without sending real messages.
 
 \subsection{Database Integration}
 \label{subsec:database-integration}
@@ -80,4 +125,11 @@ The system uses a dual-database architecture to manage structured and unstructur
 
 SQLAlchemy manages the MySQL connection and session lifecycle. Reusable database access is provided through functions such as \texttt{get\_engine()} and \texttt{get\_session()}. PyMongo manages MongoDB connections, with \texttt{get\_database()} returning the database handle used by document repositories.
 
-Both databases are abstracted behind repository classes. Application services interact with repositories rather than directly with database clients. This pattern improves separation of concerns, testability, and maintainability.
+Both databases are abstracted behind repository classes. SQL repositories in \texttt{app/infrastructure/db/sql/repositories/sql\_repos.py} manage relational records, while Mongo repositories in \texttt{app/infrastructure/db/mongo/repositories/mongo\_repos.py} manage prompts, templates, consultation documents, and generated artifacts. The test suite can swap these adapters for in-memory repositories, which is why the same application services can be tested without starting MySQL, MongoDB, Whisper, or Ollama.
+
+\subsection{Runtime Configuration and Observability}
+\label{subsec:runtime-configuration-observability}
+
+Runtime configuration is centralized in \texttt{app/core/config.py}. Important environment variables include \texttt{LOCAL\_LLM\_ENDPOINT}, \texttt{LLM\_MODEL\_NAME}, \texttt{WHISPER\_API\_URL}, \texttt{SMTP\_HOST}, \texttt{SMTP\_PORT}, \texttt{SMTP\_FROM}, \texttt{SMTP\_FROM\_NAME}, \texttt{MYSQL\_DB}, and \texttt{MONGO\_DB}. The application currently supports \texttt{qwen3:8b} as the validated local LLM configuration, while the benchmark table documents other candidates that were evaluated before selecting it.
+
+Observability is implemented through request middleware and aspect decorators. The middleware logs HTTP method, path, client IP, status code, and duration. The \texttt{apply\_logging\_aspect} decorator wraps public service methods with entry, exit, error, and duration logging. Keeping this behavior outside the business logic follows the same separation-of-concerns principle as the repository and adapter boundaries, and it supports later production hardening work such as centralized metrics and tracing\refcite{13}.

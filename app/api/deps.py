@@ -296,7 +296,7 @@ def email_service():
         host=settings.smtp_host or "mailhog",
         port=settings.smtp_port or 1025,
         from_email=settings.smtp_from or "no-reply@example.local",
-        from_name="OPD-Vertex",
+        from_name=settings.smtp_from_name or "Med Flow",
         username=settings.smtp_user or "",
         password=settings.smtp_password or "",
     )

@@ -24,7 +24,7 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_FROM_EMAIL: no-reply@example.com
-      SMTP_FROM_NAME: OPD-Vertex
+      SMTP_FROM_NAME: Med Flow
     volumes:
       - ./:/workspace
       - model-cache:/workspace/app/models
