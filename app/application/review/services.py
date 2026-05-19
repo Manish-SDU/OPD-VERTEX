@@ -193,7 +193,9 @@ class ReviewApplicationService:
             raise ValueError("Patient email is missing.")
 
         project_root = Path(__file__).resolve().parents[3]
-        pdf_path = project_root / "storage" / "pdfs" / f"mock_report_{consultation_id}.pdf"
+        pdf_path = (
+            project_root / "storage" / "pdfs" / f"mock_report_{consultation_id}.pdf"
+        )
 
         if not pdf_path.exists():
             raise ValueError(

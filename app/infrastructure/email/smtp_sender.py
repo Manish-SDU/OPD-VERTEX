@@ -41,7 +41,10 @@ class SmtpEmailService(EmailService):
 
         if message.attachment:
             subtype = "pdf"
-            if message.attachment.content_type and "/" in message.attachment.content_type:
+            if (
+                message.attachment.content_type
+                and "/" in message.attachment.content_type
+            ):
                 _, subtype = message.attachment.content_type.split("/", 1)
 
             part = MIMEApplication(
