@@ -11,19 +11,19 @@ The API layer is built using FastAPI. It defines and serves HTTP endpoints and a
 \begin{table}[htbp]
 \centering
 \small
-\begin{tabularx}{\textwidth}{@{}P{0.27\textwidth}Y@{}}
+\begin{tabularx}{\textwidth}{@{}P{0.22\textwidth}Y@{}}
 \TableTopRule
 \rowcolor{VertexTableBlue}
 \VertexTableHead{Route module} & \VertexTableHead{Implemented responsibility} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-\texttt{auth.py}, \texttt{dashboard.py}, \texttt{profile.py} & Login, logout, role-aware dashboard rendering, profile access, and appointment-count display. \\
-\texttt{patients.py}, \texttt{consultations.py} & Patient lookup, patient detail pages, consultation creation, and consultation detail views used by the booking-to-consultation flow. \\
+\path{auth.py}, \path{dashboard.py}, \path{profile.py} & Login, logout, role-aware dashboard rendering, profile access, and appointment-count display. \\
+\path{patients.py}, \path{consultations.py} & Patient lookup, patient detail pages, consultation creation, and consultation detail views used by the booking-to-consultation flow. \\
 \rowcolor{VertexTableStripe}
-\texttt{transcriptions.py} & Session start, WebSocket audio streaming, demo-text injection, completion, and transcript persistence. \\
-\texttt{review.py} & Report viewing, Markdown editing, PDF download, report generation, suggestive review, approval, rejection, and email sending. \\
+\path{transcriptions.py} & Session start, WebSocket audio streaming, demo-text injection, completion, and transcript persistence. \\
+\path{review.py} & Report viewing, Markdown editing, PDF download, report generation, suggestive review, approval, rejection, and email sending. \\
 \rowcolor{VertexTableStripe}
-\texttt{prescriptions.py}, \texttt{admin.py}, \texttt{llm.py} & Prescription listing, prompt and email-template administration, and local LLM health checks. \\
+\path{prescriptions.py}, \path{admin.py}, \path{llm.py} & Prescription listing, prompt and email-template administration, and local LLM health checks. \\
 \TableBottomRule
 \end{tabularx}
 \caption{Implemented FastAPI route modules and their concrete responsibilities.}
@@ -39,20 +39,20 @@ The implementation uses application services to coordinate use cases and infrast
 
 \begin{table}[htbp]
 \centering
-\scriptsize
-\begin{tabularx}{\textwidth}{@{}P{0.20\textwidth}P{0.27\textwidth}Y@{}}
+\small
+\begin{tabularx}{\textwidth}{@{}P{0.22\textwidth}Y@{}}
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\VertexTableHead{Workflow} & \VertexTableHead{Application service} & \VertexTableHead{Infrastructure / adapter examples} \\
+\VertexTableHead{Workflow} & \VertexTableHead{Implemented boundary} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-Authentication & \texttt{AuthApplicationService} & JWT security helpers, bcrypt password verification, and staff/patient repositories. \\
-Consultation capture & \texttt{ConsultationApplicationService}, \texttt{TranscriptionApplicationService} & \texttt{StreamingFasterWhisperService}, temporary transcript chunk repository, and Mongo-backed consultation documents. \\
+Authentication & \textbf{Application service:} \path{AuthApplicationService}. \textbf{Adapters:} JWT security helpers, bcrypt password verification, and staff/patient repositories. \\
+Consultation capture & \textbf{Application services:} \path{ConsultationApplicationService} and \path{TranscriptionApplicationService}. \textbf{Adapters:} \path{StreamingFasterWhisperService}, temporary transcript chunk repository, and Mongo-backed consultation documents. \\
 \rowcolor{VertexTableStripe}
-Clinical generation & \texttt{TranscriptNormalizationApplicationService}, \texttt{ClinicalNotesApplicationService} & \texttt{OllamaTranscriptNormalizer}, \texttt{OllamaClinicalNoteGenerator}, prompt repositories, and \texttt{OllamaClient}. \\
-Suggestive review & \texttt{SuggestiveReviewApplicationService} & \texttt{OllamaSuggestiveModeService} plus deterministic rules in \texttt{app/application/suggestive\_mode/rules.py}. \\
+Clinical generation & \textbf{Application services:} \path{TranscriptNormalizationApplicationService} and \path{ClinicalNotesApplicationService}. \textbf{Adapters:} \path{OllamaTranscriptNormalizer}, \path{OllamaClinicalNoteGenerator}, prompt repositories, and \path{OllamaClient}. \\
+Suggestive review & \textbf{Application service:} \path{SuggestiveReviewApplicationService}. \textbf{Adapters:} \path{OllamaSuggestiveModeService} plus deterministic rules in \path{app/application/suggestive_mode/rules.py}. \\
 \rowcolor{VertexTableStripe}
-Approval, PDF, email & \texttt{ReviewApplicationService}, \texttt{ReportPdfApplicationService} & \texttt{ReportLabPdfGenerator}, \texttt{SmtpEmailService}, prescription repositories, and generated-document repositories. \\
+Approval, PDF, email & \textbf{Application services:} \path{ReviewApplicationService} and \path{ReportPdfApplicationService}. \textbf{Adapters:} \path{ReportLabPdfGenerator}, \path{SmtpEmailService}, prescription repositories, and generated-document repositories. \\
 \TableBottomRule
 \end{tabularx}
 \caption{Concrete service and adapter boundaries in the implementation.}
