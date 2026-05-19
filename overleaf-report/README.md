@@ -1,20 +1,25 @@
 # OPD-Vertex Editable Overleaf Project
 
-This folder is a standalone Overleaf project for the OPD-Vertex fourth semester report. The report content has been extracted from `4th_Semester_OPDVertex_Report.pdf` and rewritten into editable LaTeX section files.
+This is the clean editable LaTeX project for the OPD-Vertex fourth semester report.
 
-`main.tex` uses the SDU `bachelorthesis.cls` template and compiles normal LaTeX content so the text, tables, figures, and structure can be edited directly in Overleaf.
+Use this Overleaf project:
+
+https://www.overleaf.com/project/6a0c607dd8122cdf4b668d6a
+
+Do not use the imported project created from the repository `main` branch:
+
+https://www.overleaf.com/project/6a0c73576ee207e406d1f536
+
+`main.tex` is the only report entry point. It uses the SDU `bachelorthesis.cls` template and compiles editable LaTeX content directly.
 
 ## Files
 
 - `main.tex` is the Overleaf main file.
-- `editable-report.tex` mirrors the same editable document structure and is kept as a compatibility entry point.
 - `bachelorthesis.cls` and `assets/sdu_logo.pdf` come from `SDU_Template.zip`.
 - `config/metadata.tex` stores title, author, date, and repository metadata.
 - `config/preamble.tex` stores layout, colors, tables, figures, and PDF settings.
 - `sections/` stores the editable report chapters.
 - `assets/charts/` stores chart images used in the validation section.
-- `assets/pdfs/` stores optional generated validation PDF appendices, not the source report body.
-- `assets/extracted/4th_semester_report.txt` is the plain-text extraction used as conversion source.
 
 ## Compile on Overleaf
 
@@ -26,7 +31,7 @@ This folder is a standalone Overleaf project for the OPD-Vertex fourth semester 
 
 The SDU class loads `minted`, so `latexmkrc` enables shell escape for Overleaf builds.
 
-The original PDF is kept only as a reference. To edit the report, change the files in `sections/` instead of replacing a PDF.
+To edit the report, change `main.tex`, `config/`, or the files in `sections/`. The source PDF, extraction text, duplicate entry files, and embedded generated PDF appendices were removed so Overleaf has one clear build path.
 
 ## SDU template note
 
@@ -34,7 +39,7 @@ The SDU template class and logo have been copied into this project, so Overleaf 
 
 ## Recommended branch flow
 
-This workspace is currently on the `SP4-Report` branch. Commit the report changes there and push that branch to GitHub so Overleaf can import or sync the same branch.
+This workspace is currently on the `SP4-Report` branch. Commit report changes there and push that branch to GitHub for version history.
 
 ```powershell
 git add overleaf-report
@@ -44,7 +49,7 @@ git push -u origin SP4-Report
 
 Do not paste personal access tokens into chat. If Git asks for credentials, type the token directly into the terminal prompt.
 
-If you want to push directly to the configured Overleaf Git remote, use:
+To update the good Overleaf project directly, publish only this folder to the Overleaf Git remote:
 
 ```powershell
 git subtree push --prefix overleaf-report overleaf SP4-Report:master
