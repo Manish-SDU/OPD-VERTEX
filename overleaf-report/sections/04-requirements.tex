@@ -14,7 +14,7 @@ The implemented workflow is centered on three roles: doctors, administrators, an
 \begin{tabularx}{\textwidth}{@{}P{0.10\textwidth}P{0.16\textwidth}YP{0.30\textwidth}@{}}
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{ID} & \tablehead{Actor} & \tablehead{Goal} & \tablehead{Primary flow} \\
+\VertexTableHead{ID} & \VertexTableHead{Actor} & \VertexTableHead{Goal} & \VertexTableHead{Primary flow} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 UC-1 & Doctor & Authenticate and reach the clinical dashboard. & Doctor enters credentials, receives a JWT cookie, and lands on the dashboard. \\
@@ -40,7 +40,7 @@ UC-6 & Administrator & Maintain configurable content. & Administrator edits prom
 \caption{Must-have functional requirements.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{ID} & \tablehead{Requirement} \\
+\VertexTableHead{ID} & \VertexTableHead{Requirement} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 F-1 & The system must manage a doctor consultation queue. \\
@@ -64,7 +64,7 @@ F-8 & The system must send prescriptions securely by email. \\
 \caption{Must-have non-functional requirements.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{ID} & \tablehead{Requirement} \\
+\VertexTableHead{ID} & \VertexTableHead{Requirement} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 NF-1 & Privacy: all AI processing must be performed locally. \\
@@ -86,7 +86,7 @@ NF-6 & Auditability: the system must log important actions and edits. \\
 \caption{Should-have requirements.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{ID} & \tablehead{Requirement} \\
+\VertexTableHead{ID} & \VertexTableHead{Requirement} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 F-9 & The system should display a live transcript during consultation. \\
@@ -106,7 +106,7 @@ NF-8 & Performance: on the target machine, local transcription should operate wi
 \caption{Could-have requirements.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{ID} & \tablehead{Requirement} \\
+\VertexTableHead{ID} & \VertexTableHead{Requirement} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 F-11 & The system could support multiple doctors for sharing documents, such as a shareable report sent to a doctor other than the family doctor. \\
@@ -123,7 +123,7 @@ NF-9 & The system could allow administrators to configure how long consultation 
 \caption{Will-not-have requirements.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{ID} & \tablehead{Requirement} \\
+\VertexTableHead{ID} & \VertexTableHead{Requirement} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 NF-10 & The system will not use cloud-based AI services. \\

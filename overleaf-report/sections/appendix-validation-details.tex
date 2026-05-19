@@ -11,7 +11,7 @@ The automated suite contains 326 tests across unit, integration, smoke, stress, 
 \caption{Detailed automated test inventory.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{Test module} & \tablehead{Tier} & \tablehead{Cases} & \tablehead{Primary concern} \\
+\VertexTableHead{Test module} & \VertexTableHead{Tier} & \VertexTableHead{Cases} & \VertexTableHead{Primary concern} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 \path{benchmarks/test_perf.py} & Bench. & 10 & Latency percentiles for hot application paths. \\
@@ -64,7 +64,7 @@ The benchmark suite measures 10 hot paths with 100 to 500 iterations per operati
 \caption{Benchmark latency results from \texttt{reports/benchmark\_results.json}.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{Operation} & \tablehead{Iter.} & \tablehead{Mean} & \tablehead{p50} & \tablehead{p95} & \tablehead{p99} & \tablehead{Max} \\
+\VertexTableHead{Operation} & \VertexTableHead{Iter.} & \VertexTableHead{Mean} & \VertexTableHead{p50} & \VertexTableHead{p95} & \VertexTableHead{p99} & \VertexTableHead{Max} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 Patient list & 200 & 0.001 & 0.001 & 0.001 & 0.003 & 0.019 \\
@@ -96,7 +96,7 @@ The manual UI catalogue covers browser behaviors that were not yet automated wit
 \caption{Manual UI test catalogue.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{ID} & \tablehead{Scenario} & \tablehead{Steps} & \tablehead{Expected result} & \tablehead{Observed result} & \tablehead{Status} \\
+\VertexTableHead{ID} & \VertexTableHead{Scenario} & \VertexTableHead{Steps} & \VertexTableHead{Expected result} & \VertexTableHead{Observed result} & \VertexTableHead{Status} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 TC001 & Valid login & Open login page and authenticate with valid staff credentials. & Redirect to the correct dashboard. & Dashboard loaded and session cookie was set. & Pass \\
@@ -128,7 +128,7 @@ The hallucination matrix maps known AI and ASR risk classes to mitigations and t
 \caption{Hallucination risk matrix and validation coverage.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{Risk class} & \tablehead{Origin} & \tablehead{Mitigation} & \tablehead{Validation evidence} \\
+\VertexTableHead{Risk class} & \VertexTableHead{Origin} & \VertexTableHead{Mitigation} & \VertexTableHead{Validation evidence} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 Malformed JSON & LLM output parser & Pydantic validation, one retry, and fail-closed error handling. & \path{test_ollama_client.py}, \path{test_real_llm.py} \\
@@ -156,7 +156,7 @@ The reference CUDA workstation used for live measurements had an Intel i7-13700H
 \caption{Hardware profiles and AI latency envelope.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{Profile} & \tablehead{VRAM / memory} & \tablehead{Whisper mode} & \tablehead{Whisper RTF} & \tablehead{LLM mode} & \tablehead{Note p95} \\
+\VertexTableHead{Profile} & \VertexTableHead{VRAM / memory} & \VertexTableHead{Whisper mode} & \VertexTableHead{Whisper RTF} & \VertexTableHead{LLM mode} & \VertexTableHead{Note p95} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 GPU plus GPU reference & 7.6 GB peak & CUDA int8 & $0.18\times$ & CUDA \texttt{Q4\_K\_M} & 7.4 s \\
@@ -174,7 +174,7 @@ GPU plus 4-bit fallback & 5.0 GB peak & CUDA int8 & $0.18\times$ & qwen3:4b \tex
 \caption{Reference end-to-end latency interpretation.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
-\tablehead{Pipeline step} & \tablehead{Reference value} & \tablehead{Interpretation} \\
+\VertexTableHead{Pipeline step} & \VertexTableHead{Reference value} & \VertexTableHead{Interpretation} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 30 s audio transcription & Approx. 5.4 s & Faster than real time on the CUDA profile, so transcription does not block the doctor after recording ends. \\
