@@ -4,20 +4,20 @@
 \subsection{Risks and Limitations of Manual Documentation}
 \label{subsec:manual-documentation-risks}
 
-A large-scale descriptive study of outpatient encounters found that physicians spent a substantial amount of time using Electronic Health Records during each visit, with an average of about 16 minutes per encounter~[1]. In a consultation context, this means documentation can compete directly with time spent listening, explaining, and making clinical decisions.
+A large-scale descriptive study of outpatient encounters found that physicians spent a substantial amount of time using Electronic Health Records during each visit, with an average of about 16 minutes per encounter\refcite{1}. Time-motion studies report the same broader pattern: outpatient doctors spend large portions of the working day on EHR and desk work, including after-hours documentation\refcite{6,7}. In a consultation context, this means documentation can compete directly with time spent listening, explaining, and making clinical decisions.
 
-Risk-management guidance for AI medical scribes confirms that automated documentation can reduce administrative effort, but also warns about omissions, hallucinated content, privacy concerns, and the need for physician review before sign-off~[2]. This supports Med Flow's decision to generate editable drafts rather than finalized medical records.
+Risk-management guidance for AI medical scribes confirms that automated documentation can reduce administrative effort, but also warns about omissions, hallucinated content, privacy concerns, and the need for physician review before sign-off\refcite{2}. Danish evaluation work on Ambient Scribe technology similarly emphasizes documentation quality, time consumption, user experience, and local testing before wider implementation\refcite{10}. This supports Med Flow's decision to generate editable drafts rather than finalized medical records.
 
 To reduce these bottlenecks, the system should capture information passively through audio rather than relying entirely on manual input. The automation must function as a decision-support tool by generating editable drafts and real-time suggestions while ensuring that the doctor keeps final clinical responsibility and oversight.
 
 \subsection{Security and Privacy in AI-Assisted Healthcare}
 \label{subsec:ai-healthcare-security-privacy}
 
-Under Article 9 of the General Data Protection Regulation (GDPR), data concerning health belongs to a special category of personal data, meaning it requires a clear lawful basis and appropriate safeguards before processing~[3]. In comparable health privacy guidance, HIPAA also treats individually identifiable health information as protected information that must be limited, safeguarded, and disclosed only under defined conditions~[4].
+Under Article 9 of the General Data Protection Regulation (GDPR), data concerning health belongs to a special category of personal data, meaning it requires a clear lawful basis and appropriate safeguards before processing\refcite{3}. In comparable health privacy guidance, HIPAA also treats individually identifiable health information as protected information that must be limited, safeguarded, and disclosed only under defined conditions\refcite{4}.
 
 Many AI documentation tools rely on transmitting audio, transcripts, or draft notes to external cloud services. This creates privacy, data-sovereignty, and availability risks, especially when the data contains clinical details, identifiers, or follow-up instructions.
 
-To reduce these risks, Med Flow is designed as a locally hosted system using open-source models deployed inside the clinic environment. This follows the general risk-management direction recommended by NIST for AI systems: map the context, measure risks, manage controls, and keep governance explicit throughout the system lifecycle~[5].
+To reduce these risks, Med Flow is designed as a locally hosted system using open-source models deployed inside the clinic environment. This follows the general risk-management direction recommended by NIST and WHO for AI systems: map the context, measure risks, manage controls, keep governance explicit, and ensure that AI remains accountable to affected people and clinical users\refcite{5,12}.
 
 \subsection{Architectural Challenges}
 \label{subsec:architectural-challenges}
@@ -28,7 +28,7 @@ The system also handles diverse data types: live audio metadata, raw speech-to-t
 
 Forcing these conflicting data types into one database model can create performance and maintainability problems. The system must therefore balance strict relational consistency for user administration and patient records with dynamic schema flexibility for AI data processing.
 
-The same architectural lesson appears in other data-intensive engineering domains: sensing and hyperspectral systems often separate acquisition hardware, preprocessing, model evaluation, and user-facing analysis instead of treating them as one undifferentiated block~[8,9,11]. Med Flow applies that principle to a healthcare-documentation workflow by separating audio capture, transcription, LLM orchestration, review, PDF generation, email, persistence, and audit concerns.
+The Danish digital health strategy emphasizes trustworthy and secure data, common building blocks, and daily workflows that are easier for healthcare professionals\refcite{8}. CAI-X describes clinical AI as a collaboration between clinical staff and engineers rather than as a purely technical model exercise\refcite{9}. Med Flow applies that principle to a healthcare-documentation workflow by separating audio capture, transcription, LLM orchestration, review, PDF generation, email, persistence, and audit concerns.
 
 \subsection{Problem Statement}
 \label{subsec:problem-statement}
