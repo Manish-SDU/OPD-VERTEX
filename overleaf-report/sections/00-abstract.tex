@@ -1,15 +1,7 @@
-\begin{abstract}
-\addcontentsline{toc}{section}{Abstract}
+\newcommand{\ProjectAbstractText}{%
+This report presents the design and implementation of OPD-Vertex, a local-first consultation support system for outpatient departments. The application helps doctors record consultations, transcribe spoken dialogue, generate AI-assisted clinical draft notes, review and edit the generated content, export approved reports as PDFs, and send follow-up communication to patients. The project focuses on the documentation workflow during and after an active consultation rather than replacing the scheduling systems that healthcare providers already use. Its architecture combines a FastAPI backend, persistence adapters, local speech transcription, prompt-driven report generation, review services, and an editable web interface. The prototype demonstrates the semester themes of artificial intelligence, component-based software, algorithms and data structures, and embedded-oriented design through privacy-aware processing, modular service boundaries, and explicit human approval before clinical information is finalized.%
+}
 
-This project was developed as part of the fourth semester Software Engineering curriculum. It concerns the design and implementation of OPD-Vertex, a web-based platform that supports medical consultations through recording, transcription, AI-assisted draft generation, clinician review, PDF creation, and follow-up communication.
-
-The system is intended for doctors, patients, and administrators. It addresses the practical challenge that consultation documentation is often written manually while the consultation is still taking place. By allowing a doctor to record an ongoing consultation, process the spoken content locally, and generate editable clinical documentation, the application aims to reduce administrative overhead while preserving medical responsibility with the doctor.
-
-Rather than implementing a standalone appointment scheduling service, the project focuses on support during and after an active consultation. Healthcare providers are assumed to already use scheduling systems, and OPD-Vertex is designed so that such functionality can be integrated later as an external component.
-
-Technically, the project reflects the semester themes of Artificial Intelligence, Component-Based Systems, Algorithms and Data Structures, and Designing Software Systems with Embedded Elements. This is demonstrated through local AI transcription and summarization, modular architecture, structured handling of consultation data, and privacy-aware processing of sensitive medical information.
-
-\begin{summarybox}
-The central result is a local-first consultation support prototype where AI assists with drafting and review, but the doctor remains responsible for editing, approving, rejecting, exporting, and sending clinical information.
-\end{summarybox}
-\end{abstract}
+\newcommand{\ProjectKeywords}{%
+Artificial Intelligence \(\cdot\) Component-Based Systems \(\cdot\) Software Architecture \(\cdot\) Clinical Documentation \(\cdot\) Privacy-Aware Processing%
+}

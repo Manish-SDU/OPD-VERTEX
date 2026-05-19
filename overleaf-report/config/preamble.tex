@@ -17,9 +17,10 @@
 
 \hypersetup{
   colorlinks=true,
-  linkcolor=VertexBlue,
-  urlcolor=VertexTeal,
-  citecolor=VertexBlue,
+  linkcolor=black,
+  urlcolor=black,
+  citecolor=black,
+  filecolor=black,
   pdftitle={\ProjectTitle},
   pdfauthor={\AuthorName}
 }
@@ -67,3 +68,61 @@
 }
 
 \newcommand{\metric}[2]{\textbf{#1}\hfill\textcolor{VertexMuted}{#2}}
+
+\newcommand{\vertexcoverauthor}[1]{%
+  \begin{minipage}[t]{0.31\textwidth}%
+    \centering\scriptsize
+    {\bfseries #1\par}%
+    University of Southern Denmark\par
+    Software Engineering\par
+  \end{minipage}%
+}
+
+\makeatletter
+\renewcommand{\maketitle}{%
+  \pagenumbering{roman}%
+  \begin{titlepage}%
+    \thispagestyle{empty}%
+    \centering
+    \vspace*{0.45cm}%
+    \rule{\textwidth}{0.7pt}\par
+    \vspace{0.85em}%
+    {\LARGE\scshape\MakeUppercase{\ProjectSubtitle}\par}%
+    \vspace{0.85em}%
+    \rule{\textwidth}{0.7pt}\par
+    \vspace{1.35em}%
+    {\small\scshape Semester Project 4\par}%
+    \vspace{1.8em}%
+    \noindent
+    \vertexcoverauthor{Gabriele Solazzo}\hfill
+    \vertexcoverauthor{Aleksandra Kwiatkowska}\hfill
+    \vertexcoverauthor{Gabija Staskeviciute}\par
+    \vspace{1.35em}%
+    \noindent
+    \vertexcoverauthor{Luigi Colluto}\hfill
+    \vertexcoverauthor{Manish Raj Moriche}\hfill
+    \vertexcoverauthor{Mats Haertel}\par
+    \vspace{1.8em}%
+    {\small\SubmissionDate\par}%
+    \vspace{1.45em}%
+    {\normalsize\bfseries\scshape Abstract\par}%
+    \vspace{0.75em}%
+    \begin{minipage}{0.86\textwidth}%
+      \small\justifying
+      \setlength{\parindent}{0pt}%
+      \setlength{\parskip}{0pt}%
+      \ProjectAbstractText
+
+      \vspace{0.8em}%
+      \noindent\textbf{\textit{Keywords}}\quad \ProjectKeywords
+    \end{minipage}%
+    \vfill
+    \begin{minipage}{\textwidth}%
+      \raggedright
+      \rule{0.12\textwidth}{0.4pt}\par
+      {\scriptsize $^{*}$ All authors contributed equally to this work.\par}%
+    \end{minipage}%
+  \end{titlepage}%
+  \setcounter{footnote}{0}%
+}
+\makeatother
