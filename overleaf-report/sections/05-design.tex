@@ -155,7 +155,9 @@ A simple booking and scheduling capability was included to support the semester 
 
 For this reason, Med Flow treats scheduling as an integration boundary rather than as a tightly coupled internal module. A booking service can create a consultation shell containing patient, clinician, time, and visit-type metadata. Med Flow can then take over from the moment the consultation begins: recording, transcription, AI-assisted drafting, review, approval, PDF export, and follow-up communication. This keeps the documentation pipeline independent from the appointment provider.
 
-Figure~\ref{fig:booking-identity-integration} uses a MitID booking scenario to show the intended boundary in a simpler form. The important design point is that Med Flow does not need to own national identity or the clinic's appointment system. It only needs a small adapter that receives trusted booking context and turns it into a consultation shell for the existing clinical workflow.
+Figure~\ref{fig:booking-identity-integration} uses a MitID booking scenario to show the intended boundary in a simpler form. The first step is outside Med Flow: the patient uses MitID in a clinic booking portal, and the clinic system records that a verified patient has booked a specific appointment. The second step is the handoff into Med Flow: a replaceable adapter translates the appointment data into the simple consultation shell that Med Flow needs before the doctor starts recording.
+
+For example, a patient signs in with MitID and books a follow-up visit with a doctor at 09:30. The external booking system owns the login, appointment confirmation, and calendar slot. The adapter then sends Med Flow only the useful consultation context: patient, doctor, time, visit type, and reason for visit. Med Flow can then open the consultation workflow without being responsible for MitID or the clinic's booking platform.
 
 \begin{figure}[htbp]
 \centering
@@ -166,8 +168,8 @@ Figure~\ref{fig:booking-identity-integration} uses a MitID booking scenario to s
   mfCore/.style={mfScenario, draw=VertexAmber!85, fill=VertexAmber!10},
   mfArrow/.style={-{Latex[length=2.4mm]}, draw=VertexInk!70, line width=0.7pt}
 ]
-\node[mfExternal] (mitid) {\textbf{1. Patient signs in and books a visit}\\\scriptsize MitID confirms identity in the external clinic booking system.};
-\node[mfAdapter, below=7mm of mitid] (adapter) {\textbf{2. Replaceable booking identity adapter}\\\scriptsize Patient, clinician, time, and visit type are mapped into a Med Flow consultation shell.};
+\node[mfExternal] (mitid) {\textbf{1. External booking and MitID}\\\scriptsize Login, identity confirmation, and appointment slot stay outside Med Flow.};
+\node[mfAdapter, below=7mm of mitid] (adapter) {\textbf{2. Adapter translates booking data}\\\scriptsize Patient, doctor, time, visit type, and reason become a Med Flow consultation shell.};
 \node[mfCore, below=7mm of adapter] (medflow) {\textbf{3. Med Flow consultation workflow}\\\scriptsize The doctor records, transcribes, reviews, approves, exports, and sends follow-up information.};
 
 \draw[mfArrow] (mitid.south) -- (adapter.north);
@@ -177,7 +179,7 @@ Figure~\ref{fig:booking-identity-integration} uses a MitID booking scenario to s
 \label{fig:booking-identity-integration}
 \smallskip
 \begin{minipage}{0.90\textwidth}
-\footnotesize\emph{Implementation note.} In the current codebase, this handoff corresponds to creating the same consultation data shape used by \texttt{ConsultationCreateRequest} and \texttt{ConsultationApplicationService.create\_consultation()}; only the source of that data changes.
+\footnotesize\emph{Color legend.} \tikz[baseline=-0.5ex]{\draw[draw=VertexBlue!75, fill=VertexBlue!7] (0,0) rectangle (0.32,0.16);} external clinic and eID systems; \tikz[baseline=-0.5ex]{\draw[draw=VertexTeal!80, fill=VertexTeal!9] (0,0) rectangle (0.32,0.16);} replaceable translation boundary; \tikz[baseline=-0.5ex]{\draw[draw=VertexAmber!85, fill=VertexAmber!10] (0,0) rectangle (0.32,0.16);} Med Flow clinical workflow.
 \end{minipage}
 \end{figure}
 
