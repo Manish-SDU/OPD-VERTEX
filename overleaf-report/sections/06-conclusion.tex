@@ -1,0 +1,20 @@
+\section{Conclusion and Future Work}
+
+OPD-Vertex demonstrates a practical local-first approach to AI-assisted outpatient documentation. Its strongest architectural qualities are the clean separation of domain contracts from infrastructure adapters, the explicit SQL and MongoDB ownership split, and the clinician approval boundary that prevents generated content from becoming operational data without review.
+
+The validation package shows that the implemented workflows are testable and measurable. The system is therefore suitable as a strong project prototype and as a foundation for deeper clinical documentation research.
+
+\subsection{Future Work}
+
+\begin{itemize}
+  \item Add production-grade role-based access control and permission checks.
+  \item Expand Suggestive Mode with a validated medication and interaction knowledge source.
+  \item Add formal audit retention, export, and review tools.
+  \item Run full-stack benchmarks against MySQL, MongoDB, Ollama, and Faster-Whisper services.
+  \item Add CI/CD automation for tests, reports, and Docker image validation.
+  \item Conduct clinician usability testing focused on speed, trust, and documentation accuracy.
+\end{itemize}
+
+\begin{summarybox}
+The project is best understood as a controlled AI documentation workflow: local AI accelerates drafting, but the doctor remains the final decision-maker for approval, prescription projection, PDF export, and patient communication.
+\end{summarybox}

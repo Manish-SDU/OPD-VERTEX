@@ -1,0 +1,44 @@
+\section{Implementation}
+
+The implementation is organized by module and by clean architecture layer. Domain packages define the vocabulary and contracts. Application packages coordinate workflows. Infrastructure packages provide concrete adapters for persistence, AI, PDF, email, and logging. API routes and templates expose the workflows to doctors, administrators, and patients.
+
+\subsection{Clinical Report Generation}
+
+The report generation path starts with a consultation transcript and produces a structured clinical draft. The generated document remains editable, visible in the review interface, and exportable after approval. The PDF adapter uses ReportLab to render the approved report with consultation metadata including patient, clinician, consultation date, and visit type.
+
+The review page renders both the raw generated document and a structured view. Doctors can edit and approve the report before final projection. This design helps preserve speed while keeping accountability with the clinician.
+
+\subsection{Suggestive Mode}
+
+Suggestive Mode is a second-pass clinical review workflow. Its purpose is to highlight possible omissions, inconsistencies, weak follow-up plans, contraindication risks, dosage issues, interaction warnings, and standard-of-care review points.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{0.22\textwidth}Y@{}}
+\toprule
+\textbf{Suggestion area} & \textbf{Examples of review points} \\
+\midrule
+Clinical omissions & Allergies, medication history, symptoms, vital signs, or red flags missing from the report. \\
+Contraindications & Allergy-medication conflicts, pregnancy concerns, kidney disease concerns, or condition-specific medication risks. \\
+Dosage checks & Missing dose, frequency, duration, malformed units, or unusual regimen details. \\
+Interaction warnings & Duplicate therapeutic intent or possible conflict with home medications. \\
+Follow-up quality & Missing follow-up interval, vague escalation guidance, or absent return precautions. \\
+Standard-of-care concerns & Possible workup or treatment rationale gaps that warrant clinician reassessment. \\
+\bottomrule
+\end{tabularx}
+\caption{Suggestive Mode review categories.}
+\end{table}
+
+The implementation is intentionally phrased as a review aid. It should use terms such as ``possible review point'' and ``consider clarifying'' rather than claiming definitive clinical authority without a validated medical knowledge base.
+
+\subsection{PDF and Email Delivery}
+
+The PDF service retrieves the generated clinical report, consultation metadata, patient details, and clinician details before rendering a PDF artifact. The email module separates templates from delivery so development can use MailHog while production can use an SMTP provider such as SendGrid or Gmail.
+
+\subsection{Operational Modes}
+
+The application supports a mock mode for local development without external services, and a full-stack mode with Docker, MySQL, MongoDB, Ollama, and the Whisper sidecar. The mock mode improves development speed and repeatable testing; the full-stack mode demonstrates the intended production topology.
+
+\begin{calloutbox}{Recommended Production Hardening}
+Before a clinical deployment, the project should add formal role-based access control, stricter audit log retention policies, backup and restore procedures, TLS termination, production secret management, clinical safety review, and a validated medication knowledge source for advanced Suggestive Mode checks.
+\end{calloutbox}

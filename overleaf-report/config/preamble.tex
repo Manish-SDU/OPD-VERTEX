@@ -1,0 +1,100 @@
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{pdfpages}
+\usepackage{hyperref}
+
+\usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric}
+
+\definecolor{VertexBlue}{HTML}{1D4ED8}
+\definecolor{VertexTeal}{HTML}{0F766E}
+\definecolor{VertexInk}{HTML}{0F172A}
+\definecolor{VertexMuted}{HTML}{475569}
+\definecolor{VertexLine}{HTML}{CBD5E1}
+\definecolor{VertexPanel}{HTML}{F8FAFC}
+\definecolor{VertexGreen}{HTML}{15803D}
+\definecolor{VertexAmber}{HTML}{B45309}
+\definecolor{VertexRed}{HTML}{B91C1C}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=VertexBlue,
+  urlcolor=VertexTeal,
+  citecolor=VertexBlue,
+  pdftitle={\ProjectTitle},
+  pdfauthor={\AuthorName}
+}
+
+\graphicspath{{assets/charts/}{assets/pdfs/}}
+\setlist[itemize]{leftmargin=1.4em,itemsep=0.25em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0.25em,topsep=0.25em}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\ProjectTitle}
+\rhead{\nouppercase{\leftmark}}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{VertexLine}\leaders\hrule height \headrulewidth\hfill}}
+
+\titleformat{\section}{\Large\bfseries\color{VertexInk}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{VertexBlue}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{VertexInk}}{\thesubsubsection}{0.5em}{}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\newtcolorbox{summarybox}{
+  enhanced,
+  colback=VertexPanel,
+  colframe=VertexBlue,
+  boxrule=0.7pt,
+  arc=2mm,
+  left=3mm,
+  right=3mm,
+  top=2mm,
+  bottom=2mm
+}
+
+\newtcolorbox{calloutbox}[1]{
+  enhanced,
+  title=#1,
+  colback=white,
+  colframe=VertexTeal,
+  coltitle=white,
+  colbacktitle=VertexTeal,
+  boxrule=0.7pt,
+  arc=2mm,
+  left=3mm,
+  right=3mm,
+  top=2mm,
+  bottom=2mm
+}
+
+\newcommand{\optionalgraphic}[3][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\parbox{0.86\linewidth}{Missing figure: \texttt{\detokenize{#2}}. Copy the asset into the project before compiling.}}%
+  }%
+}
+
+\newcommand{\metric}[2]{\textbf{#1}\hfill\textcolor{VertexMuted}{#2}}

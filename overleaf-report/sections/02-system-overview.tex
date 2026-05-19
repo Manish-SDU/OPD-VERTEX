@@ -1,0 +1,60 @@
+\section{System Overview}
+
+The system supports the end-to-end outpatient consultation lifecycle, from patient and consultation management through transcription, report generation, clinical review, approval, PDF export, and outbound email delivery.
+
+\subsection{Functional Scope}
+
+\begin{longtable}{@{}L{0.24\textwidth}L{0.28\textwidth}Y@{}}
+\caption{Functional scope mapped to project modules.}\\
+\toprule
+\textbf{Area} & \textbf{Module} & \textbf{Purpose} \\
+\midrule
+Authentication & \texttt{auth} & Staff login and future authorization hooks. \\
+Patient management & \texttt{patients} & Patient CRUD, list, detail, and search flows. \\
+Consultation lifecycle & \texttt{consultations} & Consultation creation, state changes, and review entry points. \\
+Voice transcription & \texttt{transcriptions} & Faster-Whisper transcription workflow and transcript persistence. \\
+Clinical documentation & \texttt{clinical\_notes} & Transcript normalization and structured clinical report generation contracts. \\
+Safety review & \texttt{suggestive\_mode} & Second-pass review that highlights omissions, inconsistencies, and medication risk signals. \\
+Doctor review & \texttt{review} & Draft approval, rejection, editing, and SQL projection orchestration. \\
+Prescription records & \texttt{prescriptions} & Finalized prescription model and version-ready repository contracts. \\
+Reporting & \texttt{pdf} & ReportLab-backed PDF generation for approved clinical documents. \\
+Communication & \texttt{email} & Template repository and outbound email abstraction. \\
+Audit and admin & \texttt{audit}, \texttt{admin} & Recent activity, prompt configuration, and email template overview. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Consultation Workflow}
+
+The main workflow follows this lifecycle:
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=0.75cm,
+  stage/.style={rectangle,rounded corners=2mm,draw=VertexBlue,fill=white,thick,align=center,minimum height=0.9cm,text width=2.1cm},
+  arrow/.style={-{Latex[length=2.2mm]},thick,draw=VertexMuted}
+]
+\node[stage] (recording) {recording};
+\node[stage,right=of recording] (transcribing) {transcribing};
+\node[stage,right=of transcribing] (processing) {processing};
+\node[stage,right=of processing] (review) {review};
+\node[stage,below right=0.75cm and -0.2cm of review] (approved) {approved};
+\node[stage,above right=0.75cm and -0.2cm of review,draw=VertexAmber] (rejected) {rejected};
+\draw[arrow] (recording) -- (transcribing);
+\draw[arrow] (transcribing) -- (processing);
+\draw[arrow] (processing) -- (review);
+\draw[arrow] (review) -- (approved);
+\draw[arrow] (review) -- (rejected);
+\end{tikzpicture}
+\end{center}
+
+During processing, the system normalizes the raw transcript, generates a structured draft report, and can run Suggestive Mode. During review, the doctor can inspect, edit, approve, reject, export, or send the report. This workflow keeps generated clinical content under explicit medical supervision.
+
+\subsection{Key Non-Functional Goals}
+
+\begin{itemize}
+  \item \textbf{Local-first operation:} AI inference runs through local services to reduce dependency on external clinical-data processors.
+  \item \textbf{Traceability:} Draft artifacts remain in MongoDB, while approved outcomes are projected into SQL for durable operational reporting.
+  \item \textbf{Replaceability:} Domain contracts isolate external adapters for SQL, MongoDB, local AI, PDF, and email.
+  \item \textbf{Safety:} Suggestive Mode acts as a structured review layer and does not replace clinician judgment.
+  \item \textbf{Validation:} Automated tests and generated reports provide evidence that core paths behave consistently.
+\end{itemize}

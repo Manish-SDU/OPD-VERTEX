@@ -1,0 +1,42 @@
+\section{Executive Summary}
+
+OPD-Vertex is a local-first outpatient department system designed to support doctors during consultation capture, clinical documentation, review, approval, and patient communication. The system records a consultation through the browser, sends audio to a Faster-Whisper sidecar for transcription, uses a local large language model to generate a structured clinical report, and keeps the doctor in control before any generated output is committed to operational SQL records.
+
+\begin{summarybox}
+The central design choice is clinician-in-the-loop automation. AI-generated drafts remain editable and reviewable until a doctor approves them. Only approved prescription data is projected into the relational database, while draft transcripts, prompts, generated reports, and review artifacts stay in MongoDB where iterative document state is easier to manage.
+\end{summarybox}
+
+The project combines web application workflows, local AI inference, hybrid persistence, PDF generation, email delivery, auditability, and a validation strategy covering unit, integration, benchmark, stress, and smoke testing. The current validation package reports 310 tests with no failures or skipped tests, plus performance benchmarks for patient, consultation, transcript, document editing, and generated-report paths.
+
+\subsection{Project Outcomes}
+
+\begin{itemize}
+  \item A FastAPI and Jinja2 application for outpatient clinical workflows.
+  \item Local speech-to-text processing through Faster-Whisper.
+  \item Structured report generation using Ollama with \texttt{qwen3:8b}.
+  \item A second-pass Suggestive Mode to surface clinical review points before approval.
+  \item Split SQL and MongoDB persistence aligned with transactional and document-oriented data needs.
+  \item PDF export and email delivery flows for approved reports.
+  \item Automated validation and benchmark artifacts included as appendices.
+\end{itemize}
+
+\subsection{Technology Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{0.24\textwidth}Y@{}}
+\toprule
+\textbf{Layer} & \textbf{Technology} \\
+\midrule
+API and UI & FastAPI, Jinja2, Uvicorn \\
+Relational data & MySQL 8.4 \\
+Document data & MongoDB 7 \\
+Transcription & Faster-Whisper sidecar \\
+Local language model & Ollama with \texttt{qwen3:8b} \\
+PDF generation & ReportLab \\
+Email & SMTP, MailHog for development, SendGrid or Gmail for production \\
+Testing & pytest with unit, integration, benchmark, stress, and smoke suites \\
+\bottomrule
+\end{tabularx}
+\caption{Main technologies used by OPD-Vertex.}
+\end{table}

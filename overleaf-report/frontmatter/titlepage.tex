@@ -1,0 +1,35 @@
+\begin{titlepage}
+\thispagestyle{empty}
+
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[VertexPanel] (current page.south west) rectangle (current page.north east);
+  \fill[VertexBlue] (current page.north west) rectangle ([yshift=-2.8cm]current page.north east);
+  \fill[VertexTeal] ([yshift=-2.8cm]current page.north west) rectangle ([yshift=-3.05cm]current page.north east);
+\end{tikzpicture}
+
+\vspace*{1.2cm}
+{\color{white}\Large\bfseries \InstitutionName\par}
+\vspace{3.2cm}
+
+{\Huge\bfseries\color{VertexInk}\ProjectTitle\par}
+\vspace{0.45cm}
+{\Large\color{VertexBlue}\ProjectSubtitle\par}
+\vspace{0.7cm}
+{\large\color{VertexMuted}\ProjectTagline\par}
+
+\vspace{1.6cm}
+\begin{summarybox}
+\textbf{Repository:} \RepositoryName\par
+\textbf{Primary stack:} FastAPI, Jinja2, MySQL, MongoDB, Faster-Whisper, Ollama, Qwen3:8B, ReportLab\par
+\textbf{Validation status:} 310 automated tests, 0 failures, 0 skipped; benchmark and Section 7 validation artifacts included.
+\end{summarybox}
+
+\vfill
+\begin{tabularx}{\textwidth}{@{}L{0.25\textwidth}Y@{}}
+Prepared by & \AuthorName \\
+Date & \SubmissionDate \\
+Document type & Technical project report and validation appendix \\
+Compiler & pdfLaTeX on Overleaf \\
+\end{tabularx}
+
+\end{titlepage}

@@ -1,0 +1,65 @@
+\section{Architecture}
+
+OPD-Vertex uses a layered architecture with a clear dependency direction. Presentation code calls application services, application services depend on domain contracts, and infrastructure modules implement those contracts for databases, AI services, PDF generation, email, and logging.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  layer/.style={rectangle,rounded corners=2mm,draw=VertexBlue,fill=white,thick,minimum width=10.5cm,minimum height=0.9cm,align=center},
+  adapter/.style={rectangle,rounded corners=2mm,draw=VertexTeal,fill=VertexPanel,thick,minimum width=3.1cm,minimum height=0.75cm,align=center},
+  arrow/.style={-{Latex[length=2.2mm]},draw=VertexMuted,thick}
+]
+\node[layer] (presentation) {Presentation: FastAPI routes, request handlers, Jinja templates};
+\node[layer,below=0.55cm of presentation] (application) {Application: use-case orchestration and workflow services};
+\node[layer,below=0.55cm of application] (domain) {Domain: entities, DTOs, ports, and business contracts};
+\node[adapter,below left=0.9cm and -0.1cm of domain] (sql) {SQL repositories};
+\node[adapter,right=0.35cm of sql] (mongo) {Mongo repositories};
+\node[adapter,right=0.35cm of mongo] (ai) {Local AI adapters};
+\node[adapter,below=0.35cm of mongo] (pdf) {PDF and email adapters};
+\draw[arrow] (presentation) -- (application);
+\draw[arrow] (application) -- (domain);
+\draw[arrow] (sql) -- (domain);
+\draw[arrow] (mongo) -- (domain);
+\draw[arrow] (ai) -- (domain);
+\draw[arrow] (pdf) -- (domain);
+\end{tikzpicture}
+\caption{Layered architecture and adapter direction.}
+\end{figure}
+
+\subsection{Persistence Model}
+
+The project intentionally splits transactional and document-oriented data. Relational tables own stable operational records; MongoDB owns evolving AI artifacts and configuration documents.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{0.25\textwidth}Y@{}}
+\toprule
+\textbf{Store} & \textbf{Owned data} \\
+\midrule
+MySQL & Staff, patients, consultations, approved prescriptions, and audit logs. \\
+MongoDB & Email templates, LLM prompts, generated documents, consultation documents, transcript artifacts, and review artifacts. \\
+Shared linkage & \texttt{consultation\_id} connects relational records to document records. \\
+\bottomrule
+\end{tabularx}
+\caption{SQL and MongoDB ownership boundaries.}
+\end{table}
+
+\subsection{AI Adapter Boundary}
+
+Transcription and clinical note generation are separate domain ports. This prevents the speech-to-text path from becoming tightly coupled to the report-generation path and allows each adapter to evolve independently. Faster-Whisper handles transcription, while transcript normalization, report generation, and Suggestive Mode use Ollama with \texttt{qwen3:8b}.
+
+\begin{calloutbox}{AI Safety Boundary}
+Generated drafts are not treated as final clinical records. They remain draft documents until a doctor reviews and approves them. Approved prescriptions are then projected into SQL, creating a deliberate boundary between probabilistic generation and durable operational data.
+\end{calloutbox}
+
+\subsection{Data Flow}
+
+\begin{enumerate}
+  \item Browser microphone captures consultation audio.
+  \item Faster-Whisper transcribes audio and stores raw transcript text in MongoDB.
+  \item The application normalizes the transcript and generates a structured draft report.
+  \item Suggestive Mode reviews the draft against the transcript and source context.
+  \item The doctor reviews, edits, approves, or rejects the generated report.
+  \item Approved prescription information is projected into SQL.
+  \item The approved report can be exported to PDF and sent by email.
+\end{enumerate}

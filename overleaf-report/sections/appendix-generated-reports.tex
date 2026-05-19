@@ -1,0 +1,35 @@
+\section{Generated Validation Reports}
+
+This appendix includes the generated PDF artifacts that were available in the project workspace when the LaTeX report was created. They are embedded so the Overleaf PDF can carry both the editable narrative report and the original generated validation evidence.
+
+\subsection{Automated Test Report}
+
+\IfFileExists{assets/pdfs/test_report.pdf}{
+  \includepdf[pages=-,pagecommand={}]{assets/pdfs/test_report.pdf}
+}{
+  \begin{summarybox}
+  Missing appendix file: \texttt{\detokenize{assets/pdfs/test_report.pdf}}.
+  \end{summarybox}
+}
+
+\clearpage
+\subsection{Section 7 Validation Report}
+
+\IfFileExists{assets/pdfs/section7_validation.pdf}{
+  \includepdf[pages=-,pagecommand={}]{assets/pdfs/section7_validation.pdf}
+}{
+  \begin{summarybox}
+  Missing appendix file: \texttt{\detokenize{assets/pdfs/section7_validation.pdf}}.
+  \end{summarybox}
+}
+
+\clearpage
+\subsection{Schema and Data Flow Report}
+
+\IfFileExists{assets/pdfs/OPD_VERTEX_Schema_and_DataFlow.pdf}{
+  \includepdf[pages=-,pagecommand={}]{assets/pdfs/OPD_VERTEX_Schema_and_DataFlow.pdf}
+}{
+  \begin{summarybox}
+  Missing appendix file: \texttt{\detokenize{assets/pdfs/OPD_VERTEX_Schema_and_DataFlow.pdf}}.
+  \end{summarybox}
+}

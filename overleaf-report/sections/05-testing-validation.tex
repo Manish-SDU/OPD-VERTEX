@@ -1,0 +1,87 @@
+\section{Testing and Validation}
+
+The validation package combines automated tests, benchmark measurements, Section 7 validation charts, and generated PDF reports. The current test summary reports 310 tests with zero failures and zero skipped tests.
+
+\subsection{Automated Test Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{0.22\textwidth}L{0.14\textwidth}Y@{}}
+\toprule
+\textbf{Suite} & \textbf{Count} & \textbf{Coverage} \\
+\midrule
+Unit & 263 & Domain models, repositories, services, logging, security, PDF, LLM mocks, versioning, and hallucination guards. \\
+Integration & 30 & Full HTTP flows, PDF routes, and real-LLM prompts that auto-skip when Ollama is unavailable. \\
+Benchmarks & 10 & p50, p95, and p99 latency for hot paths. \\
+Stress & 14 & Patient creation, concurrent writes, and end-to-end pipeline runs. \\
+Smoke & 6 & Application boot and health endpoint checks. \\
+\midrule
+\textbf{Total} & \textbf{310} & \textbf{0 failures, 0 skipped.} \\
+\bottomrule
+\end{tabularx}
+\caption{Automated validation summary.}
+\end{table}
+
+\subsection{Benchmark Results}
+
+Benchmarks were collected with mock adapters and in-memory paths. Values are reported in milliseconds.
+
+\begin{longtable}{@{}L{0.35\textwidth}rrrrrr@{}}
+\caption{Benchmark results from the generated validation artifacts.}\\
+\toprule
+\textbf{Operation} & \textbf{N} & \textbf{Mean} & \textbf{p50} & \textbf{p95} & \textbf{p99} & \textbf{Max} \\
+\midrule
+\texttt{patient\_list} & 200 & 0.001 & 0.001 & 0.001 & 0.008 & 0.020 \\
+\texttt{patient\_search\_by\_name} & 200 & 0.002 & 0.002 & 0.002 & 0.007 & 0.028 \\
+\texttt{patient\_create} & 100 & 0.005 & 0.005 & 0.007 & 0.041 & 0.041 \\
+\texttt{consultation\_list} & 200 & 0.001 & 0.002 & 0.002 & 0.003 & 0.013 \\
+\texttt{consultation\_create} & 100 & 0.004 & 0.003 & 0.004 & 0.033 & 0.033 \\
+\texttt{consultation\_get\_by\_id} & 500 & 0.001 & 0.001 & 0.001 & 0.001 & 0.008 \\
+\texttt{mock\_clinical\_note\_generation} & 100 & 0.011 & 0.010 & 0.011 & 0.066 & 0.066 \\
+\texttt{transcript\_normalizer} & 200 & 0.008 & 0.007 & 0.009 & 0.019 & 0.123 \\
+\texttt{document\_edit\_single\_field} & 100 & 0.096 & 0.091 & 0.111 & 0.265 & 0.265 \\
+\texttt{version\_history\_retrieval} & 500 & 0.001 & 0.001 & 0.001 & 0.001 & 0.004 \\
+\bottomrule
+\end{longtable}
+
+\subsection{Validation Charts}
+
+\begin{figure}[h]
+\centering
+\optionalgraphic[width=0.82\textwidth]{assets/charts/benchmark_latency.png}
+\caption{Benchmark latency validation chart.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \optionalgraphic[width=\linewidth]{assets/charts/pass_rate.png}
+  \caption{Pass rate}
+\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \optionalgraphic[width=\linewidth]{assets/charts/test_distribution.png}
+  \caption{Test distribution}
+\end{subfigure}
+\caption{Automated test validation overview.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \optionalgraphic[width=\linewidth]{assets/charts/hallucination_matrix.png}
+  \caption{Hallucination guard matrix}
+\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \optionalgraphic[width=\linewidth]{assets/charts/model_comparison.png}
+  \caption{Model comparison}
+\end{subfigure}
+\caption{AI validation artifacts.}
+\end{figure}
+
+\subsection{Validation Interpretation}
+
+The results support the core engineering claims of the project: the main workflows are covered by automated tests, generated reports can be exported, benchmarked paths are stable in mock mode, and AI-specific validation includes hallucination and structure checks. The remaining validation work before clinical deployment should focus on production database testing, clinician acceptance testing, security review, and external clinical safety review.
