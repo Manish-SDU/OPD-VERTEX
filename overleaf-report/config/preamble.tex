@@ -85,12 +85,24 @@
 
 \newcommand{\metric}[2]{\textbf{#1}\hfill\textcolor{VertexMuted}{#2}}
 
-\newcommand{\vertexcoverauthor}[1]{%
+\newcommand{\CollaborationMark}{\textsuperscript{\(\ast\dagger\)}}
+
+\newcommand{\vertexcoverauthor}[2]{%
   \begin{minipage}[t]{0.31\textwidth}%
     \centering\scriptsize
-    {\bfseries #1\par}%
+    {\bfseries #1\CollaborationMark\par}%
+    \href{mailto:#2}{\texttt{#2}}\par
     University of Southern Denmark\par
     Software Engineering\par
+  \end{minipage}%
+}
+
+\newcommand{\vertexcoversupervisor}[3]{%
+  \begin{minipage}[t]{0.42\textwidth}%
+    \centering\scriptsize
+    {\bfseries #1}\par
+    #2\par
+    \href{mailto:#3}{\texttt{#3}}\par
   \end{minipage}%
 }
 
@@ -112,21 +124,25 @@
     {\small\itshape\ProjectTagline\par}%
     \vspace{0.9em}%
     \rule{\textwidth}{0.7pt}\par
-    \vspace{1.15em}%
+    \vspace{1em}%
     {\small\scshape Semester Project 4 Project Report\par}%
-    \vspace{1.55em}%
+    \vspace{1.2em}%
     \noindent
-    \vertexcoverauthor{Gabriele Solazzo}\hfill
-    \vertexcoverauthor{Aleksandra Kwiatkowska}\hfill
-    \vertexcoverauthor{Gabija Staskeviciute}\par
-    \vspace{1.35em}%
+    \vertexcoverauthor{Gabriele Solazzo}{gasol24@student.sdu.dk}\hfill
+    \vertexcoverauthor{Aleksandra Kwiatkowska}{alkwi24@student.sdu.dk}\hfill
+    \vertexcoverauthor{Gabija Staskeviciute}{mahae24@student.sdu.dk}\par
+    \vspace{1em}%
     \noindent
-    \vertexcoverauthor{Luigi Colluto}\hfill
-    \vertexcoverauthor{Manish Raj Moriche}\hfill
-    \vertexcoverauthor{Mats Haertel}\par
-    \vspace{1.8em}%
+    \vertexcoverauthor{Luigi Colluto}{lucol24@student.sdu.dk}\hfill
+    \vertexcoverauthor{Manish Raj Moriche}{maraj24@student.sdu.dk}\hfill
+    \vertexcoverauthor{Mats Haertel}{mahae24@student.sdu.dk}\par
+    \vspace{1.15em}%
+    \noindent
+    \vertexcoversupervisor{Teacher}{\TeacherName}{\TeacherEmail}\hfill
+    \vertexcoversupervisor{Supervisor}{\SupervisorName}{\SupervisorEmail}\par
+    \vspace{1.1em}%
     {\small\SubmissionDate\par}%
-    \vspace{1.45em}%
+    \vspace{1.2em}%
     {\normalsize\bfseries\scshape Abstract\par}%
     \vspace{0.75em}%
     \begin{minipage}{0.86\textwidth}%
@@ -142,7 +158,7 @@
     \begin{minipage}{\textwidth}%
       \raggedright
       \rule{0.12\textwidth}{0.4pt}\par
-      {\scriptsize $^{*}$ All authors contributed equally to this work.\par}%
+      {\scriptsize $\ast\dagger$ All authors contributed collaboratively to this work.\par}%
     \end{minipage}%
   \end{titlepage}%
   \setcounter{footnote}{0}%
