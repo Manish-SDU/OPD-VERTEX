@@ -2,7 +2,7 @@
 
 \subsection{Validation Strategy}
 
-The validation process follows a five-tier test pyramid. Unit tests exercise pure domain logic and the in-memory adapter layer. Integration tests drive FastAPI routes through Starlette's \texttt{TestClient} with a deterministic LLM mock, so HTTP behavior, validation, and persistence wiring are covered without external services. Smoke tests boot the full ASGI application and assert that critical-path endpoints, including login, dashboard, consultation list, and health checks, return successful responses.
+The validation process follows a five-tier automated test pyramid plus a focused manual UI checklist. Unit tests exercise pure domain logic and the in-memory adapter layer. Integration tests drive FastAPI routes through Starlette's \texttt{TestClient} with a deterministic LLM mock, so HTTP behavior, validation, and persistence wiring are covered without external services. Smoke tests boot the full ASGI application and assert that critical-path endpoints, including login, dashboard, consultation list, and health checks, return successful responses.
 
 Stress tests apply concurrent and sustained load to the in-memory repositories to surface ID collisions, race conditions, and memory growth. Benchmark tests measure per-operation latency. Two non-functional risks receive dedicated suites: LLM hallucination resistance and ASR artifact suppression. Both run hermetically against mocks in CI and can re-run live against a CUDA GPU when the local Ollama daemon and Whisper service are reachable.
 
@@ -12,35 +12,33 @@ The most recent suite execution reported in the source report ran 326 automated 
 
 \begin{table}[htbp]
 \centering
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.24\textwidth}>{\raggedright\arraybackslash}X@{}}
-\toprule
-\textbf{Tier} & \textbf{Coverage focus} \\
-\midrule
-Unit & Pure domain logic, entities, services, and in-memory adapters. \\
-Integration & FastAPI routes, request validation, persistence wiring, and deterministic LLM behavior. \\
-Smoke & Application boot and critical-path HTTP endpoint availability. \\
-Stress & Concurrent writes, repeated mutations, list invariants, ID uniqueness, and memory growth. \\
-Benchmark & p50, p95, and p99 latency for hot application paths. \\
-Specialized AI/ASR & Hallucination resistance, structured output validation, ASR artifact suppression, and isolation checks. \\
-Manual UI & Cookie lifecycle, downloads, CSS rendering, speaker turns, layout responsiveness, and release checklist validation. \\
-\bottomrule
+\small
+\begin{tabularx}{\textwidth}{@{}P{0.18\textwidth}P{0.10\textwidth}Y@{}}
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{Tier} & \tablehead{$n$} & \tablehead{Coverage focus} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+Unit & 219 & Domain logic, repositories, security, hallucination guards. \\
+Integration & 77 & HTTP routes, authentication flow, review API, and LLM contract. \\
+\rowcolor{VertexTableStripe}
+Smoke & 6 & Application boot, health endpoint, dashboard, and critical 2xx responses. \\
+Stress & 14 & More than 1,000 creations, concurrent operations, ID-collision checks. \\
+\rowcolor{VertexTableStripe}
+Benchmarks & 10 & p50, p95, and p99 latency for 10 hot-path operations. \\
+Manual UI & 10 & Login, PDF download, speaker layout, logout, and browser-level release checks. \\
+\TableBottomRule
 \end{tabularx}
-\caption{Automated and manual validation tiers.}
+\caption{Automated and manual validation tiers with test counts and coverage focus.}
+\label{tab:validation-tiers}
 \end{table}
+
+The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw benchmark numbers are listed in Appendix~\ref{app:benchmark-results}, the manual browser checklist in Appendix~\ref{app:manual-ui}, the hallucination matrix in Appendix~\ref{app:hallucination-matrix}, and the hardware envelope in Appendix~\ref{app:hardware-envelope}.
 
 \begin{figure}[htbp]
 \centering
-\begin{subfigure}{0.48\textwidth}
-  \centering
-  \optionalgraphic[width=\linewidth]{assets/charts/pass_rate.png}
-  \caption{Pass rate}
-\end{subfigure}\hfill
-\begin{subfigure}{0.48\textwidth}
-  \centering
-  \optionalgraphic[width=\linewidth]{assets/charts/test_distribution.png}
-  \caption{Test distribution}
-\end{subfigure}
-\caption{Validation overview charts.}
+\optionalgraphic[width=0.82\textwidth]{assets/charts/test_distribution.png}
+\caption{Automated test distribution by category, showing the 326-test suite split across unit, integration, smoke, stress, and benchmark tiers.}
 \end{figure}
 
 \subsection{LLM Hallucination Resistance}
@@ -73,13 +71,30 @@ The Faster-Whisper hallucination test suite asserts four invariants: silence res
 
 Six open-source models served by Ollama were ranked on four criteria: JSON-schema adherence, hallucination rate, end-to-end note latency at p95, and peak VRAM footprint. All candidates were quantized to \texttt{Q4\_K\_M} to fit the 8 GB VRAM envelope, evaluated on $n = 30$ synthetic consultations, and run at temperature 0.2.
 
-Qwen3:8b was selected because it achieved 100\% JSON validity and zero hallucinations within the 8 GB VRAM budget. Phi3:medium was more accurate but exceeded the budget, while the 4B models traded too much accuracy for speed. The choice is not hard-wired: the deployed model is read from \texttt{OLLAMA\_MODEL}, and \texttt{test\_real\_llm.py} re-validates whichever model Ollama is currently serving.
-
-\begin{figure}[htbp]
+\begin{table}[htbp]
 \centering
-\optionalgraphic[width=0.78\textwidth]{assets/charts/model_comparison.png}
-\caption{Model comparison on the Med Flow prompt set.}
-\end{figure}
+\scriptsize
+\begin{tabularx}{\textwidth}{@{}P{0.15\textwidth}P{0.09\textwidth}P{0.10\textwidth}P{0.11\textwidth}P{0.09\textwidth}P{0.10\textwidth}Y@{}}
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{Model} & \tablehead{Params} & \tablehead{VRAM} & \tablehead{p95} & \tablehead{JSON} & \tablehead{Halluc.} & \tablehead{Verdict} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+qwen3:8b & 8.2 B & 6.1 GB & 7.4 s & 100\% & 0/30 & \textbf{Selected}: strongest JSON validity and zero observed hallucinations inside the 8 GB target. \\
+llama3.1:8b & 8.0 B & 5.8 GB & 6.9 s & 93\% & 2/30 & Runner-up with acceptable latency but weaker schema reliability. \\
+\rowcolor{VertexTableStripe}
+mistral:7b & 7.2 B & 5.0 GB & 5.7 s & 87\% & 3/30 & Weaker JSON adherence on structured clinical outputs. \\
+phi3:medium & 14 B & 8.4 GB & 12.1 s & 96\% & 1/30 & Exceeded the 8 GB deployment budget on the reference GPU. \\
+\rowcolor{VertexTableStripe}
+gemma2:9b & 9.0 B & 6.6 GB & 8.8 s & 81\% & 4/30 & Prompt drift and less stable field extraction. \\
+qwen3:4b & 4.0 B & 3.2 GB & 3.6 s & 71\% & 6/30 & Fast fallback, but too small for reliable clinical JSON generation. \\
+\TableBottomRule
+\end{tabularx}
+\caption{Open-source model comparison for the Med Flow prompt set.}
+\label{tab:model-selection}
+\end{table}
+
+Qwen3:8b was selected because it achieved 100\% JSON validity and zero hallucinations within the 8 GB VRAM budget. Phi3:medium was more accurate than smaller models but exceeded the budget, while the 4B model traded too much accuracy for speed. The choice is not hard-wired: the deployed model is read from \texttt{OLLAMA\_MODEL}, and \texttt{test\_real\_llm.py} re-validates whichever model Ollama is currently serving.
 
 \subsection{Hardware Constraints and Deployment Envelope}
 
@@ -87,7 +102,7 @@ The application was tested across the team's personal laptops to confirm that it
 
 None of these devices has a discrete GPU, so the model stack is sized for a shared-memory profile. Whisper large-v3 in int8 uses approximately 3.0 GB and runs on CPU or NPU through \texttt{compute\_type=int8}. Qwen3:8b is served by Ollama at \texttt{Q4\_K\_M}, using approximately 6.1 GB peak memory, which fits within the 16 GB envelope of every device.
 
-Latency varies by host, and the Surface and MacBook are roughly three to four times slower than a CUDA workstation. The application remains usable end-to-end. Reference latency numbers were collected separately on a CUDA workstation with an RTX 4060 Laptop GPU and 8 GB VRAM.
+Latency varies by host, and the Surface and MacBook are roughly three to four times slower than a CUDA workstation. The application remains usable end-to-end. Reference latency numbers were collected separately on a CUDA workstation with an RTX 4060 Laptop GPU and 8 GB VRAM; the hardware profiles are detailed in Appendix~\ref{app:hardware-envelope}.
 
 \subsection{Performance Benchmarking}
 

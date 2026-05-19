@@ -22,12 +22,7 @@ Before writing code, the team sketched the main user journeys and screen layouts
 
 \begin{figure}[htbp]
 \centering
-\fbox{%
-  \begin{minipage}{0.86\linewidth}
-  \centering
-  Insert Figma mockup screenshot for doctor dashboard and consultation screens.
-  \end{minipage}%
-}
+\optionalgraphic[width=0.96\textwidth]{assets/img/fig2-Figma.png}
 \caption{Initial Figma mockup of the doctor dashboard and consultation screens.}
 \end{figure}
 
@@ -41,31 +36,15 @@ The system was decomposed into loosely coupled components. Each component has a 
 
 \begin{figure}[htbp]
 \centering
-\begin{tikzpicture}[
-  component/.style={rectangle,rounded corners=2mm,draw=VertexBlue,fill=white,thick,align=center,text width=3.2cm,minimum height=0.9cm},
-  adapter/.style={rectangle,rounded corners=2mm,draw=VertexTeal,fill=VertexPanel,thick,align=center,text width=3cm,minimum height=0.8cm},
-  arrow/.style={-{Latex[length=2.2mm]},draw=VertexMuted,thick}
-]
-\node[component] (doctor) {Doctor Dashboard\\UI};
-\node[component,right=0.6cm of doctor] (patient) {Patient Portal\\UI};
-\node[component,below=0.7cm of doctor,xshift=1.9cm] (gateway) {Gateway API};
-\node[component,below=0.7cm of gateway] (backend) {Local Backend App};
-\node[adapter,below left=0.8cm and 1.2cm of backend] (auth) {Authentication\\Authorization};
-\node[adapter,below=0.8cm of backend] (ai) {Transcription\\LLM\\Suggestive Review};
-\node[adapter,below right=0.8cm and 1.2cm of backend] (doc) {PDF\\Email\\Versioning};
-\node[adapter,below=0.7cm of ai,xshift=-1.7cm] (mysql) {MySQL\\System of Record};
-\node[adapter,below=0.7cm of ai,xshift=1.7cm] (mongo) {MongoDB\\AI Artifacts};
-\draw[arrow] (doctor) -- (gateway);
-\draw[arrow] (patient) -- (gateway);
-\draw[arrow] (gateway) -- (backend);
-\draw[arrow] (backend) -- (auth);
-\draw[arrow] (backend) -- (ai);
-\draw[arrow] (backend) -- (doc);
-\draw[arrow] (backend) -- (mysql);
-\draw[arrow] (backend) -- (mongo);
-\end{tikzpicture}
+\optionalgraphic[width=0.98\textwidth]{assets/img/fig3-component.png}
 \caption{Logical component diagram showing Med Flow components and interfaces.}
 \end{figure}
+
+The final architecture and sequence diagrams can replace the slots below. Keeping them as dedicated spaces makes the report ready for the polished C4-style architecture view and the consultation-flow sequence diagram without mixing them with partial sketches.
+
+\diagramplaceholder{Architecture diagram slot}{Insert the final architecture diagram here, including the FastAPI app, Whisper sidecar, Ollama runtime, MySQL, MongoDB, SMTP service, and browser clients.}
+
+\diagramplaceholder{Sequence diagram slot}{Insert the final sequence diagram here for the doctor consultation flow from login and recording through transcription, AI generation, review, PDF export, and email.}
 
 On the user-facing side, the Doctor Dashboard is the main interface for doctors and gives access to the patient list, consultation recording, draft review, and prescription approval. The Patient Portal is used by patients to log in and read their own consultations and prescriptions. Both interfaces are server-rendered with Jinja2 templates and communicate with the backend through the Gateway API.
 
@@ -81,20 +60,48 @@ The AOP layer is based on a class-level decorator that automatically wraps every
 
 This keeps application services and repository classes free of observability boilerplate while producing uniform log entries with consistent duration units. A future migration to tracing or metrics infrastructure would require changing one focused area instead of refactoring the entire codebase.
 
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.92\textwidth}
+\begin{minted}[fontsize=\scriptsize,breaklines,linenos,frame=single,framesep=2mm,bgcolor=VertexPanel]{python}
+def apply_logging_aspect(component: str, module: str, *, log_args: bool = False, exclude=frozenset()):
+  def decorator(cls: type) -> type:
+    aspect = log_method(component, module, log_args=log_args)
+    for attr_name in list(vars(cls)):
+      if attr_name.startswith("_") or attr_name in exclude:
+        continue
+      attr = getattr(cls, attr_name)
+      if callable(attr):
+        setattr(cls, attr_name, aspect(attr))
+    return cls
+  return decorator
+
+@apply_logging_aspect("service", "consultations")
+class ConsultationApplicationService:
+  ...
+\end{minted}
+\end{minipage}
+\caption{Actual AOP implementation pattern used to wrap public service methods with entry, exit, error, and duration logging.}
+\end{figure}
+
 \subsection{Data Design and Dual-Database Architecture}
 
 Med Flow uses a dual-database design to separate the system of record from iterative AI artifacts. The relational store provides consistency for clinically meaningful data, while the document store provides flexibility for evolving AI outputs.
 
 \begin{table}[htbp]
 \centering
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.22\textwidth}>{\raggedright\arraybackslash}X@{}}
-\toprule
-\textbf{Database} & \textbf{Responsibility} \\
-\midrule
+\small
+\begin{tabularx}{\textwidth}{@{}P{0.22\textwidth}Y@{}}
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{Database} & \tablehead{Responsibility} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
 MySQL 8.4 & Stores staff, patients, consultations, approved prescriptions, and audit logs. It acts as the structured system of record. \\
 MongoDB 7 & Stores consultation documents, generated documents, prescription artifacts, LLM prompts, and email templates. It acts as the flexible document store for AI artifacts. \\
+\rowcolor{VertexTableStripe}
 Shared linkage & The \texttt{consultation\_id} connects relational records to document records across the two stores. \\
-\bottomrule
+\TableBottomRule
 \end{tabularx}
 \caption{Dual-database ownership model.}
 \end{table}
@@ -103,25 +110,6 @@ MySQL stores doctors and administrators with roles, hashed passwords, license da
 
 MongoDB stores semi-structured artifacts from the AI pipeline: transcripts and working notes, drafted reports, suggestive reviews, generated PDFs, versioned prompt templates, and editable patient communication templates. The iterative and fast-changing artifacts remain in MongoDB, while the legally meaningful approved prescription is moved into MySQL only after doctor approval.
 
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-  store/.style={rectangle,rounded corners=2mm,draw=VertexBlue,fill=white,thick,align=center,text width=4.5cm,minimum height=0.9cm},
-  item/.style={rectangle,draw=VertexLine,fill=VertexPanel,align=center,text width=4.2cm,minimum height=0.55cm},
-  arrow/.style={-{Latex[length=2.2mm]},draw=VertexMuted,thick}
-]
-\node[store] (mysql) {MySQL\\System of Record};
-\node[item,below=0.25cm of mysql] (staff) {staff, patients, consultations};
-\node[item,below=0.15cm of staff] (presc) {prescriptions, audit\_logs};
-\node[store,right=1.4cm of mysql] (mongo) {MongoDB\\Document Store};
-\node[item,below=0.25cm of mongo] (docs) {consultation\_documents};
-\node[item,below=0.15cm of docs] (gen) {generated\_documents, prompts};
-\node[item,below=0.15cm of gen] (email) {artifacts, email\_templates};
-\draw[arrow] (mysql) -- node[above]{\texttt{consultation\_id}} (mongo);
-\end{tikzpicture}
-\caption{Relational schema and document collections connected by consultation identity.}
-\end{figure}
-
 \subsection{Main Workflow and AI Pipeline}
 
 The consultation flow is implemented as three smaller workflows: consultation creation, AI processing, and prescription approval. The doctor opens the patient list, selects a patient, and starts a consultation. The system creates a new record with status \texttt{recording}; audio is captured in the browser and streamed to the backend through a WebSocket, which forwards chunks to the Whisper sidecar in near real time. Partial transcripts are stored so the session can survive a disconnect. When the doctor stops recording, the consultation moves to \texttt{processing} and the AI pipeline starts.
@@ -129,31 +117,6 @@ The consultation flow is implemented as three smaller workflows: consultation cr
 The AI pipeline contains two LLM calls followed by a safety pass. The transcript normalizer converts the raw transcript into structured JSON and filters speech artifacts. The clinical-note generator combines the normalized transcript with patient context, including age, allergies, and medical history, and asks Qwen3:8b to produce a structured object containing diagnosis, medications, instructions, follow-up date, lab tests, imaging, and a Markdown rendering of the full report.
 
 Suggestive Mode then performs a second pass. An LLM-based clinical safety review is merged with deterministic rule-based checks, such as missing dose, frequency, duration, allergy conflicts, and contraindication conflicts. The combined output is shown to the doctor as advisory alerts. Nothing is written to the prescription unless the doctor accepts it during editing.
-
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-  stage/.style={rectangle,rounded corners=2mm,draw=VertexBlue,fill=white,thick,align=center,text width=2.4cm,minimum height=0.8cm},
-  arrow/.style={-{Latex[length=2.2mm]},draw=VertexMuted,thick}
-]
-\node[stage] (audio) {Audio capture};
-\node[stage,right=0.35cm of audio] (asr) {Faster-Whisper transcription};
-\node[stage,right=0.35cm of asr] (normalizer) {Transcript normalizer};
-\node[stage,below=0.6cm of normalizer] (llm) {Clinical note generator};
-\node[stage,left=0.35cm of llm] (suggest) {Suggestive Mode};
-\node[stage,left=0.35cm of suggest] (review) {Doctor review};
-\node[stage,below=0.6cm of review] (approve) {Approve or reject};
-\node[stage,right=0.35cm of approve] (pdf) {PDF and email};
-\draw[arrow] (audio) -- (asr);
-\draw[arrow] (asr) -- (normalizer);
-\draw[arrow] (normalizer) -- (llm);
-\draw[arrow] (llm) -- (suggest);
-\draw[arrow] (suggest) -- (review);
-\draw[arrow] (review) -- (approve);
-\draw[arrow] (approve) -- (pdf);
-\end{tikzpicture}
-\caption{End-to-end consultation workflow from audio capture to approved output.}
-\end{figure}
 
 After generation, the doctor opens the review page, optionally edits the Markdown report, and either approves or rejects the draft. If approved, the system builds a prescription, saves it in MySQL with \texttt{is\_approved = true} and the next version number, marks the generated document as approved, and updates the consultation status. After approval, the doctor can download the PDF and send a plain-text summary email to the patient.
 

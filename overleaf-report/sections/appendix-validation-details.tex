@@ -1,51 +1,187 @@
-\section{Validation Detail Tables}
+\section{Validation Appendices}
 
-The source report includes several validation appendices. The tables below keep those appendix sections editable in LaTeX and leave room for detailed numerical data to be expanded as the generated reports evolve.
+\subsection{7.A. Detailed Test Inventory}
+\label{app:test-inventory}
 
-\subsection{Detailed Test Inventory}
+The automated suite contains 326 tests across unit, integration, smoke, stress, and benchmark tiers. The inventory below keeps the validation claims traceable to concrete test modules.
 
-The detailed test inventory lists each test file, the number of declared test cases, and the architectural concern covered by that file. It supports traceability from validation claims back to concrete test modules.
-
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.22\textwidth}>{\raggedright\arraybackslash}p{0.16\textwidth}>{\raggedright\arraybackslash}p{0.54\textwidth}@{}}
-\caption{Editable detailed test inventory template.}\\
-\toprule
-\textbf{Test area} & \textbf{Count} & \textbf{Coverage concern} \\
-\midrule
-Domain and services & To update & Entity behavior, workflow services, contracts, and validation rules. \\
-API and integration & To update & FastAPI routes, request handling, persistence wiring, and user workflows. \\
-AI and ASR safety & To update & Hallucination resistance, JSON structure, transcript artifacts, and session isolation. \\
-Benchmark and stress & To update & Hot-path latency, concurrent access, repository invariants, and memory behavior. \\
-Smoke and UI & To update & Application boot, health checks, critical pages, and manual browser validation. \\
-\bottomrule
+\begingroup
+\scriptsize
+\begin{longtable}{@{}P{0.34\textwidth}P{0.11\textwidth}P{0.07\textwidth}P{0.36\textwidth}@{}}
+\caption{Detailed automated test inventory.}\\
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{Test module} & \tablehead{Tier} & \tablehead{Cases} & \tablehead{Primary concern} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+\path{benchmarks/test_perf.py} & Bench. & 10 & Latency percentiles for hot application paths. \\
+\path{integration/test_auth_flow.py} & Integ. & 7 & Login, logout, JWT cookie lifecycle, and invalid credentials. \\
+\rowcolor{VertexTableStripe}
+\path{integration/test_functional_workflows.py} & Integ. & 21 & Multi-step user journeys from consultation creation through approval. \\
+\path{integration/test_health_dashboard.py} & Integ. & 2 & Health and dashboard routes. \\
+\rowcolor{VertexTableStripe}
+\path{integration/test_middleware.py} & Integ. & 4 & ASGI request/response middleware behavior. \\
+\path{integration/test_pdf_and_ui.py} & Integ. & 19 & PDF download through HTTP and UI-facing report routes. \\
+\rowcolor{VertexTableStripe}
+\path{integration/test_real_llm.py} & Integ. & 17 & Live Qwen3:8b contract with deterministic mock fallback. \\
+\path{integration/test_review_api.py} & Integ. & 7 & Suggestive review endpoint and doctor review API behavior. \\
+\rowcolor{VertexTableStripe}
+\path{smoke/test_app.py} & Smoke & 6 & Application boot, route registration, and critical pages. \\
+\path{stress/test_stress.py} & Stress & 14 & Concurrency, sustained load, list invariants, and ID collisions. \\
+\rowcolor{VertexTableStripe}
+\path{unit/test_component_services.py} & Unit & 17 & Component-wired service construction and dependency contracts. \\
+\path{unit/test_document_versioning.py} & Unit & 19 & Edit history and generated-document versioning. \\
+\rowcolor{VertexTableStripe}
+\path{unit/test_domain.py} & Unit & 10 & Domain entities, status transitions, and invariants. \\
+\path{unit/test_faster_whisper_hallucination.py} & Unit & 16 & ASR silence, artifact, word-error, and session-isolation guards. \\
+\rowcolor{VertexTableStripe}
+\path{unit/test_llm_hallucination.py} & Unit & 17 & LLM content grounding, isolation, and structured-output guards. \\
+\path{unit/test_logging.py} & Unit & 19 & Structured logging, AOP decorators, and middleware timing. \\
+\rowcolor{VertexTableStripe}
+\path{unit/test_mock_services.py} & Unit & 19 & Mock adapter behavior used by deterministic integration tests. \\
+\path{unit/test_ollama_client.py} & Unit & 4 & Ollama JSON parsing, retries, and error handling. \\
+\rowcolor{VertexTableStripe}
+\path{unit/test_pdf_generation.py} & Unit & 16 & PDF rendering correctness and report formatting. \\
+\path{unit/test_persistence_alignment.py} & Unit & 8 & ORM-to-domain mapping and persistence alignment. \\
+\rowcolor{VertexTableStripe}
+\path{unit/test_repositories.py} & Unit & 19 & In-memory repository contracts and list/create invariants. \\
+\path{unit/test_security.py} & Unit & 10 & JWT handling, password hashing, and role security. \\
+\rowcolor{VertexTableStripe}
+\path{unit/test_services.py} & Unit & 22 & Application service orchestration and workflow boundaries. \\
+\path{unit/test_transcription_speaker_diarization.py} & Unit & 23 & Speaker-labelled transcript normalization. \\
+\TableBottomRule
 \end{longtable}
+\endgroup
 
-\subsection{Benchmark Results}
+\subsection{7.B. Benchmark Results (Numerical)}
+\label{app:benchmark-results}
 
-Benchmark results are persisted in \texttt{reports/benchmark\_results.json}. The report measures p50, p95, p99, and maximum latency for hot paths. The current chart is included in Section 7, while this appendix can be expanded with the raw numerical table.
+The benchmark suite measures 10 hot paths with 100 to 500 iterations per operation. Values are reported in milliseconds and use in-memory adapters, so they demonstrate application-layer overhead rather than production database latency.
 
-\subsection{Manual UI Test Catalogue}
-
-Manual UI test cases follow a six-column format: test case ID, scenario, steps, expected result, actual result, and status. Cases TC001 through TC010 are executed manually before each release on the reference workstation.
-
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.10\textwidth}>{\raggedright\arraybackslash}p{0.19\textwidth}>{\raggedright\arraybackslash}p{0.22\textwidth}>{\raggedright\arraybackslash}p{0.18\textwidth}>{\raggedright\arraybackslash}p{0.13\textwidth}@{}}
-\caption{Editable manual UI test catalogue template.}\\
-\toprule
-\textbf{ID} & \textbf{Scenario} & \textbf{Steps} & \textbf{Expected result} & \textbf{Status} \\
-\midrule
-TC001 & Login flow & Open login page and authenticate with a valid role. & User reaches the correct dashboard. & Passing \\
-TC002 & Consultation list & Open consultation overview. & Existing consultations are visible and correctly scoped. & Passing \\
-TC003 & Recording UI & Start and stop a consultation recording. & Recording controls and status indicators update correctly. & Passing \\
-TC004 & Review page & Open generated draft. & Draft, structured fields, and actions are visible. & Passing \\
-TC005 & PDF download & Download approved report. & Browser receives a PDF file. & Passing \\
-\bottomrule
+\begingroup
+\scriptsize
+\begin{longtable}{@{}P{0.30\textwidth}P{0.09\textwidth}P{0.10\textwidth}P{0.10\textwidth}P{0.10\textwidth}P{0.10\textwidth}P{0.10\textwidth}@{}}
+\caption{Benchmark latency results from \texttt{reports/benchmark\_results.json}.}\\
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{Operation} & \tablehead{Iter.} & \tablehead{Mean} & \tablehead{p50} & \tablehead{p95} & \tablehead{p99} & \tablehead{Max} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+Patient list & 200 & 0.001 & 0.001 & 0.001 & 0.003 & 0.019 \\
+Patient search by name & 200 & 0.002 & 0.002 & 0.002 & 0.004 & 0.019 \\
+\rowcolor{VertexTableStripe}
+Patient create & 100 & 0.005 & 0.005 & 0.007 & 0.034 & 0.034 \\
+Consultation list & 200 & 0.001 & 0.001 & 0.001 & 0.001 & 0.008 \\
+\rowcolor{VertexTableStripe}
+Consultation create & 100 & 0.005 & 0.003 & 0.008 & 0.049 & 0.049 \\
+Consultation get by ID & 500 & 0.001 & 0.001 & 0.001 & 0.001 & 0.007 \\
+\rowcolor{VertexTableStripe}
+Mock clinical note generation & 100 & 0.011 & 0.010 & 0.014 & 0.069 & 0.069 \\
+Transcript normalizer & 200 & 0.007 & 0.007 & 0.008 & 0.018 & 0.114 \\
+\rowcolor{VertexTableStripe}
+Document edit single field & 100 & 0.097 & 0.088 & 0.181 & 0.262 & 0.262 \\
+Version history retrieval & 500 & 0.001 & 0.001 & 0.001 & 0.001 & 0.003 \\
+\TableBottomRule
 \end{longtable}
+\endgroup
 
-\subsection{Hallucination Test Matrix}
+\subsection{7.C. Manual UI Test Catalogue}
+\label{app:manual-ui}
 
-The hallucination matrix maps risk classes to tests. It covers malformed JSON, invented medication or allergy content, cross-consultation leakage, and live-model revalidation.
+The manual UI catalogue covers browser behaviors that were not yet automated with Playwright. Each case was executed against the release candidate and recorded with the observed evidence.
 
-\subsection{Hardware Envelope and End-to-End Latency}
+\begingroup
+\scriptsize
+\begin{longtable}{@{}P{0.07\textwidth}P{0.14\textwidth}P{0.22\textwidth}P{0.19\textwidth}P{0.19\textwidth}P{0.07\textwidth}@{}}
+\caption{Manual UI test catalogue.}\\
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{ID} & \tablehead{Scenario} & \tablehead{Steps} & \tablehead{Expected result} & \tablehead{Observed result} & \tablehead{Status} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+TC001 & Valid login & Open login page and authenticate with valid staff credentials. & Redirect to the correct dashboard. & Dashboard loaded and session cookie was set. & Pass \\
+TC002 & Invalid login & Submit invalid credentials. & Inline error, no redirect, and no session cookie. & Error displayed, URL unchanged, no new cookie. & Pass \\
+\rowcolor{VertexTableStripe}
+TC003 & New consultation & Select a patient and create a consultation. & Detail page opens with status \texttt{RECORDING}. & Detail page loaded and status badge showed recording. & Pass \\
+TC004 & Patient names & Open consultation list. & Human-readable patient names, not raw foreign keys. & Full patient names were displayed. & Pass \\
+\rowcolor{VertexTableStripe}
+TC005 & Generate report & Run clinical report generation. & Spinner appears and Markdown draft returns within 30 s. & Draft rendered in 7--9 s on Qwen3:8b. & Pass \\
+TC006 & Download PDF & Download approved report. & Browser saves a \texttt{report\_*.pdf} file. & PDF downloaded and opened successfully. & Pass \\
+\rowcolor{VertexTableStripe}
+TC007 & Speaker layout & Open speaker-labelled transcript. & Doctor and patient turns are visually distinct. & Doctor and patient turns used separate colors. & Pass \\
+TC008 & Computed age & Open patient detail page. & Age is computed in years. & Sample patients displayed correct ages. & Pass \\
+\rowcolor{VertexTableStripe}
+TC009 & Approve prescription & Approve a consultation draft. & Prescription appears and status becomes approved. & Prescription was created and consultation status updated. & Pass \\
+TC010 & Logout & Trigger logout then revisit dashboard. & Cookie cleared and protected page redirects or returns 401. & Session cookie cleared and access was blocked. & Pass \\
+\TableBottomRule
+\end{longtable}
+\endgroup
 
-The hardware envelope documents latency for GPU-bound paths on an auxiliary CUDA workstation with an Intel i7-13700H CPU, 32 GB DDR5 memory, NVIDIA RTX 4060 Laptop GPU with 8 GB GDDR6, Windows 11, CUDA 12.4, Ollama 0.4, and Faster-Whisper 1.0.
+\subsection{7.D. Hallucination Test Matrix}
+\label{app:hallucination-matrix}
 
-Whisper RTF means real-time factor. For example, $0.18\times$ means 30 seconds of audio is transcribed in approximately 5.4 seconds. The reference profile was used for the reported validation numbers, while the CPU-only profile is documented for reproducibility on machines without a CUDA GPU.
+The hallucination matrix maps known AI and ASR risk classes to mitigations and test evidence. It combines prompt-level grounding, schema validation, deterministic post-processing, and doctor approval.
+
+\begingroup
+\scriptsize
+\begin{longtable}{@{}P{0.18\textwidth}P{0.20\textwidth}P{0.31\textwidth}P{0.21\textwidth}@{}}
+\caption{Hallucination risk matrix and validation coverage.}\\
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{Risk class} & \tablehead{Origin} & \tablehead{Mitigation} & \tablehead{Validation evidence} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+Malformed JSON & LLM output parser & Pydantic validation, one retry, and fail-closed error handling. & \path{test_ollama_client.py}, \path{test_real_llm.py} \\
+Missing clinical fields & Structured note generation & Required schema keys and no literal \texttt{None} in generated fields. & \path{test_llm_hallucination.py} \\
+\rowcolor{VertexTableStripe}
+Invented medication or diagnosis & LLM clinical summarization & Grounded prompt, transcript contradiction checks, and doctor review. & \path{test_llm_hallucination.py} \\
+Allergy contradiction & Patient context versus generated prescription & Deterministic allergy checks in Suggestive Mode before approval. & \path{test_llm_hallucination.py}, \path{test_review_api.py} \\
+\rowcolor{VertexTableStripe}
+Cross-consultation leakage & Prompt state or runtime memory & Stateless per-call prompts and interleaved patient isolation tests. & \path{test_llm_hallucination.py} \\
+ASR caption artifact & Whisper decoder on silence or noise & VAD filtering, artifact blacklist, and \path{condition_on_previous_text=False}. & \path{test_faster_whisper_hallucination.py} \\
+\rowcolor{VertexTableStripe}
+Silent-audio hallucination & Empty ASR buffers & Empty transcript guard and silence fixture. & \path{test_faster_whisper_hallucination.py} \\
+\TableBottomRule
+\end{longtable}
+\endgroup
+
+\subsection{7.E. Hardware Envelope and End-to-End Latency}
+\label{app:hardware-envelope}
+
+The reference CUDA workstation used for live measurements had an Intel i7-13700H CPU, 32 GB DDR5 memory, an NVIDIA RTX 4060 Laptop GPU with 8 GB GDDR6, Windows 11, CUDA 12.4, Ollama 0.4, and Faster-Whisper 1.0. Whisper RTF means real-time factor; for example, $0.18\times$ means 30 seconds of audio is transcribed in approximately 5.4 seconds.
+
+\begingroup
+\scriptsize
+\begin{longtable}{@{}P{0.20\textwidth}P{0.14\textwidth}P{0.17\textwidth}P{0.11\textwidth}P{0.17\textwidth}P{0.13\textwidth}@{}}
+\caption{Hardware profiles and AI latency envelope.}\\
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{Profile} & \tablehead{VRAM / memory} & \tablehead{Whisper mode} & \tablehead{Whisper RTF} & \tablehead{LLM mode} & \tablehead{Note p95} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+GPU plus GPU reference & 7.6 GB peak & CUDA int8 & $0.18\times$ & CUDA \texttt{Q4\_K\_M} & 7.4 s \\
+CPU Whisper plus GPU LLM & 5.1 GB peak & CPU int8 & $0.62\times$ & CUDA \texttt{Q4\_K\_M} & 7.4 s \\
+\rowcolor{VertexTableStripe}
+CPU only degraded & 0 GB GPU, 18 GB RAM & CPU int8 & $0.62\times$ & CPU \texttt{Q4\_K\_M} & 44.0 s \\
+GPU plus 4-bit fallback & 5.0 GB peak & CUDA int8 & $0.18\times$ & qwen3:4b \texttt{Q4\_K\_M} & 3.6 s \\
+\TableBottomRule
+\end{longtable}
+\endgroup
+
+\begingroup
+\small
+\begin{longtable}{@{}P{0.26\textwidth}P{0.22\textwidth}P{0.42\textwidth}@{}}
+\caption{Reference end-to-end latency interpretation.}\\
+\TableTopRule
+\rowcolor{VertexTableBlue}
+\tablehead{Pipeline step} & \tablehead{Reference value} & \tablehead{Interpretation} \\
+\TableMidRule
+\rowcolor{VertexTableStripe}
+30 s audio transcription & Approx. 5.4 s & Faster than real time on the CUDA profile, so transcription does not block the doctor after recording ends. \\
+Clinical note generation & p95 7.4 s & Qwen3:8b stays within the interactive review target on the reference GPU. \\
+\rowcolor{VertexTableStripe}
+CPU-only note generation & p95 44.0 s & Usable for degraded local operation, but too slow for the recommended clinical workflow. \\
+Full AI path estimate & Approx. 13--16 s & Transcription plus note generation fits the report's recommended hardware target before PDF and email actions. \\
+\TableBottomRule
+\end{longtable}
+\endgroup
