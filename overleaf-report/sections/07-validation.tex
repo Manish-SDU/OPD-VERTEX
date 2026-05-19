@@ -8,6 +8,34 @@ The validation process follows a five-tier automated test pyramid plus a focused
 
 Stress tests apply concurrent and sustained load to the in-memory repositories to surface ID collisions, race conditions, and memory growth. Benchmark tests measure per-operation latency. Two non-functional risks receive dedicated suites: LLM hallucination resistance and ASR artifact suppression. Both run hermetically against mocks in CI and can re-run live against a CUDA GPU when the local Ollama daemon and Whisper service are reachable.
 
+\subsection{CI/CD Pipeline}
+\label{subsec:cicd-pipeline}
+
+The repository includes a GitHub Actions workflow in \path{.github/workflows/ci.yml}. It runs on pushes and pull requests targeting \path{main}, uses Python 3.12 with pip caching, and separates quality gates into independent jobs. The lint job installs the development dependencies and runs \path{ruff check app/} plus \path{ruff format --check app/}. Three test jobs then run the unit, integration, and smoke suites separately with \path{pytest}. The final Docker build job depends on all four quality gates and builds the application image tagged with the commit SHA.
+
+This is continuous integration plus build verification. The workflow does not automatically deploy the system to a production environment, so the delivery part is limited to proving that the codebase can pass the quality gates and produce a container image.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  ciNode/.style={draw=VertexTeal!70, fill=VertexTeal!8, rounded corners=1.3mm, align=center, text width=2.8cm, minimum height=1.35cm, font=\small, inner sep=2.5mm},
+  ciTrigger/.style={ciNode, draw=VertexBlue!70, fill=VertexBlue!7},
+  ciBuild/.style={ciNode, draw=VertexAmber!80, fill=VertexAmber!10},
+  ciArrow/.style={-{Latex[length=2.3mm]}, draw=VertexInk!65, line width=0.65pt}
+]
+\node[ciTrigger] (trigger) at (0,0) {\textbf{Trigger}\\\scriptsize Push / pull request\\to \texttt{main}};
+\node[ciNode] (lint) at (3.65,0) {\textbf{Lint}\\\scriptsize Ruff check\\Ruff format check};
+\node[ciNode] (tests) at (7.3,0) {\textbf{Automated tests}\\\scriptsize Unit\\Integration\\Smoke};
+\node[ciBuild] (build) at (10.95,0) {\textbf{Docker build}\\\scriptsize Runs after gates\\Image tagged by SHA};
+
+\draw[ciArrow] (trigger.east) -- (lint.west);
+\draw[ciArrow] (lint.east) -- (tests.west);
+\draw[ciArrow] (tests.east) -- (build.west);
+\end{tikzpicture}
+\caption{GitHub Actions continuous integration and build verification pipeline.}
+\label{fig:cicd-pipeline}
+\end{figure}
+
 \subsection{Test Inventory and Outcome}
 \label{subsec:test-inventory-outcome}
 
