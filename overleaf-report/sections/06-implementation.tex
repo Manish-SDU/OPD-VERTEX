@@ -109,12 +109,12 @@ The orchestration workflow is:
 
 The PDF generation module creates structured PDF documents from clinical data produced by consultations and prescriptions. This feature is important for shareable and printable records.
 
-PDF generation is implemented with ReportLab. The review route \texttt{/review/\{consultation\_id\}/pdf} calls \texttt{ReportPdfApplicationService.generate\_report\_pdf()}, which loads the generated Markdown report from the document repository, fetches consultation, patient, and clinician metadata, and delegates rendering to \texttt{ReportLabPdfGenerator}. The resulting file is stored in the configured PDF output directory and returned to the browser as an \texttt{application/pdf} response.
+PDF generation is implemented with ReportLab. The review workflow exposes a consultation PDF download action that loads the approved Markdown report, fetches consultation, patient, and clinician metadata, and delegates rendering to the ReportLab PDF adapter. The resulting file is stored in the configured PDF output directory and returned to the browser as a PDF response.
 
 \subsection{Email Notification Service}
 \label{subsec:email-notification-service}
 
-The email notification service sends patient-friendly follow-up information after doctor approval. The implemented endpoint is \texttt{/review/report/\{consultation\_id\}/send-email}, which calls \texttt{ReviewApplicationService.send\_report\_to\_patient()}. That service refuses to send unapproved generated reports, loads the patient email address, builds a summary containing prescription, follow-up, and suggestions, and passes an \texttt{EmailMessage} to \texttt{SmtpEmailService}.
+The email notification service sends patient-friendly follow-up information after doctor approval. The report-send action calls the review application service, which refuses unapproved generated reports, loads the patient email address, builds a summary containing prescription, follow-up, and suggestions, and passes the message to the SMTP adapter.
 
 Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart messages using Python's \texttt{email.mime} package and sends them with \texttt{smtplib}. The SMTP adapter supports plain text, optional HTML, and optional attachments, but the current patient follow-up workflow sends a plain-text summary without attaching the PDF. During development, MailHog was used as the SMTP server so outgoing emails could be inspected without sending real messages.
 
