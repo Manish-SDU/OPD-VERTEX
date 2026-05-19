@@ -35,12 +35,6 @@ Manual UI & 10 & Login, PDF download, speaker layout, logout, and browser-level 
 
 The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw benchmark numbers are listed in Appendix~\ref{app:benchmark-results}, the manual browser checklist in Appendix~\ref{app:manual-ui}, the hallucination matrix in Appendix~\ref{app:hallucination-matrix}, and the hardware envelope in Appendix~\ref{app:hardware-envelope}.
 
-\begin{figure}[htbp]
-\centering
-\optionalgraphic[width=0.82\textwidth]{assets/charts/test_distribution.png}
-\caption{Automated test distribution by category, showing the 326-test suite split across unit, integration, smoke, stress, and benchmark tiers.}
-\end{figure}
-
 \subsection{LLM Hallucination Resistance}
 
 Every LLM-backed component runs on open-source weights served locally by Ollama. The reference model is Qwen3:8b under the Apache 2.0 license. No proprietary cloud APIs are used, which keeps patient data on-premises and makes validation reproducible without a billing account.
@@ -108,11 +102,7 @@ Latency varies by host, and the Surface and MacBook are roughly three to four ti
 
 The benchmark suite uses Python's \texttt{time.perf\_counter} to time 10 hot paths over 100 to 500 iterations each, recording p50, p95, and p99 latency. Each measurement has an explicit upper-bound assertion so a regression fails the build instead of silently degrading performance.
 
-\begin{figure}[htbp]
-\centering
-\optionalgraphic[width=0.82\textwidth]{assets/charts/benchmark_latency.png}
-\caption{p50, p95, and p99 latency for benchmarked operations against in-memory adapters.}
-\end{figure}
+The numerical results are listed in Appendix~\ref{app:benchmark-results}, which keeps the evidence inspectable without adding another chart to the main report.
 
 The results are favorable: every operation finishes in well under a millisecond at the 99th percentile. This indicates that the application layer is not the bottleneck. Production latency will be higher because real MySQL and MongoDB adapters add network and disk I/O, but the benchmark establishes that the domain logic imposes negligible overhead.
 

@@ -16,8 +16,8 @@
 \definecolor{VertexGreen}{HTML}{15803D}
 \definecolor{VertexAmber}{HTML}{B45309}
 \definecolor{VertexRed}{HTML}{B91C1C}
-\definecolor{VertexTableBlue}{HTML}{1E40AF}
-\definecolor{VertexTableStripe}{HTML}{EFF6FF}
+\definecolor{VertexTableBlue}{gray}{1}
+\definecolor{VertexTableStripe}{gray}{1}
 
 \hypersetup{
   colorlinks=true,
@@ -38,10 +38,10 @@
 
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
-\newcommand{\VertexTableHead}[1]{\textcolor{white}{\bfseries #1}}
-\newcommand{\TableTopRule}{\arrayrulecolor{VertexTableBlue}\toprule}
-\newcommand{\TableMidRule}{\arrayrulecolor{VertexLine}\midrule}
-\newcommand{\TableBottomRule}{\arrayrulecolor{VertexTableBlue}\bottomrule\arrayrulecolor{black}}
+\newcommand{\VertexTableHead}[1]{\bfseries #1}
+\newcommand{\TableTopRule}{\arrayrulecolor{black}\toprule}
+\newcommand{\TableMidRule}{\arrayrulecolor{black}\midrule}
+\newcommand{\TableBottomRule}{\arrayrulecolor{black}\bottomrule\arrayrulecolor{black}}
 
 \setlength{\headheight}{14pt}
 \pagestyle{fancy}

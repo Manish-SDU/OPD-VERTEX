@@ -1,6 +1,4 @@
-\section{Validation Appendices}
-
-\subsection{7.A. Detailed Test Inventory}
+\section{Detailed Test Inventory}
 \label{app:test-inventory}
 
 The automated suite contains 326 tests across unit, integration, smoke, stress, and benchmark tiers. The inventory below keeps the validation claims traceable to concrete test modules.
@@ -53,7 +51,7 @@ The automated suite contains 326 tests across unit, integration, smoke, stress, 
 \end{longtable}
 \endgroup
 
-\subsection{7.B. Benchmark Results (Numerical)}
+\section{Benchmark Results (Numerical)}
 \label{app:benchmark-results}
 
 The benchmark suite measures 10 hot paths with 100 to 500 iterations per operation. Values are reported in milliseconds and use in-memory adapters, so they demonstrate application-layer overhead rather than production database latency.
@@ -85,7 +83,7 @@ Version history retrieval & 500 & 0.001 & 0.001 & 0.001 & 0.001 & 0.003 \\
 \end{longtable}
 \endgroup
 
-\subsection{7.C. Manual UI Test Catalogue}
+\section{Manual UI Test Catalogue}
 \label{app:manual-ui}
 
 The manual UI catalogue covers browser behaviors that were not yet automated with Playwright. Each case was executed against the release candidate and recorded with the observed evidence.
@@ -117,7 +115,7 @@ TC010 & Logout & Trigger logout then revisit dashboard. & Cookie cleared and pro
 \end{longtable}
 \endgroup
 
-\subsection{7.D. Hallucination Test Matrix}
+\section{Hallucination Test Matrix}
 \label{app:hallucination-matrix}
 
 The hallucination matrix maps known AI and ASR risk classes to mitigations and test evidence. It combines prompt-level grounding, schema validation, deterministic post-processing, and doctor approval.
@@ -145,7 +143,7 @@ Silent-audio hallucination & Empty ASR buffers & Empty transcript guard and sile
 \end{longtable}
 \endgroup
 
-\subsection{7.E. Hardware Envelope and End-to-End Latency}
+\section{Hardware Envelope and End-to-End Latency}
 \label{app:hardware-envelope}
 
 The reference CUDA workstation used for live measurements had an Intel i7-13700H CPU, 32 GB DDR5 memory, an NVIDIA RTX 4060 Laptop GPU with 8 GB GDDR6, Windows 11, CUDA 12.4, Ollama 0.4, and Faster-Whisper 1.0. Whisper RTF means real-time factor; for example, $0.18\times$ means 30 seconds of audio is transcribed in approximately 5.4 seconds.
