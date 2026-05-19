@@ -1,18 +1,19 @@
-\documentclass[11pt,a4paper]{article}
+\documentclass{bachelorthesis}
 
 \input{config/metadata}
 \input{config/preamble}
 
+\title{\ProjectTitle\\\ProjectSubtitle}
+\author{\GroupName\\[0.5em]\AuthorNames\\[1em]Teachers and supervisors\\\SupervisorNames}
+\date{\InstitutionName\\\ProgrammeName\\Course ID: \CourseId\\\SubmissionDate}
+
 \begin{document}
 
-\input{frontmatter/titlepage}
-
-\pagenumbering{roman}
+\maketitle
 \input{sections/00-abstract}
 \tableofcontents
-\clearpage
 
-\pagenumbering{arabic}
+\mainmatter
 \input{sections/01-introduction}
 \input{sections/02-methodology}
 \input{sections/03-problem-analysis}

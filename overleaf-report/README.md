@@ -2,12 +2,13 @@
 
 This folder is a standalone Overleaf project for the OPD-Vertex fourth semester report. The report content has been extracted from `4th_Semester_OPDVertex_Report.pdf` and rewritten into editable LaTeX section files.
 
-`main.tex` no longer embeds the source report PDF. It compiles normal LaTeX content so the text, tables, figures, and structure can be edited directly in Overleaf.
+`main.tex` uses the SDU `bachelorthesis.cls` template and compiles normal LaTeX content so the text, tables, figures, and structure can be edited directly in Overleaf.
 
 ## Files
 
 - `main.tex` is the Overleaf main file.
 - `editable-report.tex` mirrors the same editable document structure and is kept as a compatibility entry point.
+- `bachelorthesis.cls` and `assets/sdu_logo.pdf` come from `SDU_Template.zip`.
 - `config/metadata.tex` stores title, author, date, and repository metadata.
 - `config/preamble.tex` stores layout, colors, tables, figures, and PDF settings.
 - `sections/` stores the editable report chapters.
@@ -23,29 +24,30 @@ This folder is a standalone Overleaf project for the OPD-Vertex fourth semester 
 4. Set the compiler to `pdfLaTeX`.
 5. Recompile.
 
+The SDU class loads `minted`, so `latexmkrc` enables shell escape for Overleaf builds.
+
 The original PDF is kept only as a reference. To edit the report, change the files in `sections/` instead of replacing a PDF.
 
 ## SDU template note
 
-The chat attachment `SDU_Template.zip` was not visible as a workspace file during conversion. If you place that zip in this folder or extract it into the workspace, the editable report content can be moved into the exact SDU template structure.
+The SDU template class and logo have been copied into this project, so Overleaf can compile the report without needing the original `SDU_Template.zip` upload.
 
-## Recommended GitHub flow
+## Recommended branch flow
 
-For the cleanest Overleaf import, push this folder as its own repository instead of importing the full application repository.
-
-```powershell
-cd overleaf-report
-git init
-git add .
-git commit -m "Create OPD-Vertex Overleaf report"
-```
-
-Then create a GitHub repository, add it as `origin`, and push. Do not paste personal access tokens into chat; use GitHub's normal browser login or type credentials directly into the terminal if Git asks for them.
+This workspace is currently on the `SP4-Report` branch. Commit the report changes there and push that branch to GitHub so Overleaf can import or sync the same branch.
 
 ```powershell
-git remote add origin https://github.com/Manish-SDU/opd-vertex-overleaf-report.git
-git branch -M main
-git push -u origin main
+git add overleaf-report
+git commit -m "Create editable SDU Overleaf report"
+git push -u origin SP4-Report
 ```
 
-After that, use Overleaf's GitHub import/sync feature and select the new repository.
+Do not paste personal access tokens into chat. If Git asks for credentials, type the token directly into the terminal prompt.
+
+If you want to push directly to the configured Overleaf Git remote, use:
+
+```powershell
+git subtree push --prefix overleaf-report overleaf SP4-Report:master
+```
+
+That command publishes only the `overleaf-report` folder to the Overleaf project root, so `main.tex` appears at the top level in Overleaf.
