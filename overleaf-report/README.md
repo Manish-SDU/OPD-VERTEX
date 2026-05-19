@@ -2,7 +2,7 @@
 
 This folder is a standalone Overleaf project that reproduces the original PDF exactly by embedding it with LaTeX's `pdfpages` package.
 
-The main file is intentionally simple: it does not redesign the report. It includes `assets/pdfs/source.pdf` page-for-page so the Overleaf output matches the PDF layout.
+The main file is intentionally simple: it does not redesign the report. It includes `assets/pdfs/source.pdf` page-for-page so the Overleaf output matches the PDF layout. The current `source.pdf` is copied from `docs/4th_Semester_OPDVertex_Report.pdf`.
 
 ## Files
 

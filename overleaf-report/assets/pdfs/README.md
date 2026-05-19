@@ -2,7 +2,7 @@
 
 This directory stores PDF files used by the Overleaf project.
 
-`source.pdf` is the PDF reproduced exactly by `main.tex`. Replace `source.pdf` if you want Overleaf to reproduce a different original PDF.
+`source.pdf` is the PDF reproduced exactly by `main.tex`. It currently mirrors `docs/4th_Semester_OPDVertex_Report.pdf`. Replace `source.pdf` if you want Overleaf to reproduce a different original PDF.
 
 Expected files:
 
