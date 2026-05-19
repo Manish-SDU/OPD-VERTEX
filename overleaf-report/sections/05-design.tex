@@ -157,28 +157,29 @@ For this reason, Med Flow treats scheduling as an integration boundary rather th
 
 \begin{figure}[htbp]
 \centering
-\resizebox{0.96\textwidth}{!}{%
+\resizebox{0.86\textwidth}{!}{%
 \begin{tikzpicture}[
-  node distance=1.15cm and 1.25cm,
-  box/.style={draw=black, rounded corners=1mm, align=center, fill=white, minimum width=3.0cm, minimum height=0.85cm, font=\small},
-  muted/.style={draw=black!55, rounded corners=1mm, align=center, fill=VertexPanel, minimum width=3.2cm, minimum height=0.85cm, font=\small},
-  arrow/.style={-{Latex[length=2mm]}, draw=black!65, line width=0.45pt},
-  boundary/.style={draw=black!55, dashed, rounded corners=1.5mm, inner sep=4mm}
+  external/.style={draw=VertexBlue!70, fill=VertexBlue!8, rounded corners=1mm, align=center, text width=3.9cm, minimum height=1.05cm, font=\small},
+  medflow/.style={draw=VertexTeal!70, fill=VertexTeal!9, rounded corners=1mm, align=center, text width=4.05cm, minimum height=1.05cm, font=\small},
+  clinical/.style={draw=VertexAmber!80, fill=VertexAmber!10, rounded corners=1mm, align=center, text width=4.05cm, minimum height=1.05cm, font=\small},
+  arrow/.style={-{Latex[length=2.4mm]}, draw=VertexInk!70, line width=0.6pt},
+  boundary/.style={draw=VertexTeal!45, dashed, rounded corners=1.5mm, inner sep=4.5mm}
 ]
-\node[muted] (identity) {MitID / NemLog-in\\identity and SSO};
-\node[muted, below=of identity] (booking) {Clinic or public-sector\\booking service};
-\node[box, right=of identity] (gateway) {Med Flow API\\integration boundary};
-\node[box, right=of gateway] (consultation) {Consultation context\\patient, doctor, time};
-\node[box, below=of consultation] (pipeline) {Documentation pipeline\\record, transcribe, draft};
-\node[box, right=of pipeline] (review) {Doctor review\\approve, PDF, email};
+\node[external] (identity) at (0,2.2) {\textbf{External identity}\\MitID / NemLog-in\\\scriptsize verified user session};
+\node[external] (booking) at (0,0.35) {\textbf{External booking}\\clinic or public-sector system\\\scriptsize appointment metadata};
 
-\draw[arrow] (identity) -- node[above, font=\scriptsize]{verified user/session} (gateway);
-\draw[arrow] (booking) -- node[below, font=\scriptsize]{appointment metadata} (gateway);
-\draw[arrow] (gateway) -- (consultation);
-\draw[arrow] (consultation) -- (pipeline);
-\draw[arrow] (pipeline) -- (review);
+\node[medflow] (gateway) at (6.1,1.3) {\textbf{Med Flow adapter}\\stable API contract};
+\node[medflow] (consultation) at (6.1,-0.1) {\textbf{Consultation context}\\patient, doctor, time};
+\node[clinical] (pipeline) at (6.1,-1.5) {\textbf{Documentation pipeline}\\record, transcribe, draft};
+\node[clinical] (review) at (6.1,-2.9) {\textbf{Doctor review}\\approve, PDF, email};
 
-\node[boundary, fit=(gateway)(consultation)(pipeline)(review), label={[font=\scriptsize]above:Med Flow scope}] {};
+\draw[arrow] (identity.east) -- (gateway.160);
+\draw[arrow] (booking.east) -- (gateway.200);
+\draw[arrow] (gateway.south) -- (consultation.north);
+\draw[arrow] (consultation.south) -- (pipeline.north);
+\draw[arrow] (pipeline.south) -- (review.north);
+
+\node[boundary, fit=(gateway)(consultation)(pipeline)(review), label={[font=\scriptsize\bfseries, text=VertexTeal]above:Med Flow scope}] {};
 \end{tikzpicture}%
 }
 \caption{Replaceable booking and identity integration boundary for a Danish deployment scenario.}

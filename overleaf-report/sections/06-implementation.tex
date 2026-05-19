@@ -30,7 +30,7 @@ The API layer is built using FastAPI. It defines and serves HTTP endpoints and a
 \label{tab:implemented-route-modules}
 \end{table}
 
-FastAPI dependency injection is used to manage authentication, repositories, adapters, and shared services. Dependencies are defined in \texttt{app/api/deps.py}; for example, \texttt{get\_clinical\_notes\_app\_service()} wires the consultation repositories, prompt repository, transcript normalization service, and note generator into \texttt{ClinicalNotesApplicationService}. This keeps route functions focused on HTTP concerns while application services own workflow orchestration.
+FastAPI dependency injection is used to manage authentication, repositories, adapters, and shared services. Dependencies are defined in \path{app/api/deps.py}. For example, the clinical-notes dependency wires consultation repositories, the prompt repository, transcript normalization, and the note generator into the application service. This keeps route functions focused on HTTP concerns while application services own workflow orchestration.
 
 \subsection{Service and Adapter Boundaries}
 \label{subsec:service-adapter-boundaries}
@@ -79,7 +79,7 @@ After successful authentication, the system assigns a JWT to the user. The token
 
 The transcription component enables live conversion of audio into text, which can then be processed into clinical documentation. It is designed to be scalable, replaceable, and integrated with the other components.
 
-The workflow is orchestrated by \texttt{TranscriptionApplicationService}, which handles streaming audio data, temporary audio and text chunks, and finalization of the complete transcription. The route module \texttt{transcriptions.py} exposes \texttt{/transcriptions/session/start}, the WebSocket endpoint \texttt{/transcriptions/ws/\{session\_id\}}, completion endpoints, and demo-text injection for presentations. The actual speech-to-text conversion is handled by Faster-Whisper through \texttt{StreamingFasterWhisperService}, which communicates with the local Whisper microservice configured by \texttt{WHISPER\_API\_URL}.
+The transcription application service handles streaming audio data, temporary audio and text chunks, and finalization of the complete transcription. The route module \path{transcriptions.py} exposes session start, WebSocket streaming, completion endpoints, and demo-text injection for presentations. The actual speech-to-text conversion is handled by Faster-Whisper through the local Whisper adapter, which communicates with the microservice configured by \path{WHISPER_API_URL}.
 
 \begin{enumerate}
   \item \textbf{Session initialization:} temporary storage is created for incoming audio data through \texttt{start\_transcription\_session}.
@@ -91,9 +91,9 @@ The workflow is orchestrated by \texttt{TranscriptionApplicationService}, which 
 \subsection{LLM Orchestration}
 \label{subsec:llm-orchestration}
 
-The LLM orchestration component enables transcript normalization, clinical note generation, and suggestions using the locally integrated Ollama model. The implementation uses \texttt{OllamaClient} for low-level HTTP communication and adapter classes in \texttt{ollama\_adapter.py} for domain-specific tasks. \texttt{OllamaTranscriptNormalizer} returns a structured normalized transcript, \texttt{OllamaClinicalNoteGenerator} returns validated clinical notes, and \texttt{OllamaSuggestiveModeService} returns a structured suggestive review.
+The LLM orchestration component enables transcript normalization, clinical note generation, and suggestions using the locally integrated Ollama model. The implementation uses an Ollama client for low-level HTTP communication and adapter classes in \path{ollama_adapter.py} for domain-specific tasks. Separate adapters return the normalized transcript, validated clinical notes, and structured suggestive review.
 
-The configured runtime endpoint and model are read from \texttt{LOCAL\_LLM\_ENDPOINT} and \texttt{LLM\_MODEL\_NAME}. In the current implementation, \texttt{app/core/config.py} validates \texttt{LLM\_MODEL\_NAME} as \texttt{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{5,12}.
+The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{5,12}.
 
 The orchestration workflow is:
 
@@ -125,11 +125,19 @@ The system uses a dual-database architecture to manage structured and unstructur
 
 SQLAlchemy manages the MySQL connection and session lifecycle. Reusable database access is provided through functions such as \texttt{get\_engine()} and \texttt{get\_session()}. PyMongo manages MongoDB connections, with \texttt{get\_database()} returning the database handle used by document repositories.
 
-Both databases are abstracted behind repository classes. SQL repositories in \texttt{app/infrastructure/db/sql/repositories/sql\_repos.py} manage relational records, while Mongo repositories in \texttt{app/infrastructure/db/mongo/repositories/mongo\_repos.py} manage prompts, templates, consultation documents, and generated artifacts. The test suite can swap these adapters for in-memory repositories, which is why the same application services can be tested without starting MySQL, MongoDB, Whisper, or Ollama.
+Both databases are abstracted behind repository classes. SQL repositories in \path{app/infrastructure/db/sql/repositories/sql_repos.py} manage relational records. Mongo repositories in \path{app/infrastructure/db/mongo/repositories/mongo_repos.py} manage prompts, templates, consultation documents, and generated artifacts. The test suite can swap these adapters for in-memory repositories, which is why the same application services can be tested without starting MySQL, MongoDB, Whisper, or Ollama.
 
 \subsection{Runtime Configuration and Observability}
 \label{subsec:runtime-configuration-observability}
 
-Runtime configuration is centralized in \texttt{app/core/config.py}. Important environment variables include \texttt{LOCAL\_LLM\_ENDPOINT}, \texttt{LLM\_MODEL\_NAME}, \texttt{WHISPER\_API\_URL}, \texttt{SMTP\_HOST}, \texttt{SMTP\_PORT}, \texttt{SMTP\_FROM}, \texttt{SMTP\_FROM\_NAME}, \texttt{MYSQL\_DB}, and \texttt{MONGO\_DB}. The application currently supports \texttt{qwen3:8b} as the validated local LLM configuration, while the benchmark table documents other candidates that were evaluated before selecting it.
+Runtime configuration is centralized in \path{app/core/config.py}. The most important settings are grouped by responsibility:
+
+\begin{itemize}
+  \item \textbf{AI services:} \path{LOCAL_LLM_ENDPOINT}, \path{LLM_MODEL_NAME}, and \path{WHISPER_API_URL}.
+  \item \textbf{Email delivery:} \path{SMTP_HOST}, \path{SMTP_PORT}, \path{SMTP_FROM}, and \path{SMTP_FROM_NAME}.
+  \item \textbf{Persistence:} \path{MYSQL_DB} and \path{MONGO_DB}.
+\end{itemize}
+
+The application currently supports \path{qwen3:8b} as the validated local LLM configuration, while the benchmark table documents other candidates that were evaluated before selecting it.
 
 Observability is implemented through request middleware and aspect decorators. The middleware logs HTTP method, path, client IP, status code, and duration. The \texttt{apply\_logging\_aspect} decorator wraps public service methods with entry, exit, error, and duration logging. Keeping this behavior outside the business logic follows the same separation-of-concerns principle as the repository and adapter boundaries, and it supports later production hardening work such as centralized metrics and tracing\refcite{13}.

@@ -35,6 +35,11 @@
 \renewcommand{\arraystretch}{1.2}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.55em}
+\emergencystretch=2em
+\Urlmuskip=0mu plus 1mu\relax
+\makeatletter
+\g@addto@macro{\UrlBreaks}{\do\/\do\_\do\-\do\.}
+\makeatother
 
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
