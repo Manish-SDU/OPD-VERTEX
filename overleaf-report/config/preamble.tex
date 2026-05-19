@@ -2,6 +2,7 @@
 \usepackage[most]{tcolorbox}
 \usepackage{tikz}
 \usepackage{subcaption}
+\usepackage{fancyhdr}
 
 \usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric}
 
@@ -31,6 +32,21 @@
 \renewcommand{\arraystretch}{1.2}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.55em}
+
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\scriptsize\scshape\RunningReportTitle}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[C]{\scriptsize\scshape\RunningReportTitle}%
+  \fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0.4pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
 
 \newtcolorbox{summarybox}{
   enhanced,
@@ -86,13 +102,19 @@
     \centering
     \vspace*{0.45cm}%
     \rule{\textwidth}{0.7pt}\par
-    \vspace{0.85em}%
-    {\LARGE\scshape\MakeUppercase{\ProjectSubtitle}\par}%
-    \vspace{0.85em}%
+    \vspace{0.9em}%
+    {\Huge\bfseries\scshape\MakeUppercase{\ApplicationName}\par}%
+    \vspace{0.35em}%
+    {\large\scshape\MakeUppercase{\ProjectSubtitle}\par}%
+    \vspace{0.2em}%
+    {\small\ProjectFullName\par}%
+    \vspace{0.35em}%
+    {\small\itshape\ProjectTagline\par}%
+    \vspace{0.9em}%
     \rule{\textwidth}{0.7pt}\par
-    \vspace{1.35em}%
-    {\small\scshape Semester Project 4\par}%
-    \vspace{1.8em}%
+    \vspace{1.15em}%
+    {\small\scshape Semester Project 4 Project Report\par}%
+    \vspace{1.55em}%
     \noindent
     \vertexcoverauthor{Gabriele Solazzo}\hfill
     \vertexcoverauthor{Aleksandra Kwiatkowska}\hfill
