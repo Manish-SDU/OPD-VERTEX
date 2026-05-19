@@ -16,8 +16,9 @@
 \definecolor{VertexGreen}{HTML}{15803D}
 \definecolor{VertexAmber}{HTML}{B45309}
 \definecolor{VertexRed}{HTML}{B91C1C}
-\definecolor{VertexTableBlue}{gray}{1}
-\definecolor{VertexTableStripe}{gray}{1}
+\definecolor{VertexTableBlue}{HTML}{EEF5FF}
+\definecolor{VertexTableStripe}{HTML}{F8FBFF}
+\definecolor{VertexTableRule}{HTML}{9CBCE8}
 
 \hypersetup{
   colorlinks=true,
@@ -39,9 +40,9 @@
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\VertexTableHead}[1]{\bfseries #1}
-\newcommand{\TableTopRule}{\arrayrulecolor{black}\toprule}
-\newcommand{\TableMidRule}{\arrayrulecolor{black}\midrule}
-\newcommand{\TableBottomRule}{\arrayrulecolor{black}\bottomrule\arrayrulecolor{black}}
+\newcommand{\TableTopRule}{\arrayrulecolor{VertexTableRule}\toprule}
+\newcommand{\TableMidRule}{\arrayrulecolor{VertexTableRule}\midrule}
+\newcommand{\TableBottomRule}{\arrayrulecolor{VertexTableRule}\bottomrule\arrayrulecolor{black}}
 \newcommand{\refcite}[1]{\textsuperscript{[#1]}}
 
 \setlength{\headheight}{14pt}
