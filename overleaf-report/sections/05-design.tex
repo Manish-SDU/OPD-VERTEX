@@ -155,11 +155,11 @@ A simple booking and scheduling capability was included to support the semester 
 
 For this reason, Med Flow treats scheduling as an integration boundary rather than as a tightly coupled internal module. A booking service can create a consultation shell containing patient, clinician, time, and visit-type metadata. Med Flow can then take over from the moment the consultation begins: recording, transcription, AI-assisted drafting, review, approval, PDF export, and follow-up communication. This keeps the documentation pipeline independent from the appointment provider.
 
-The diagram uses color as a semantic grouping: blue marks external clinic or public-sector services, teal marks the Med Flow integration boundary, and amber marks the clinical documentation workflow owned by the doctor-facing system.
+Figure~\ref{fig:booking-identity-integration} summarizes this replaceable boundary between external booking or identity services and Med Flow's documentation workflow.
 
 \begin{figure}[htbp]
 \centering
-\resizebox{0.78\textwidth}{!}{%
+\resizebox{0.68\textwidth}{!}{%
 \begin{tikzpicture}[
   external/.style={draw=VertexBlue!70, fill=VertexBlue!8, rounded corners=1mm, align=center, text width=3.9cm, minimum height=1.05cm, font=\small},
   medflow/.style={draw=VertexTeal!70, fill=VertexTeal!9, rounded corners=1mm, align=center, text width=4.05cm, minimum height=1.05cm, font=\small},
@@ -186,6 +186,10 @@ The diagram uses color as a semantic grouping: blue marks external clinic or pub
 }
 \caption{Replaceable booking and identity integration boundary for a Danish deployment scenario.}
 \label{fig:booking-identity-integration}
+\smallskip
+\begin{minipage}{0.72\textwidth}
+\footnotesize\emph{Color note.} Blue indicates external clinic or public-sector services, teal indicates Med Flow's replaceable integration boundary, and amber indicates the doctor-facing clinical documentation workflow.
+\end{minipage}
 \end{figure}
 
 Future enhancements include a queued retry layer for transient Whisper or Ollama failures, hardened deployment security, expanded Suggestive Mode rules with a broader interaction database, and production-grade adapters for external booking, identity, and access-control services.
