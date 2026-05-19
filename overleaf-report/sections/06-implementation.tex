@@ -127,6 +127,8 @@ SQLAlchemy manages the MySQL connection and session lifecycle. Reusable database
 
 Both databases are abstracted behind repository classes. SQL repositories in \path{app/infrastructure/db/sql/repositories/sql_repos.py} manage relational records. Mongo repositories in \path{app/infrastructure/db/mongo/repositories/mongo_repos.py} manage prompts, templates, consultation documents, and generated artifacts. The test suite can swap these adapters for in-memory repositories, which is why the same application services can be tested without starting MySQL, MongoDB, Whisper, or Ollama.
 
+Auditability is implemented through two complementary mechanisms. \texttt{AuditApplicationService} appends SQL audit entries containing user ID, role, action, target table, target ID, JSON details, IP address, and timestamp. The current admin routes record prompt and email-template updates with explicit action names such as \path{ADMIN_PROMPT_UPDATED} and \path{ADMIN_EMAIL_TEMPLATE_UPDATED}. Doctor-facing report edits are traced through \texttt{DocumentEditingService}, which records field-level old and new values, edit timestamps, and version-history snapshots before each change. Approval and rejection are then represented as generated-document and consultation status transitions. This matches NF-6 as traceability across audit log entries, version history, and workflow state rather than as a single logging table for every event.
+
 \subsection{Runtime Configuration and Observability}
 \label{subsec:runtime-configuration-observability}
 

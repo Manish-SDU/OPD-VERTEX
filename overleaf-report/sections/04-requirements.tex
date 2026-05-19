@@ -53,11 +53,11 @@ F-1 & The system must manage a doctor consultation queue, including consultation
 F-2 & The system must capture consultation audio locally. \\
 \rowcolor{VertexTableStripe}
 F-3 & The system must transcribe speech to text locally. \\
-F-4 & The system must generate structured clinical notes. \\
-F-5 & The system must generate prescription drafts. \\
-F-6 & The system must allow doctors to edit and approve clinical notes and prescriptions. \\
-F-7 & The system must generate prescription PDFs. \\
-F-8 & The system must send prescriptions securely by email. \\
+F-4 & The system must generate a doctor-editable structured clinical note from the transcript and patient context, including presenting problem, relevant history, assessment, treatment or medication plan, follow-up, and patient instructions when supported by the consultation. \\
+F-5 & The system must generate a doctor-editable prescription draft with medication name, dosage, frequency, duration, patient instructions, and review alerts for missing dosage information or possible allergy/contraindication conflicts. \\
+F-6 & The system must allow doctors to edit, approve, or reject generated clinical notes and prescription drafts before they become final records. \\
+F-7 & The system must generate downloadable PDFs from approved clinical report and prescription data. \\
+F-8 & The system must send approved patient follow-up or prescription summaries by configured email and prevent unapproved drafts from being emailed. \\
 \TableBottomRule
 \end{longtable}
 \endgroup
@@ -75,12 +75,12 @@ F-8 & The system must send prescriptions securely by email. \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
 NF-1 & Privacy: all AI processing must be performed locally. \\
-NF-2 & Security: the system must use authentication and role-based access. \\
+NF-2 & Security: the system must use authentication and role-based access for doctors, administrators, and patients, with patients restricted to their own records. \\
 \rowcolor{VertexTableStripe}
-NF-3 & Encryption: the system must ensure encryption for sensitive data. \\
+NF-3 & Data protection: the system must hash stored passwords and be designed for encrypted deployment channels and storage. \\
 NF-4 & Modularity: components must be loosely coupled and replaceable. \\
-NF-5 & Reliability: consultation data must be stored safely. \\
-NF-6 & Auditability: the system must log important actions and edits. \\
+NF-5 & Reliability: the system must persist consultation state, transcripts, generated documents, and prescription versions so interrupted workflows can be retried without losing approved data. \\
+NF-6 & Auditability: the system must preserve traceability for important actions and edits, including prompt updates, email-template updates, doctor report edits with version history, and review approval or rejection status changes. \\
 \TableBottomRule
 \end{longtable}
 \endgroup
