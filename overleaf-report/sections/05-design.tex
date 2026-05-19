@@ -155,40 +155,32 @@ A simple booking and scheduling capability was included to support the semester 
 
 For this reason, Med Flow treats scheduling as an integration boundary rather than as a tightly coupled internal module. A booking service can create a consultation shell containing patient, clinician, time, and visit-type metadata. Med Flow can then take over from the moment the consultation begins: recording, transcription, AI-assisted drafting, review, approval, PDF export, and follow-up communication. This keeps the documentation pipeline independent from the appointment provider.
 
-Figure~\ref{fig:booking-identity-integration} summarizes this replaceable boundary between external booking or identity services and Med Flow's documentation workflow.
+Figure~\ref{fig:booking-identity-integration} shows the idea in three steps: an external service provides trusted appointment context, Med Flow receives it through a replaceable adapter, and the doctor continues with the documentation workflow.
 
 \begin{figure}[htbp]
 \centering
-\resizebox{0.68\textwidth}{!}{%
+\resizebox{0.78\textwidth}{!}{%
 \begin{tikzpicture}[
-  external/.style={draw=VertexBlue!70, fill=VertexBlue!8, rounded corners=1mm, align=center, text width=3.9cm, minimum height=1.05cm, font=\small},
-  medflow/.style={draw=VertexTeal!70, fill=VertexTeal!9, rounded corners=1mm, align=center, text width=4.05cm, minimum height=1.05cm, font=\small},
-  clinical/.style={draw=VertexAmber!80, fill=VertexAmber!10, rounded corners=1mm, align=center, text width=4.05cm, minimum height=1.05cm, font=\small},
-  arrow/.style={-{Latex[length=2.4mm]}, draw=VertexInk!70, line width=0.6pt},
-  boundary/.style={draw=VertexTeal!45, dashed, rounded corners=1.5mm, inner sep=4.5mm}
+  step/.style={rounded corners=1.5mm, align=center, text width=3.25cm, minimum height=1.85cm, font=\small, inner sep=3mm},
+  external/.style={step, draw=VertexBlue!75, fill=VertexBlue!8},
+  boundary/.style={step, draw=VertexTeal!75, fill=VertexTeal!9},
+  workflow/.style={step, draw=VertexAmber!80, fill=VertexAmber!10},
+  arrow/.style={-{Latex[length=2.5mm]}, draw=VertexInk!70, line width=0.7pt},
+  arrowlabel/.style={font=\scriptsize, text=VertexMuted, align=center}
 ]
-\node[external] (identity) at (0,2.2) {\textbf{External identity}\\MitID / NemLog-in\\\scriptsize verified user session};
-\node[external] (booking) at (0,0.35) {\textbf{External booking}\\clinic or public-sector system\\\scriptsize appointment metadata};
+\node[external] (external) at (0,0) {\textbf{External services}\\\scriptsize Clinic booking\\MitID / NemLog-in\\Appointment context};
+\node[boundary] (adapter) at (4.35,0) {\textbf{Med Flow adapter}\\\scriptsize Replaceable contract\\Transforms data\\Creates consultation};
+\node[workflow] (workflow) at (8.7,0) {\textbf{Doctor workflow}\\\scriptsize Record\\Generate draft\\Review and export};
 
-\node[medflow] (gateway) at (6.1,1.3) {\textbf{Med Flow adapter}\\stable API contract};
-\node[medflow] (consultation) at (6.1,-0.1) {\textbf{Consultation context}\\patient, doctor, time};
-\node[clinical] (pipeline) at (6.1,-1.5) {\textbf{Documentation pipeline}\\record, transcribe, draft};
-\node[clinical] (review) at (6.1,-2.9) {\textbf{Doctor review}\\approve, PDF, email};
-
-\draw[arrow] (identity.east) -- (gateway.160);
-\draw[arrow] (booking.east) -- (gateway.200);
-\draw[arrow] (gateway.south) -- (consultation.north);
-\draw[arrow] (consultation.south) -- (pipeline.north);
-\draw[arrow] (pipeline.south) -- (review.north);
-
-\node[boundary, fit=(gateway)(consultation)(pipeline)(review), label={[font=\scriptsize\bfseries, text=VertexTeal]above:Med Flow scope}] {};
+\draw[arrow] (external.east) -- node[arrowlabel, above] {trusted context} (adapter.west);
+\draw[arrow] (adapter.east) -- node[arrowlabel, above] {consultation} (workflow.west);
 \end{tikzpicture}%
 }
 \caption{Replaceable booking and identity integration boundary for a Danish deployment scenario.}
 \label{fig:booking-identity-integration}
 \smallskip
 \begin{minipage}{0.72\textwidth}
-\footnotesize\emph{Color note.} Blue indicates external clinic or public-sector services, teal indicates Med Flow's replaceable integration boundary, and amber indicates the doctor-facing clinical documentation workflow.
+\footnotesize\emph{Color note.} Blue marks systems outside Med Flow, teal marks the replaceable Med Flow integration boundary, and amber marks the doctor-facing workflow inside Med Flow.
 \end{minipage}
 \end{figure}
 
