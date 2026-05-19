@@ -1,10 +1,10 @@
 \section{Design}
 
-This chapter describes the design of OPD-Vertex, focusing on the principles used to structure the system, the main components and their interactions, the data model, and the cross-cutting concerns of the application.
+This chapter describes the design of Med Flow, focusing on the principles used to structure the system, the main components and their interactions, the data model, and the cross-cutting concerns of the application.
 
 \subsection{Design Goals and Principles}
 
-OPD-Vertex was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. Five principles guided the design decisions:
+Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. Five principles guided the design decisions:
 
 \begin{itemize}
   \item \textbf{Local-first execution:} sensitive processing runs inside the clinic environment, so no consultation data is sent to a third-party cloud LLM.
@@ -25,15 +25,15 @@ Before writing code, the team sketched the main user journeys and screen layouts
 \fbox{%
   \begin{minipage}{0.86\linewidth}
   \centering
-  Insert Figma prototype screenshot for doctor dashboard and consultation screens.
+  Insert Figma mockup screenshot for doctor dashboard and consultation screens.
   \end{minipage}%
 }
-\caption{Initial Figma prototype of the doctor dashboard and consultation screens.}
+\caption{Initial Figma mockup of the doctor dashboard and consultation screens.}
 \end{figure}
 
 The target architecture is a set of cooperating services organized around the clinical workflow: identity, patient, consultation, transcription, LLM orchestration, suggestive review, PDF generation, notification, and audit. Public endpoints sit behind an API gateway, while AI components run on dedicated local services. Each service owns its own datastore to preserve loose coupling.
 
-In the implemented prototype, this design is realized on a smaller scale. The logical components live as Python modules inside a single FastAPI application. The transcription module runs as a separate Whisper sidecar, the LLM runs in Ollama, MySQL stores relational data, and MongoDB stores AI documents. All services are packaged as Docker containers and orchestrated with Docker Compose, giving the project a reproducible setup and a clear migration path toward the target architecture.
+In the implemented system, this design is realized on a smaller scale. The logical components live as Python modules inside a single FastAPI application. The transcription module runs as a separate Whisper sidecar, the LLM runs in Ollama, MySQL stores relational data, and MongoDB stores AI documents. All services are packaged as Docker containers and orchestrated with Docker Compose, giving the project a reproducible setup and a clear migration path toward the target architecture.
 
 \subsection{Component-Based System Design}
 
@@ -64,7 +64,7 @@ The system was decomposed into loosely coupled components. Each component has a 
 \draw[arrow] (backend) -- (mysql);
 \draw[arrow] (backend) -- (mongo);
 \end{tikzpicture}
-\caption{Logical component diagram showing OPD-Vertex components and interfaces.}
+\caption{Logical component diagram showing Med Flow components and interfaces.}
 \end{figure}
 
 On the user-facing side, the Doctor Dashboard is the main interface for doctors and gives access to the patient list, consultation recording, draft review, and prescription approval. The Patient Portal is used by patients to log in and read their own consultations and prescriptions. Both interfaces are server-rendered with Jinja2 templates and communicate with the backend through the Gateway API.
@@ -83,7 +83,7 @@ This keeps application services and repository classes free of observability boi
 
 \subsection{Data Design and Dual-Database Architecture}
 
-OPD-Vertex uses a dual-database design to separate the system of record from iterative AI artifacts. The relational store provides consistency for clinically meaningful data, while the document store provides flexibility for evolving AI outputs.
+Med Flow uses a dual-database design to separate the system of record from iterative AI artifacts. The relational store provides consistency for clinically meaningful data, while the document store provides flexibility for evolving AI outputs.
 
 \begin{table}[htbp]
 \centering
@@ -165,7 +165,7 @@ The audit log records significant actions, including user, role, action, target,
 
 Error handling follows a small predictable model. Domain-level problems raise a \texttt{ValueError}, which the API translates into 400 or 404 responses. Unexpected failures become 500 responses. Transcription errors leave the consultation in its current state so the doctor can retry. LLM errors are caught by validation and drafts are left unchanged. PDF and email failures return 500 without altering the underlying record.
 
-The prototype does not claim full regulatory compliance. TLS termination, stronger authorization tests, and at-rest encryption are treated as future deployment requirements.
+The implementation does not claim full regulatory compliance. TLS termination, stronger authorization tests, and at-rest encryption are treated as future deployment requirements.
 
 \subsection{UI Overview}
 
@@ -175,7 +175,7 @@ The patient portal is read-only with respect to clinical data. The admin configu
 
 \subsection{Scope Decisions and Future Enhancements}
 
-The project specification mentioned a patient booking system, but after discussion with the supervisor the team decided not to build an in-house scheduler. Clinics usually already have scheduling solutions, often connected to national identity and e-health infrastructure. Duplicating this functionality would not add much value to the prototype.
+The project specification mentioned a patient booking system, but after discussion with the supervisor the team decided not to build an in-house scheduler. Clinics usually already have scheduling solutions, often connected to national identity and e-health infrastructure. Duplicating this functionality would not add much value to the system.
 
 The component-based architecture makes it possible to defer scheduling cleanly. Patients and consultations are independent modules with stable contracts, so an external scheduler can pre-create consultations through the same APIs. Doctors currently create consultations directly from the patient list, and the AI pipeline works end-to-end from there.
 

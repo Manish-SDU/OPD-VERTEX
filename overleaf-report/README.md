@@ -1,6 +1,6 @@
-# OPD-Vertex Editable Overleaf Project
+# Med Flow Editable Overleaf Project
 
-This is the clean editable LaTeX project for the OPD-Vertex fourth semester report.
+This is the clean editable LaTeX project for the Med Flow fourth semester report.
 
 Use this Overleaf project:
 

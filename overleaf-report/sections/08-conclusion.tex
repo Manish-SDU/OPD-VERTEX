@@ -1,10 +1,10 @@
 \section{Conclusion}
 
-OPD-Vertex demonstrates how a local-first, AI-assisted system can support outpatient consultation documentation without removing clinical responsibility from the doctor. The project combines consultation recording, speech-to-text transcription, structured clinical draft generation, Suggestive Mode, review and approval workflows, PDF generation, email communication, and auditability.
+Med Flow demonstrates how a local-first, AI-assisted system can support outpatient consultation documentation without removing clinical responsibility from the doctor. The project combines consultation recording, speech-to-text transcription, structured clinical draft generation, Suggestive Mode, review and approval workflows, PDF generation, email communication, and auditability.
 
 The architecture is intentionally component-based. FastAPI routes, application services, domain contracts, infrastructure adapters, AI services, persistence layers, and notification tools are separated so the system can evolve without forcing every change through a monolithic structure. The dual-database design supports both reliable relational records and flexible document-oriented AI artifacts.
 
-The validation package supports the core engineering claims of the project. Automated tests, stress tests, benchmark tests, hallucination checks, ASR artifact checks, manual UI validation, and hardware-envelope testing show that the prototype is testable, measurable, and suitable as a foundation for further development.
+The validation package supports the core engineering claims of the project. Automated tests, stress tests, benchmark tests, hallucination checks, ASR artifact checks, manual UI validation, and hardware-envelope testing show that the implementation is testable, measurable, and suitable as a foundation for further development.
 
 Several extensions would strengthen the platform for deployment in real clinics or companies. The RBAC model could be expanded beyond doctor, patient, and admin roles to support nurses, receptionists, and auditors with finer-grained permissions. An offline ASR fallback would improve reliability on low-bandwidth networks. The audit log could evolve into a searchable, exportable, and retention-aware governance tool. Because the LLM is isolated behind a client port, clinics can replace the current Qwen3:8b/Ollama setup with private or self-hosted models without changing the domain or application layers.
 
