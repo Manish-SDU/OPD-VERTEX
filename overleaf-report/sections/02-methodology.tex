@@ -23,10 +23,10 @@ GitHub was used to share and manage the code, allowing the team to collaborate e
 
 \subsection{Application of Course Knowledge}
 
-The application was developed using a component-based architecture, following concepts from the Component-Based Systems course. This approach made it easier for team members to work in parallel on different parts of the system without interfering with each other's progress. By separating the application into independent components, development became more organized, scalable, and easier to maintain.
-
-Testing was carried out throughout the development process, applying principles from the Designing Software Systems with Embedded Elements course. Instead of leaving testing only for the final stages, features were regularly checked and improved as they were implemented, helping the team identify issues earlier and maintain a more stable system overall.
-
-An LLM was integrated into the application to support features such as Suggestive Mode. This part of the project combined ideas from the Artificial Intelligence course and the Algorithms and Data Structures course, especially in terms of data processing, optimization, and AI-driven functionality.
-
-The team also applied knowledge gained during the previous semester by using Docker for containerization, which simplified deployment and ensured a more consistent development environment across all machines. Concepts from the Data Management course were used to design the database architecture, which was split into MySQL for structured relational data and MongoDB for document-oriented storage. This separation allowed each database to be used where it was most appropriate, improving efficiency and data organization.
+\begin{itemize}
+	\item \textbf{Artificial Intelligence:} Faster-Whisper transcribes consultation audio, while a local LLM generates draft clinical notes and Suggestive Mode alerts.
+	\item \textbf{Component-Based Systems:} FastAPI routers, application services, repositories, and adapters separate authentication, patients, consultations, transcription, review, prescriptions, PDF, email, and audit.
+	\item \textbf{Algorithms and Data Structures:} transcript normalization and JSON validation structure raw speech into fields used by review, prescription, and PDF workflows.
+	\item \textbf{Designing Software Systems with Embedded Elements:} Docker Compose and local model services were validated against realistic laptop hardware limits instead of relying on cloud APIs.
+	\item \textbf{Data Management:} MySQL stores users, patients, consultations, prescriptions, and audit logs, while MongoDB stores transcripts, generated documents, prompts, and email templates.
+\end{itemize}

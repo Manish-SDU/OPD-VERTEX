@@ -2,19 +2,19 @@
 
 \subsection{Risks and Limitations of Manual Documentation}
 
-A large-scale descriptive study analysing approximately 100 million patient encounters with about 155 thousand physicians found that the average time spent on Electronic Health Records (EHR) is about 16 minutes per encounter. When contrasted with a typical 15 to 20 minute patient consultation, this indicates that administrative work can take almost as much time as the medical evaluation itself.
+A large-scale descriptive study of outpatient encounters found that physicians spent a substantial amount of time using Electronic Health Records during each visit, with an average of about 16 minutes per encounter~[1]. In a consultation context, this means documentation can compete directly with time spent listening, explaining, and making clinical decisions.
 
-The American Medical Association has also highlighted that administrative tasks can occupy a large part of a standard shift. This forces doctors to multitask by actively listening while typing summaries. Divided focus increases the risk of documentation errors and missed diagnostic verbal cues.
+Risk-management guidance for AI medical scribes confirms that automated documentation can reduce administrative effort, but also warns about omissions, hallucinated content, privacy concerns, and the need for physician review before sign-off~[2]. This supports Med Flow's decision to generate editable drafts rather than finalized medical records.
 
 To reduce these bottlenecks, the system should capture information passively through audio rather than relying entirely on manual input. The automation must function as a decision-support tool by generating editable drafts and real-time suggestions while ensuring that the doctor keeps final clinical responsibility and oversight.
 
 \subsection{Security and Privacy in AI-Assisted Healthcare}
 
-According to Article 9 of the General Data Protection Regulation (GDPR), medical data such as clinical notes, transcriptions, and prescriptions is classified as a special category of personal data. This classification significantly restricts how it can be collected, stored, and processed.
+Under Article 9 of the General Data Protection Regulation (GDPR), data concerning health belongs to a special category of personal data, meaning it requires a clear lawful basis and appropriate safeguards before processing~[3]. In comparable health privacy guidance, HIPAA also treats individually identifiable health information as protected information that must be limited, safeguarded, and disclosed only under defined conditions~[4].
 
-Many AI documentation tools rely on transmitting data to external cloud servers, which creates concerns around data sovereignty and purpose limitation. Cloud dependency also introduces operational vulnerability if the external network fails.
+Many AI documentation tools rely on transmitting audio, transcripts, or draft notes to external cloud services. This creates privacy, data-sovereignty, and availability risks, especially when the data contains clinical details, identifiers, or follow-up instructions.
 
-To reduce the risk of data leaks and internet dependency, Med Flow is designed as a locally hosted system using open-source LLMs deployed on the clinic's internal network. This architecture aims to keep audio processing, transcription, and document generation local, ensuring that sensitive data remains private and under the clinic's control.
+To reduce these risks, Med Flow is designed as a locally hosted system using open-source models deployed inside the clinic environment. This follows the general risk-management direction recommended by NIST for AI systems: map the context, measure risks, manage controls, and keep governance explicit throughout the system lifecycle~[5].
 
 \subsection{Architectural Challenges}
 

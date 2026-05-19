@@ -1,22 +1,20 @@
 \section{Introduction}
 
-Med Flow is a web-based platform for supporting outpatient medical consultations. The application helps doctors capture consultation audio, transcribe spoken dialogue, generate structured draft documentation, review the result, create PDFs, and send approved follow-up material to patients.
+Med Flow was developed as part of the fourth-semester Software Engineering curriculum. It is a web-based consultation-support system for recording consultation audio, transcribing speech, generating draft clinical documentation, and supporting doctor review, PDF export, and follow-up communication. The project responds to the documented administrative burden created by electronic health record work, where documentation can consume a substantial part of the clinical day~[1].
 
-The project builds on the original consultation-support proposal, which emphasized local processing, privacy-aware handling of medical data, and loosely coupled system design. The resulting system demonstrates how software can support documentation and communication in medical consultation settings while keeping sensitive data within the local environment.
+The scope is deliberately focused on the consultation and post-consultation workflow. Scheduling is treated as an external component because healthcare providers commonly already rely on separate scheduling systems. Med Flow instead focuses on local processing, modular system design, and human-controlled AI assistance, so generated transcripts, suggestions, and documents remain reviewable decision-support rather than autonomous medical outputs~[2,3].
 
 \subsection{Motivation}
 
-Medical consultations often require doctors to divide their attention between interacting with patients and documenting notes, prescriptions, and other relevant information. This can reduce consultation efficiency, increase the risk of missing important details, and delay the preparation of post-consultation documentation.
+Medical consultations often require doctors to divide attention between the patient conversation and documentation. This can reduce consultation quality and delay follow-up material.
 
-At the same time, the growing use of digital and AI-assisted healthcare tools raises concerns about privacy, legal compliance, protection of sensitive patient data, and dependence on external cloud services. Med Flow is motivated by the need for a more efficient and privacy-conscious documentation workflow during medical consultations.
-
-By supporting consultation recording, transcription, draft generation, and follow-up communication in a single system, the application aims to reduce administrative overhead while improving the quality and accessibility of consultation-related documentation. The project also explores how AI-assisted tools can support doctors without removing clinical responsibility from the final decision-making process.
+Med Flow is motivated by the need for a privacy-conscious workflow where recording, transcription, draft generation, and follow-up communication support the doctor without removing clinical responsibility.
 
 \subsection{Objective}
 
-The objective of this project is to design and implement a secure web-based consultation support system that assists doctors during and after medical consultations. The system records consultation audio, converts spoken dialogue into text, and generates a draft PDF containing consultation-related information and suggestions that the doctor can review, edit, approve, or decline before further processing.
+The objective is to design and implement a secure consultation-support system for doctors, patients, and administrators. The system records consultation audio, converts spoken dialogue into text, generates draft clinical content, and lets the doctor review, edit, approve, or reject the result.
 
-Once approved by the doctor, the system supports continued handling of the consultation outcome by allowing relevant information, such as prescription details and follow-up material, to be sent to the patient by email. The system also provides functionality for viewing patient details, accessing doctor information, downloading generated PDF documents, and presenting relevant information through a dashboard.
+After approval, the system supports PDF download and email-based follow-up communication while preserving role-based access to patient, doctor, and consultation information.
 
 \subsection{Delimitation}
 

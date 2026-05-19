@@ -111,11 +111,22 @@
   \pagenumbering{roman}%
   \begin{titlepage}%
     \thispagestyle{empty}%
-    \centering
-    \vspace*{0.2cm}%
-    \includegraphics[height=0.95cm]{sdu_logo}\par
-    \vspace{0.45em}%
+    \vspace*{0.05cm}%
+    \noindent
+    \begin{minipage}[t]{0.32\textwidth}%
+      \raggedright
+      \includegraphics[height=1.05cm]{sdu_logo}%
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[t]{0.62\textwidth}%
+      \raggedleft\scriptsize
+      University of Southern Denmark\par
+      \InstituteName\par
+      \InstitutionName\par
+    \end{minipage}\par
+    \vspace{0.75em}%
     \rule{\textwidth}{0.7pt}\par
+    \centering
     \vspace{0.75em}%
     {\Huge\bfseries\scshape\MakeUppercase{\ApplicationName}\par}%
     \vspace{0.28em}%
@@ -153,8 +164,9 @@
       \setlength{\parskip}{0pt}%
       \ProjectAbstractText
 
-      \vspace{0.8em}%
-      \noindent\textbf{\textit{Keywords}}\quad \ProjectKeywords
+      \vspace{0.9em}%
+      \noindent\textbf{\textit{Keywords}}\par
+      \noindent\ProjectKeywords
     \end{minipage}%
     \vfill
     \begin{minipage}{\textwidth}%
