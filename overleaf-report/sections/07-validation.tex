@@ -13,26 +13,30 @@ Stress tests apply concurrent and sustained load to the in-memory repositories t
 
 The repository includes a GitHub Actions workflow in \path{.github/workflows/ci.yml}. It runs on pushes and pull requests targeting \path{main}, uses Python 3.12 with pip caching, and separates quality gates into independent jobs. The lint job installs the development dependencies and runs \path{ruff check app/} plus \path{ruff format --check app/}. Three test jobs then run the unit, integration, and smoke suites separately with \path{pytest}. The final Docker build job depends on all four quality gates and builds the application image tagged with the commit SHA.
 
-This is continuous integration plus build verification. The workflow does not automatically deploy the system to a production environment, so the delivery part is limited to proving that the codebase can pass the quality gates and produce a container image.
+The purpose of this pipeline is to protect a fast-moving team project from silent regressions. Med Flow combines FastAPI routes, application services, database adapters, AI-related mocks, Docker configuration, and UI templates, so a change in one area can easily break another. Continuous integration gives the team immediate feedback before a change is merged: formatting problems, failing tests, route regressions, and missing dependencies are caught in the same place for every contributor.
+
+In this project, continuous delivery is intentionally limited to build verification rather than automatic production deployment. No production server is configured in the workflow. Instead, the delivery value is that every accepted change must prove it can become a Docker image. This provides a reproducible handoff for demonstrations, local deployment, and later production hardening without claiming an automated release process that the project does not yet implement.
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-  ciNode/.style={draw=VertexTeal!70, fill=VertexTeal!8, rounded corners=1.3mm, align=center, text width=2.8cm, minimum height=1.35cm, font=\small, inner sep=2.5mm},
-  ciTrigger/.style={ciNode, draw=VertexBlue!70, fill=VertexBlue!7},
-  ciBuild/.style={ciNode, draw=VertexAmber!80, fill=VertexAmber!10},
+  ciNode/.style={rounded corners=1.4mm, align=center, text width=2.55cm, minimum height=1.45cm, font=\small, inner sep=2.2mm},
+  ciTrigger/.style={ciNode, draw=VertexBlue!75, fill=VertexBlue!7},
+  ciGate/.style={ciNode, draw=VertexTeal!75, fill=VertexTeal!9},
+  ciBuild/.style={ciNode, draw=VertexAmber!85, fill=VertexAmber!10},
+  ciValue/.style={ciNode, draw=VertexGreen!75, fill=VertexGreen!9},
   ciArrow/.style={-{Latex[length=2.3mm]}, draw=VertexInk!65, line width=0.65pt}
 ]
-\node[ciTrigger] (trigger) at (0,0) {\textbf{Trigger}\\\scriptsize Push / pull request\\to \texttt{main}};
-\node[ciNode] (lint) at (3.65,0) {\textbf{Lint}\\\scriptsize Ruff check\\Ruff format check};
-\node[ciNode] (tests) at (7.3,0) {\textbf{Automated tests}\\\scriptsize Unit\\Integration\\Smoke};
-\node[ciBuild] (build) at (10.95,0) {\textbf{Docker build}\\\scriptsize Runs after gates\\Image tagged by SHA};
+\node[ciTrigger] (trigger) at (0,0) {\textbf{Code change}\\\scriptsize Push or pull request};
+\node[ciGate] (gates) at (3.35,0) {\textbf{Quality gates}\\\scriptsize Ruff plus unit, integration, smoke tests};
+\node[ciBuild] (build) at (6.70,0) {\textbf{Build check}\\\scriptsize Docker image can be produced};
+\node[ciValue] (value) at (10.05,0) {\textbf{Project value}\\\scriptsize Safer merges and reproducible demos};
 
-\draw[ciArrow] (trigger.east) -- (lint.west);
-\draw[ciArrow] (lint.east) -- (tests.west);
-\draw[ciArrow] (tests.east) -- (build.west);
+\draw[ciArrow] (trigger.east) -- (gates.west);
+\draw[ciArrow] (gates.east) -- (build.west);
+\draw[ciArrow] (build.east) -- (value.west);
 \end{tikzpicture}
-\caption{GitHub Actions continuous integration and build verification pipeline.}
+\caption{How the GitHub Actions pipeline turns each code change into quality feedback and a reproducible build candidate.}
 \label{fig:cicd-pipeline}
 \end{figure}
 
