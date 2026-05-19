@@ -3,7 +3,7 @@
 
 Med Flow was developed as part of the fourth-semester Software Engineering curriculum. It is a web-based consultation-support system for recording consultation audio, transcribing speech, generating draft clinical documentation, and supporting doctor review, PDF export, and follow-up communication. The project responds to the documented administrative burden created by electronic health record work, where documentation can consume a substantial part of the clinical day\refcite{1,6,7}.
 
-The report focuses on the consultation and post-consultation workflow rather than general outpatient administration. Scheduling is treated as an external component because healthcare providers commonly already rely on separate scheduling systems. Med Flow therefore concentrates on the software engineering problem of connecting audio capture, local AI processing, review, persistence, and communication inside one coherent workflow.
+The report focuses on the consultation and post-consultation workflow rather than a complete outpatient administration platform. A basic booking and scheduling concept was considered as part of the system boundary, but the architecture treats scheduling as replaceable because healthcare providers commonly already rely on established booking, identity, and e-health infrastructure. Med Flow therefore concentrates on connecting booking context, audio capture, local AI processing, review, persistence, and communication through clear component interfaces.
 
 \subsection{Motivation}
 \label{subsec:motivation}
@@ -24,6 +24,6 @@ After approval, the system supports PDF download and email-based follow-up commu
 
 The application is not intended to provide a complete medical administration system. It does not include full clinical record management, long-term clinical testing, user studies with external patients or healthcare providers, live medical deployment, advanced compliance certification, large-scale deployment, or full integration with existing healthcare systems.
 
-The project focuses on supporting activities during and after an ongoing consultation. In the intended deployment context, healthcare providers are assumed to already rely on established scheduling systems. In line with the system's component-based architecture, scheduling is treated as an external concern that can be integrated through well-defined interfaces.
+The project focuses on supporting activities around an outpatient consultation. A local booking/scheduling flow can create consultation context inside the semester system, but a real deployment should be able to replace that part with an existing clinic, company, or public-sector scheduling service. In a Danish setting, this could include identity and login infrastructure such as MitID and NemLog-in rather than a custom identity flow for every healthcare provider\refcite{14,15}.
 
 The generated transcription, summaries, suggestions, and PDF drafts are decision-support material. They are not autonomous medical outputs, and the approval boundary is kept explicit before information is processed further or shared with the patient.

@@ -6,13 +6,14 @@ This chapter describes the design of Med Flow, focusing on the principles used t
 \subsection{Design Goals and Principles}
 \label{subsec:design-goals-principles}
 
-Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. The design principles translate the privacy and AI-governance concerns from the problem analysis into implementation boundaries\refcite{3,5,12}. Five principles guided the design decisions:
+Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. The design principles translate the privacy and AI-governance concerns from the problem analysis into implementation boundaries\refcite{3,5,12}. Six principles guided the design decisions:
 
 \begin{itemize}
   \item \textbf{Local-first execution:} sensitive processing runs inside the clinic environment, so no consultation data is sent to a third-party cloud LLM.
   \item \textbf{Component-based design:} the system is split into bounded modules, each with its own application service and domain contracts.
   \item \textbf{Loose coupling through ports and adapters:} external dependencies are exposed as domain ports and implemented by adapters, so application logic does not depend on concrete libraries.
   \item \textbf{Replaceability of AI components:} transcription, LLM generation, and suggestive review are independent ports, allowing them to be swapped without changing core application logic.
+  \item \textbf{Replaceability of scheduling and identity:} booking and login boundaries can be connected to external clinic or public-sector services without changing the consultation documentation pipeline.
   \item \textbf{Human-in-the-loop approval:} no AI output is written to the relational database without doctor approval.
 \end{itemize}
 
@@ -30,7 +31,7 @@ Before writing code, the team sketched the main user journeys and screen layouts
 \label{fig:figma-mockup}
 \end{figure}
 
-The target architecture is a set of cooperating services organized around the clinical workflow: identity, patient, consultation, transcription, LLM orchestration, suggestive review, PDF generation, notification, and audit. Public endpoints sit behind an API gateway, while AI components run on dedicated local services. Each service owns its own datastore to preserve loose coupling.
+The target architecture is a set of cooperating services organized around the clinical workflow: identity, booking, patient, consultation, transcription, LLM orchestration, suggestive review, PDF generation, notification, and audit. Public endpoints sit behind an API gateway, while AI components run on dedicated local services. Each service owns or accesses data through a clear contract to preserve loose coupling.
 
 In the implemented system, this design is realized on a smaller scale. The logical components live as Python modules inside a single FastAPI application. The transcription module runs as a separate Whisper sidecar, the LLM runs in Ollama, MySQL stores relational data, and MongoDB stores AI documents. All services are packaged as Docker containers and orchestrated with Docker Compose, giving the project a reproducible setup and a clear migration path toward the target architecture.
 
@@ -52,7 +53,7 @@ The final architecture and sequence diagrams can replace the slots below. Keepin
 
 \diagramplaceholder{Sequence diagram slot}{Insert the final sequence diagram here for the doctor consultation flow from login and recording through transcription, AI generation, review, PDF export, and email.}
 
-On the user-facing side, the Doctor Dashboard is the main interface for doctors and gives access to the patient list, consultation recording, draft review, and prescription approval. The Patient Portal is used by patients to log in and read their own consultations and prescriptions. Both interfaces are server-rendered with Jinja2 templates and communicate with the backend through the Gateway API.
+On the user-facing side, the Doctor Dashboard is the main interface for doctors and gives access to the patient list, consultation context, recording, draft review, and prescription approval. The Patient Portal is used by patients to log in and read their own consultations and prescriptions. Both interfaces are server-rendered with Jinja2 templates and communicate with the backend through the Gateway API.
 
 Authentication and authorization validate credentials, issue JWT tokens, and enforce role-based access control. The Email Notification Service sends patient summaries through SMTP. The Document Editing and Versioning service manages generated report lifecycle, Markdown edits, and version history so every revision made by a doctor can be traced.
 
@@ -150,8 +151,38 @@ The patient portal is read-only with respect to clinical data. The admin configu
 \subsection{Scope Decisions and Future Enhancements}
 \label{subsec:scope-decisions}
 
-The project specification mentioned a patient booking system, but after discussion with the supervisor the team decided not to build an in-house scheduler. Clinics usually already have scheduling solutions, often connected to national identity and e-health infrastructure. Duplicating this functionality would not add much value to the system.
+A simple booking and scheduling capability was included to support the semester workflow, but the design does not treat it as the long-term source of truth for appointments. Clinics, companies, and public authorities often already operate booking systems connected to identity and access infrastructure. In Denmark, MitID provides national eID for public self-service solutions, while NemLog-in provides public-sector login and single sign-on for authority self-service systems\refcite{14,15}. MitID Erhverv also supports organisational identities where employees can act digitally on behalf of an organisation\refcite{16}.
 
-The component-based architecture makes it possible to defer scheduling cleanly. Patients and consultations are independent modules with stable contracts, so an external scheduler can pre-create consultations through the same APIs. Doctors currently create consultations directly from the patient list, and the AI pipeline works end-to-end from there.
+For this reason, Med Flow treats scheduling as an integration boundary rather than as a tightly coupled internal module. A booking service can create a consultation shell containing patient, clinician, time, and visit-type metadata. Med Flow can then take over from the moment the consultation begins: recording, transcription, AI-assisted drafting, review, approval, PDF export, and follow-up communication. This keeps the documentation pipeline independent from the appointment provider.
 
-Future enhancements include a queued retry layer for transient Whisper or Ollama failures, hardened deployment security, expanded Suggestive Mode rules with a broader interaction database, and a booking component with patient-facing calendar, slot management, and reminders.
+\begin{figure}[htbp]
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=1.15cm and 1.25cm,
+  box/.style={draw=black, rounded corners=1mm, align=center, fill=white, minimum width=3.0cm, minimum height=0.85cm, font=\small},
+  muted/.style={draw=black!55, rounded corners=1mm, align=center, fill=VertexPanel, minimum width=3.2cm, minimum height=0.85cm, font=\small},
+  arrow/.style={-{Latex[length=2mm]}, draw=black!65, line width=0.45pt},
+  boundary/.style={draw=black!55, dashed, rounded corners=1.5mm, inner sep=4mm}
+]
+\node[muted] (identity) {MitID / NemLog-in\\identity and SSO};
+\node[muted, below=of identity] (booking) {Clinic or public-sector\\booking service};
+\node[box, right=of identity] (gateway) {Med Flow API\\integration boundary};
+\node[box, right=of gateway] (consultation) {Consultation context\\patient, doctor, time};
+\node[box, below=of consultation] (pipeline) {Documentation pipeline\\record, transcribe, draft};
+\node[box, right=of pipeline] (review) {Doctor review\\approve, PDF, email};
+
+\draw[arrow] (identity) -- node[above, font=\scriptsize]{verified user/session} (gateway);
+\draw[arrow] (booking) -- node[below, font=\scriptsize]{appointment metadata} (gateway);
+\draw[arrow] (gateway) -- (consultation);
+\draw[arrow] (consultation) -- (pipeline);
+\draw[arrow] (pipeline) -- (review);
+
+\node[boundary, fit=(gateway)(consultation)(pipeline)(review), label={[font=\scriptsize]above:Med Flow scope}] {};
+\end{tikzpicture}%
+}
+\caption{Replaceable booking and identity integration boundary for a Danish deployment scenario.}
+\label{fig:booking-identity-integration}
+\end{figure}
+
+Future enhancements include a queued retry layer for transient Whisper or Ollama failures, hardened deployment security, expanded Suggestive Mode rules with a broader interaction database, and production-grade adapters for external booking, identity, and access-control services.

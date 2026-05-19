@@ -22,7 +22,7 @@ The implemented workflow is centered on three roles: doctors, administrators, an
 \TableMidRule
 \rowcolor{VertexTableStripe}
 UC-1 & Doctor & Authenticate and reach the clinical dashboard. & Doctor enters credentials, receives a JWT cookie, and lands on the dashboard. \\
-UC-2 & Doctor & Start a patient consultation. & Doctor selects a patient, creates a consultation, and begins recording. \\
+UC-2 & Doctor & Book or start a patient consultation. & Doctor creates or opens a scheduled consultation, selects the patient, and begins recording. \\
 \rowcolor{VertexTableStripe}
 UC-3 & Doctor & Review AI-generated material. & Doctor reads the transcript, structured report, prescription draft, and suggestive alerts. \\
 UC-4 & Doctor & Approve and export the final record. & Doctor edits Markdown if needed, approves the draft, downloads the PDF, and can send the patient email. \\
@@ -49,7 +49,7 @@ UC-6 & Administrator & Maintain configurable content. & Administrator edits prom
 \VertexTableHead{ID} & \VertexTableHead{Requirement} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-F-1 & The system must manage a doctor consultation queue. \\
+F-1 & The system must manage a doctor consultation queue, including consultation context created from booking or scheduling. \\
 F-2 & The system must capture consultation audio locally. \\
 \rowcolor{VertexTableStripe}
 F-3 & The system must transcribe speech to text locally. \\
@@ -100,6 +100,7 @@ NF-6 & Auditability: the system must log important actions and edits. \\
 F-9 & The system should display a live transcript during consultation. \\
 F-10 & The system should allow doctors to view past consultations. \\
 \rowcolor{VertexTableStripe}
+F-12 & The system should keep booking and scheduling replaceable, so an external clinic or public-sector booking service can create consultation context through stable interfaces. \\
 NF-7 & Usability: the interface should be user-friendly and efficient. \\
 NF-8 & Performance: on the target machine, local transcription should operate with RTF $\leq 1.0$. For a typical consultation transcript, the system should generate structured notes, prescription draft, and clinical alerts within $\leq 40$ seconds on recommended hardware and within $\leq 120$ seconds on minimum hardware. \\
 \TableBottomRule

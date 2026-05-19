@@ -4,16 +4,16 @@
 \subsection{Scope and Outcome}
 \label{subsec:discussion-scope-outcome}
 
-Med Flow demonstrates the consultation-support path promised by the project scope: a doctor can work with patient information, start a consultation, capture audio, obtain a transcript, generate structured clinical material, review and edit the AI output, approve the result, export a PDF, and send follow-up communication. The result is strongest as a workflow prototype with a real implementation behind it, not only as a design proposal.
+Med Flow demonstrates the consultation-support path promised by the project scope: a doctor can work with patient information, start a consultation from booking context, capture audio, obtain a transcript, generate structured clinical material, review and edit the AI output, approve the result, export a PDF, and send follow-up communication. The result is strongest as a working workflow with a real implementation behind it, not only as a design proposal.
 
-The most important project decision was narrowing the system around consultation documentation rather than trying to build a complete outpatient administration platform. Scheduling, advanced retention governance, and production deployment hardening were treated as integration or future-work topics. This focus made the core workflow achievable within the semester while still aligning with the requirements for local AI processing, role-based access, modularity, persistence, auditability, and validation.
+The most important project decision was narrowing the system around consultation documentation rather than trying to build a complete outpatient administration platform. Booking and scheduling were treated as replaceable support capabilities: useful inside the semester system, but better integrated through an existing clinic or public-sector service in a real deployment. This focus made the core workflow achievable within the semester while still aligning with the requirements for local AI processing, role-based access, modularity, persistence, auditability, and validation.
 
 \subsection{Project Reflection}
 \label{subsec:project-reflection}
 
 The sprint-based workflow helped the group keep the project realistic. Early work on authentication, patient records, database setup, and UI structure made it possible to integrate transcription and LLM features later without rewriting the whole system. A key lesson was that AI features create extra engineering work around validation, error handling, prompt versioning, and fallback behavior; simply connecting to a model is not enough for a trustworthy clinical workflow.
 
-The architecture also benefited from component-based thinking. FastAPI routes, application services, domain contracts, repository ports, infrastructure adapters, and local AI services can be changed independently. This became important when the project moved from general report generation toward a stricter review workflow with Markdown editing, PDF generation, email follow-up, and Suggestive Mode. The separation of concerns made those changes easier to add without turning the route handlers into business-logic containers.
+The architecture also benefited from component-based thinking. FastAPI routes, application services, domain contracts, repository ports, infrastructure adapters, and local AI services can be changed independently. This became important when the project moved from general report generation toward a stricter review workflow with Markdown editing, PDF generation, email follow-up, Suggestive Mode, and booking context. The separation of concerns made those changes easier to add without turning the route handlers into business-logic containers.
 
 \subsection{Validation Evidence}
 \label{subsec:discussion-validation-evidence}
@@ -22,37 +22,14 @@ The validation results are strong for a semester project. The automated suite co
 
 At the same time, the validation evidence should be interpreted with the same boundaries stated in the validation chapter. The benchmark figures prove that the application layer is lightweight, but they do not replace production load tests against real MySQL and MongoDB deployments. The LLM and ASR checks reduce obvious risks, but they do not replace testing with real annotated clinical audio or external clinical users.
 
-\subsection{Known Limitations Before Real Clinical Deployment}
-\label{subsec:known-limitations-clinical-deployment}
+\subsection{Integration and Deployment Limitations}
+\label{subsec:integration-deployment-limitations}
 
-Local execution reduces dependence on cloud AI providers, but a real clinic deployment would still require operational and legal controls beyond the semester implementation. OWASP guidance for service-oriented systems recommends treating these controls as part of the deployed architecture rather than as afterthoughts\refcite{13}.
+Local execution reduces dependence on cloud AI providers, but a real clinic deployment would still require operational and legal controls beyond the semester implementation. This includes TLS termination, at-rest encryption, service-to-service authentication, retention enforcement, backup policy, operational monitoring, and governance for audit logs and prompt changes. OWASP guidance for service-oriented systems recommends treating these controls as part of the deployed architecture rather than as afterthoughts\refcite{13}.
 
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabularx}{\textwidth}{@{}P{0.23\textwidth}P{0.33\textwidth}Y@{}}
-\TableTopRule
-\rowcolor{VertexTableBlue}
-\VertexTableHead{Area} & \VertexTableHead{Current project status} & \VertexTableHead{Needed before clinical deployment} \\
-\TableMidRule
-\rowcolor{VertexTableStripe}
-TLS and network security & Local Docker setup and development HTTP endpoints. & TLS termination, secure reverse proxy configuration, and service-to-service authentication. \\
-At-rest encryption & Passwords are hashed, but database and file encryption are not fully implemented. & Encrypted database volumes, encrypted PDF storage, key management, and backup encryption. \\
-\rowcolor{VertexTableStripe}
-Retention and deletion & Retention policy is identified as future work. & Configurable retention periods, secure deletion, audit-preserving removal workflows, and backup retention rules. \\
-Consent and legal basis & GDPR and health-data risks are discussed at design level. & Clinic-specific consent flow, lawful-basis documentation, data-processing agreements, and patient information material. \\
-\rowcolor{VertexTableStripe}
-Clinical validation & Synthetic transcripts, live model checks, and manual UI tests support the prototype. & Annotated clinical audio corpus, clinician review study, measured documentation quality, and failure-case analysis. \\
-Audit governance & Audit events and prompt/template administration are logged. & Tamper-evident audit storage, access-review process, alerting, and governance ownership. \\
-\rowcolor{VertexTableStripe}
-Operations & Docker Compose supports local reproducibility. & Monitoring, backup restore tests, incident response, deployment runbooks, and production load testing. \\
-\TableBottomRule
-\end{tabularx}
-\caption{Known limitations that must be addressed before real clinical deployment.}
-\label{tab:clinical-deployment-limitations}
-\end{table}
+The same applies to booking and identity integration. The system can create consultation context internally, but production use in Denmark should avoid duplicating national or organisational identity infrastructure where MitID, NemLog-in, or MitID Erhverv are already appropriate for the deployment context\refcite{14,15,16}. Med Flow should therefore expose stable interfaces for receiving appointment metadata and verified user identity, while keeping the consultation documentation pipeline independent.
 
 \subsection{Future Direction}
 \label{subsec:discussion-future-direction}
 
-Future iterations should replace the manual UI checklist with Playwright end-to-end tests, evaluate load behavior against deployed MySQL and MongoDB instances, validate transcription quality against an annotated clinical audio corpus, and harden the deployment controls listed in Table~\ref{tab:clinical-deployment-limitations}. These tasks are outside the semester prototype, but they define the practical path from a validated academic system toward a safer clinical pilot.
+Future iterations should replace the manual UI checklist with Playwright end-to-end tests, evaluate load behavior against deployed MySQL and MongoDB instances, validate transcription quality against an annotated clinical audio corpus, and harden the deployment controls described above. A production-oriented version should also add adapter tests for external booking and identity providers, so appointment metadata and authenticated users can enter Med Flow without coupling the documentation workflow to one scheduling vendor.

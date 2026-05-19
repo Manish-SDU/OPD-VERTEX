@@ -17,8 +17,8 @@ The API layer is built using FastAPI. It defines and serves HTTP endpoints and a
 \VertexTableHead{Route module} & \VertexTableHead{Implemented responsibility} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-\texttt{auth.py}, \texttt{dashboard.py}, \texttt{profile.py} & Login, logout, role-aware dashboard rendering, and profile access. \\
-\texttt{patients.py}, \texttt{consultations.py} & Patient lookup, patient detail pages, consultation creation, and consultation detail views. \\
+\texttt{auth.py}, \texttt{dashboard.py}, \texttt{profile.py} & Login, logout, role-aware dashboard rendering, profile access, and appointment-count display. \\
+\texttt{patients.py}, \texttt{consultations.py} & Patient lookup, patient detail pages, consultation creation, and consultation detail views used by the booking-to-consultation flow. \\
 \rowcolor{VertexTableStripe}
 \texttt{transcriptions.py} & Session start, WebSocket audio streaming, demo-text injection, completion, and transcript persistence. \\
 \texttt{review.py} & Report viewing, Markdown editing, PDF download, report generation, suggestive review, approval, rejection, and email sending. \\
@@ -62,7 +62,7 @@ Approval, PDF, email & \texttt{ReviewApplicationService}, \texttt{ReportPdfAppli
 \subsection{Authentication and Authorization}
 \label{subsec:authentication-authorization}
 
-Authentication ensures secure access control using role-based authorization. The system uses FastAPI dependency injection, JWT tokens, bcrypt password verification, and a modular service structure.
+Authentication ensures secure access control using role-based authorization. The system uses FastAPI dependency injection, JWT tokens, bcrypt password verification, and a modular service structure. This internal login is sufficient for the semester implementation, while the architecture keeps identity at a boundary where a Danish deployment could integrate with MitID/NemLog-in through a dedicated adapter\refcite{14,15}.
 
 The main authentication logic is implemented in \texttt{AuthApplicationService}, which bridges the API layer and domain logic. Domain models represent users, login requests, and the authentication interface, creating a consistent contract between application and infrastructure layers.
 
