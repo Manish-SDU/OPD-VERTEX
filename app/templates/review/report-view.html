@@ -21,7 +21,7 @@
       {% endif %}
 
       {% if user and user.role == 'doctor' and generated_document.status|lower == 'approved' %}
-      <button type="button" class="btn btn-success" id="send-report-btn">
+      <button type="button" class="btn btn-success" id="send-report-btn" title="Note: You must export the PDF first before sending to patient">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="5" width="18" height="14" rx="2"></rect>
           <path d="M3 7l9 6 9-6"></path>
@@ -30,7 +30,7 @@
       </button>
       {% endif %}
 
-      <a href="/review/{{ consultation_id }}/pdf" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+      <a href="/review/{{ consultation_id }}/pdf" class="btn btn-secondary" target="_blank" rel="noopener noreferrer" title="Export the clinical report as PDF before sending to patient">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 6 2 18 2 18 9"></polyline>
           <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
@@ -184,7 +184,7 @@ function showToast(message, type) {
 }
 
 async function sendReportToPatient() {
-  const confirmed = confirm("Send this approved report to the patient's email?");
+  const confirmed = confirm("Send this approved report to the patient's email with the PDF attached?");
   if (!confirmed) return;
 
   const sendBtn = document.getElementById('send-report-btn');
@@ -201,12 +201,23 @@ async function sendReportToPatient() {
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.detail || 'Failed to send email');
+      const errorMessage = result.detail || 'Failed to send email';
+      
+      // Check if the error is about PDF not being exported
+      if (errorMessage.includes('not been exported') || errorMessage.includes('PDF')) {
+        showToast(
+          '⚠️ ' + errorMessage + '\n\nPlease click "Export PDF" button first, then try again.',
+          'error'
+        );
+      } else {
+        throw new Error(errorMessage);
+      }
+      return;
     }
 
-    showToast('Report email sent successfully. Check MailHog inbox.', 'success');
+    showToast('✓ Report email sent successfully with PDF attached. Check MailHog inbox.', 'success');
   } catch (error) {
-    showToast(error.message || 'Failed to send email', 'error');
+    showToast('❌ ' + (error.message || 'Failed to send email'), 'error');
   } finally {
     if (sendBtn) {
       sendBtn.disabled = false;

@@ -374,6 +374,7 @@ def get_review_app_service() -> ReviewApplicationService:
         prescription_repository(),
         patient_repository(),
         email_service(),
+        get_report_pdf_app_service(),
     )
 
 

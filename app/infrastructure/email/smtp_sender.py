@@ -40,12 +40,19 @@ class SmtpEmailService(EmailService):
         msg.attach(alt)
 
         if message.attachment:
+            subtype = "pdf"
+            if message.attachment.content_type and "/" in message.attachment.content_type:
+                _, subtype = message.attachment.content_type.split("/", 1)
+
             part = MIMEApplication(
                 message.attachment.data,
+                _subtype=subtype,
                 Name=message.attachment.filename,
             )
-            part["Content-Disposition"] = (
-                f'attachment; filename="{message.attachment.filename}"'
+            part.add_header(
+                "Content-Disposition",
+                "attachment",
+                filename=message.attachment.filename,
             )
             msg.attach(part)
 
