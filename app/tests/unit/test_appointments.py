@@ -79,7 +79,10 @@ class TestInMemoryAppointmentRepository:
         appointments = appt_repo.list_all()
         statuses = [a.status for a in appointments]
         # confirmed should come before pending
-        if AppointmentStatus.CONFIRMED in statuses and AppointmentStatus.PENDING in statuses:
+        if (
+            AppointmentStatus.CONFIRMED in statuses
+            and AppointmentStatus.PENDING in statuses
+        ):
             assert statuses.index(AppointmentStatus.CONFIRMED) < statuses.index(
                 AppointmentStatus.PENDING
             )
@@ -241,7 +244,8 @@ class TestAppointmentApplicationService:
         a = appt_svc.create_appointment(req)
         user = {"role": "doctor", "sub": "1"}
         updated_appt, consultation = appt_svc.start_consultation_from_appointment(
-            a.id, current_user=user  # type: ignore[arg-type]
+            a.id,
+            current_user=user,  # type: ignore[arg-type]
         )
         assert consultation.id is not None
         assert updated_appt.consultation_id == consultation.id
@@ -256,8 +260,6 @@ class TestAppointmentApplicationService:
             appt_svc.start_consultation_from_appointment(a.id, current_user=user)  # type: ignore[arg-type]
 
     def test_list_upcoming_excludes_past(self, appt_svc):
-        from datetime import timezone
-
         past_slot = utcnow() - timedelta(hours=2)
         req = AppointmentCreateRequest(
             patient_id=1,

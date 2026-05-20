@@ -9,7 +9,7 @@ from pathlib import Path
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     HRFlowable,
@@ -26,39 +26,88 @@ from app.domain.prescriptions.models import Prescription
 from app.core.config import get_settings
 
 # ── Palette ────────────────────────────────────────────────────────────────
-_BLUE       = colors.HexColor("#2563eb")
+_BLUE = colors.HexColor("#2563eb")
 _BLUE_LIGHT = colors.HexColor("#eff6ff")
-_BLUE_DIM   = colors.HexColor("#bfdbfe")
-_ACCENT     = colors.HexColor("#1d4ed8")
-_DARK       = colors.HexColor("#0f172a")
-_MUTED      = colors.HexColor("#64748b")
-_BORDER     = colors.HexColor("#e2e8f0")
-_WHITE      = colors.white
+_BLUE_DIM = colors.HexColor("#bfdbfe")
+_ACCENT = colors.HexColor("#1d4ed8")
+_DARK = colors.HexColor("#0f172a")
+_MUTED = colors.HexColor("#64748b")
+_BORDER = colors.HexColor("#e2e8f0")
+_WHITE = colors.white
 
 
 def _build_styles() -> dict:
-    base = getSampleStyleSheet()
     defs = [
-        ParagraphStyle("BannerTitle",   fontName="Helvetica-Bold", fontSize=22,
-                       textColor=_WHITE,    leading=28),
-        ParagraphStyle("BannerSub",     fontName="Helvetica",      fontSize=9,
-                       textColor=_BLUE_DIM, leading=13),
-        ParagraphStyle("BannerRight",   fontName="Helvetica-Bold", fontSize=9,
-                       textColor=_WHITE,    leading=13, alignment=TA_RIGHT),
-        ParagraphStyle("BannerRightSub",fontName="Helvetica",      fontSize=9,
-                       textColor=_BLUE_DIM, leading=13, alignment=TA_RIGHT),
-        ParagraphStyle("InfoLabel",     fontName="Helvetica-Bold", fontSize=7,
-                       textColor=_MUTED,    leading=10, spaceAfter=1),
-        ParagraphStyle("InfoValue",     fontName="Helvetica",      fontSize=10,
-                       textColor=_DARK,     leading=14),
-        ParagraphStyle("SectionHead",   fontName="Helvetica-Bold", fontSize=11,
-                       textColor=_ACCENT,   leading=15, spaceBefore=10, spaceAfter=4),
-        ParagraphStyle("Body",          fontName="Helvetica",      fontSize=10,
-                       textColor=_DARK,     leading=15, spaceAfter=3),
-        ParagraphStyle("Bullet",        fontName="Helvetica",      fontSize=10,
-                       textColor=_DARK,     leading=15, leftIndent=14, spaceAfter=2),
-        ParagraphStyle("FooterStyle",   fontName="Helvetica",      fontSize=8,
-                       textColor=_MUTED),
+        ParagraphStyle(
+            "BannerTitle",
+            fontName="Helvetica-Bold",
+            fontSize=22,
+            textColor=_WHITE,
+            leading=28,
+        ),
+        ParagraphStyle(
+            "BannerSub",
+            fontName="Helvetica",
+            fontSize=9,
+            textColor=_BLUE_DIM,
+            leading=13,
+        ),
+        ParagraphStyle(
+            "BannerRight",
+            fontName="Helvetica-Bold",
+            fontSize=9,
+            textColor=_WHITE,
+            leading=13,
+            alignment=TA_RIGHT,
+        ),
+        ParagraphStyle(
+            "BannerRightSub",
+            fontName="Helvetica",
+            fontSize=9,
+            textColor=_BLUE_DIM,
+            leading=13,
+            alignment=TA_RIGHT,
+        ),
+        ParagraphStyle(
+            "InfoLabel",
+            fontName="Helvetica-Bold",
+            fontSize=7,
+            textColor=_MUTED,
+            leading=10,
+            spaceAfter=1,
+        ),
+        ParagraphStyle(
+            "InfoValue", fontName="Helvetica", fontSize=10, textColor=_DARK, leading=14
+        ),
+        ParagraphStyle(
+            "SectionHead",
+            fontName="Helvetica-Bold",
+            fontSize=11,
+            textColor=_ACCENT,
+            leading=15,
+            spaceBefore=10,
+            spaceAfter=4,
+        ),
+        ParagraphStyle(
+            "Body",
+            fontName="Helvetica",
+            fontSize=10,
+            textColor=_DARK,
+            leading=15,
+            spaceAfter=3,
+        ),
+        ParagraphStyle(
+            "Bullet",
+            fontName="Helvetica",
+            fontSize=10,
+            textColor=_DARK,
+            leading=15,
+            leftIndent=14,
+            spaceAfter=2,
+        ),
+        ParagraphStyle(
+            "FooterStyle", fontName="Helvetica", fontSize=8, textColor=_MUTED
+        ),
     ]
     out = {}
     for s in defs:
@@ -72,14 +121,15 @@ _STYLES = _build_styles()
 def _md(text: str) -> str:
     """Convert **bold** and *italic* markdown to ReportLab XML."""
     text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
-    text = re.sub(r"\*([^*]+)\*",     r"<i>\1</i>", text)
+    text = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", text)
     return text
 
 
 def _build_banner(metadata: ConsultationMetadata, usable_w: float) -> Table:
     date_str = (
         metadata.consultation_date.strftime("%d %B %Y")
-        if metadata.consultation_date else "—"
+        if metadata.consultation_date
+        else "—"
     )
     left = [
         Paragraph("MedFlow", _STYLES["BannerTitle"]),
@@ -87,47 +137,66 @@ def _build_banner(metadata: ConsultationMetadata, usable_w: float) -> Table:
     ]
     right = [
         Paragraph("CLINICAL REPORT", _STYLES["BannerRight"]),
-        Paragraph(f"Consultation #{metadata.consultation_id} &nbsp;·&nbsp; {date_str}",
-                  _STYLES["BannerRightSub"]),
+        Paragraph(
+            f"Consultation #{metadata.consultation_id} &nbsp;·&nbsp; {date_str}",
+            _STYLES["BannerRightSub"],
+        ),
     ]
     t = Table([[left, right]], colWidths=[usable_w * 0.55, usable_w * 0.45])
-    t.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0), (-1, -1), _BLUE),
-        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING",    (0, 0), (-1, -1), 18),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 18),
-        ("LEFTPADDING",   (0, 0), (0,  0),  20),
-        ("RIGHTPADDING",  (1, 0), (1,  0),  20),
-        ("LEFTPADDING",   (1, 0), (1,  0),   0),
-        ("RIGHTPADDING",  (0, 0), (0,  0),   8),
-    ]))
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), _BLUE),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 18),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 18),
+                ("LEFTPADDING", (0, 0), (0, 0), 20),
+                ("RIGHTPADDING", (1, 0), (1, 0), 20),
+                ("LEFTPADDING", (1, 0), (1, 0), 0),
+                ("RIGHTPADDING", (0, 0), (0, 0), 8),
+            ]
+        )
+    )
     return t
 
 
 def _build_info_card(metadata: ConsultationMetadata, usable_w: float) -> Table:
     date_label = (
         metadata.consultation_date.strftime("%d %b %Y, %H:%M")
-        if metadata.consultation_date else "—"
+        if metadata.consultation_date
+        else "—"
     )
     L, V = _STYLES["InfoLabel"], _STYLES["InfoValue"]
     col = usable_w / 4
 
     data = [
-        [Paragraph("PATIENT",    L), Paragraph(metadata.patient_name or "—", V),
-         Paragraph("DATE",       L), Paragraph(date_label, V)],
-        [Paragraph("CLINICIAN",  L), Paragraph(metadata.clinician_name or "—", V),
-         Paragraph("VISIT TYPE", L), Paragraph(metadata.visit_type or "General", V)],
+        [
+            Paragraph("PATIENT", L),
+            Paragraph(metadata.patient_name or "—", V),
+            Paragraph("DATE", L),
+            Paragraph(date_label, V),
+        ],
+        [
+            Paragraph("CLINICIAN", L),
+            Paragraph(metadata.clinician_name or "—", V),
+            Paragraph("VISIT TYPE", L),
+            Paragraph(metadata.visit_type or "General", V),
+        ],
     ]
     t = Table(data, colWidths=[col * 0.55, col * 1.45, col * 0.55, col * 1.45])
-    t.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0), (-1, -1), _BLUE_LIGHT),
-        ("BOX",           (0, 0), (-1, -1), 1,   _BORDER),
-        ("LINEBELOW",     (0, 0), (-1,  0), 0.5, _BORDER),
-        ("TOPPADDING",    (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("LEFTPADDING",   (0, 0), (-1, -1), 12),
-        ("RIGHTPADDING",  (0, 0), (-1, -1), 12),
-    ]))
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), _BLUE_LIGHT),
+                ("BOX", (0, 0), (-1, -1), 1, _BORDER),
+                ("LINEBELOW", (0, 0), (-1, 0), 0.5, _BORDER),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+            ]
+        )
+    )
     return t
 
 
@@ -143,12 +212,15 @@ def _parse_content(markdown: str) -> list:
 
         if stripped.startswith("## ") or stripped.startswith("### "):
             heading = re.sub(r"^#{2,3}\s*", "", stripped)
-            flowables.append(HRFlowable(width="100%", thickness=0.5,
-                                        color=_BORDER, spaceAfter=2))
+            flowables.append(
+                HRFlowable(width="100%", thickness=0.5, color=_BORDER, spaceAfter=2)
+            )
             flowables.append(Paragraph(_md(heading), _STYLES["SectionHead"]))
 
         elif stripped.startswith("- "):
-            flowables.append(Paragraph(f"&bull;&nbsp; {_md(stripped[2:])}", _STYLES["Bullet"]))
+            flowables.append(
+                Paragraph(f"&bull;&nbsp; {_md(stripped[2:])}", _STYLES["Bullet"])
+            )
 
         elif stripped:
             flowables.append(Paragraph(_md(stripped), _STYLES["Body"]))
@@ -167,10 +239,8 @@ def _footer_cb(canvas, doc):
     canvas.line(0.75 * inch, y_line, A4[0] - 0.75 * inch, y_line)
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(_MUTED)
-    canvas.drawString(0.75 * inch, 0.45 * inch,
-                      "MedFlow — Confidential Medical Record")
-    canvas.drawRightString(A4[0] - 0.75 * inch, 0.45 * inch,
-                           f"Page {doc.page}")
+    canvas.drawString(0.75 * inch, 0.45 * inch, "MedFlow — Confidential Medical Record")
+    canvas.drawRightString(A4[0] - 0.75 * inch, 0.45 * inch, f"Page {doc.page}")
     canvas.restoreState()
 
 
@@ -194,7 +264,9 @@ class ReportLabPdfGenerator(PdfGenerator):
             if consultation_metadata.consultation_date
             else datetime.now().strftime("%Y%m%d")
         )
-        filename = f"report_{safe_last}_{date_str}_{consultation_metadata.consultation_id}.pdf"
+        filename = (
+            f"report_{safe_last}_{date_str}_{consultation_metadata.consultation_id}.pdf"
+        )
         file_path = self.pdf_output_dir / filename
 
         usable_w = A4[0] - 1.5 * inch
@@ -223,7 +295,9 @@ class ReportLabPdfGenerator(PdfGenerator):
 
         return str(file_path)
 
-    def generate_prescription_pdf(self, prescription: Prescription) -> PrescriptionArtifact:
+    def generate_prescription_pdf(
+        self, prescription: Prescription
+    ) -> PrescriptionArtifact:
         return PrescriptionArtifact(
             prescription_id=prescription.id or 0,
             consultation_id=prescription.consultation_id,

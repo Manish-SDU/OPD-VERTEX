@@ -28,9 +28,7 @@ router = APIRouter()
 
 
 @router.get("", response_class=HTMLResponse)
-def appointment_list(
-    request: Request, user=Depends(get_current_user)
-) -> HTMLResponse:
+def appointment_list(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     svc = get_appointment_app_service()
     appointments = svc.list_appointments(current_user=user)
 
@@ -108,9 +106,7 @@ def appointment_create(
     except AppError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
 
-    return RedirectResponse(
-        url=f"/appointments/{appointment.id}", status_code=303
-    )
+    return RedirectResponse(url=f"/appointments/{appointment.id}", status_code=303)
 
 
 # ── Detail ──────────────────────────────────────────────────────────────
@@ -214,6 +210,4 @@ def appointment_start_consultation(
     except AppError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
 
-    return RedirectResponse(
-        url=f"/consultations/{consultation.id}", status_code=303
-    )
+    return RedirectResponse(url=f"/consultations/{consultation.id}", status_code=303)

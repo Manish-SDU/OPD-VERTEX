@@ -453,7 +453,9 @@ def appointment_repository():
     if _use_mock():
         return _in_memory_appointment_repo()
     from app.infrastructure.db.sql.connection import get_session
-    from app.infrastructure.db.sql.repositories.sql_repos import SqlAppointmentRepository
+    from app.infrastructure.db.sql.repositories.sql_repos import (
+        SqlAppointmentRepository,
+    )
 
     return SqlAppointmentRepository(get_session())
 

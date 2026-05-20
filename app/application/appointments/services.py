@@ -85,10 +85,10 @@ class AppointmentApplicationService:
         # Prevent exact double-booking for the same doctor at the same time
         existing = self.repository.list_by_doctor(req.doctor_id)
         for appt in existing:
-            if (
-                appt.status not in (AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW)
-                and _naive(appt.scheduled_at) == _naive(req.scheduled_at)
-            ):
+            if appt.status not in (
+                AppointmentStatus.CANCELLED,
+                AppointmentStatus.NO_SHOW,
+            ) and _naive(appt.scheduled_at) == _naive(req.scheduled_at):
                 raise AppError(
                     "Doctor already has an appointment at this exact time. "
                     "Please choose a different slot."
@@ -105,7 +105,9 @@ class AppointmentApplicationService:
             raise AppError(
                 f"Cannot confirm an appointment with status '{appointment.status}'."
             )
-        result = self.repository.update_status(appointment_id, AppointmentStatus.CONFIRMED)
+        result = self.repository.update_status(
+            appointment_id, AppointmentStatus.CONFIRMED
+        )
         return result  # type: ignore[return-value]
 
     def cancel_appointment(self, appointment_id: int) -> Appointment:
@@ -123,7 +125,9 @@ class AppointmentApplicationService:
             raise AppError("Cannot complete a cancelled appointment.")
         if appointment.status == AppointmentStatus.NO_SHOW:
             raise AppError("Cannot complete a no-show appointment.")
-        result = self.repository.update_status(appointment_id, AppointmentStatus.COMPLETED)
+        result = self.repository.update_status(
+            appointment_id, AppointmentStatus.COMPLETED
+        )
         return result  # type: ignore[return-value]
 
     def mark_no_show(self, appointment_id: int) -> Appointment:
@@ -135,7 +139,9 @@ class AppointmentApplicationService:
             raise AppError(
                 f"Cannot mark as no-show an appointment with status '{appointment.status}'."
             )
-        result = self.repository.update_status(appointment_id, AppointmentStatus.NO_SHOW)
+        result = self.repository.update_status(
+            appointment_id, AppointmentStatus.NO_SHOW
+        )
         return result  # type: ignore[return-value]
 
     def start_consultation_from_appointment(

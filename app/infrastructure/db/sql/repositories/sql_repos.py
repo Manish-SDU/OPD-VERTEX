@@ -360,6 +360,7 @@ class SqlAppointmentRepository(AppointmentRepository):
 
     def _priority_order(self):
         from sqlalchemy import case
+
         return (
             case(
                 (AppointmentRow.status == "confirmed", 0),
@@ -372,9 +373,7 @@ class SqlAppointmentRepository(AppointmentRepository):
 
     def list_all(self) -> list[Appointment]:
         rows = (
-            self.session.query(AppointmentRow)
-            .order_by(*self._priority_order())
-            .all()
+            self.session.query(AppointmentRow).order_by(*self._priority_order()).all()
         )
         return [self._to_domain(r) for r in rows]
 
