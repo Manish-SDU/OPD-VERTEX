@@ -7,7 +7,6 @@ perform clinical approvals.
 
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
 
@@ -21,7 +20,11 @@ client = TestClient(app, follow_redirects=False)
 
 
 def _token(role: str, sub: str = "1") -> dict[str, str]:
-    return {"access_token": jwt.encode({"sub": sub, "role": role}, SECRET_KEY, algorithm=ALGORITHM)}
+    return {
+        "access_token": jwt.encode(
+            {"sub": sub, "role": role}, SECRET_KEY, algorithm=ALGORITHM
+        )
+    }
 
 
 def _doctor_cookie(sub: str = "1") -> dict[str, str]:
@@ -59,11 +62,15 @@ class TestClinicalDoctorOnly:
         assert response.status_code == 403
 
     def test_admin_cannot_run_suggestive_review(self):
-        response = client.post("/review/4101/suggestive-review", cookies=_admin_cookie())
+        response = client.post(
+            "/review/4101/suggestive-review", cookies=_admin_cookie()
+        )
         assert response.status_code == 403
 
     def test_admin_cannot_regenerate_suggestive_review(self):
-        response = client.post("/review/4101/suggestive-review/regenerate", cookies=_admin_cookie())
+        response = client.post(
+            "/review/4101/suggestive-review/regenerate", cookies=_admin_cookie()
+        )
         assert response.status_code == 403
 
     def test_admin_cannot_edit_report(self):
@@ -75,7 +82,9 @@ class TestClinicalDoctorOnly:
         assert response.status_code == 403
 
     def test_patient_cannot_generate_report(self):
-        response = client.post("/review/4101/generate-report", cookies=_patient_cookie())
+        response = client.post(
+            "/review/4101/generate-report", cookies=_patient_cookie()
+        )
         assert response.status_code == 403
 
     def test_doctor_can_approve_prescription(self):
@@ -100,15 +109,21 @@ class TestConsultationStartDoctorOnly:
 
     def test_admin_cannot_start_consultation(self):
         # Appointment #1 is seeded in the mock repo
-        response = client.post("/appointments/1/start-consultation", cookies=_admin_cookie())
+        response = client.post(
+            "/appointments/1/start-consultation", cookies=_admin_cookie()
+        )
         assert response.status_code == 403
 
     def test_patient_cannot_start_consultation(self):
-        response = client.post("/appointments/1/start-consultation", cookies=_patient_cookie())
+        response = client.post(
+            "/appointments/1/start-consultation", cookies=_patient_cookie()
+        )
         assert response.status_code == 403
 
     def test_doctor_can_start_consultation(self):
-        response = client.post("/appointments/1/start-consultation", cookies=_doctor_cookie())
+        response = client.post(
+            "/appointments/1/start-consultation", cookies=_doctor_cookie()
+        )
         # 303 redirect on success, or 409 if already started — both mean the check passed
         assert response.status_code in (303, 409)
 
