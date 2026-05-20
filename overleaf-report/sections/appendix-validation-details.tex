@@ -1,7 +1,7 @@
 \section{Detailed Test Inventory}
 \label{app:test-inventory}
 
-The automated source inventory contains 384 test functions across unit, integration, smoke, stress, and benchmark tiers. The inventory below keeps the validation claims traceable to concrete test modules.
+The retained automated validation run contains 326 collected tests across unit, integration, smoke, stress, and benchmark tiers. The inventory below keeps the validation claims traceable to the concrete test modules represented in the generated validation artifact.
 
 \begingroup
 \scriptsize
@@ -13,14 +13,12 @@ The automated source inventory contains 384 test functions across unit, integrat
 \TableMidRule
 \rowcolor{VertexTableStripe}
 \path{benchmarks/test_perf.py} & Bench. & 10 & Latency percentiles for hot application paths. \\
-\path{integration/test_admin_config.py} & Integ. & 4 & Admin prompt and email-template configuration routes. \\
-\rowcolor{VertexTableStripe}
 \path{integration/test_auth_flow.py} & Integ. & 7 & Login, logout, JWT cookie lifecycle, and invalid credentials. \\
 \path{integration/test_functional_workflows.py} & Integ. & 21 & Multi-step user journeys from consultation creation through approval. \\
 \path{integration/test_health_dashboard.py} & Integ. & 2 & Health and dashboard routes. \\
 \rowcolor{VertexTableStripe}
 \path{integration/test_middleware.py} & Integ. & 4 & ASGI request/response middleware behavior. \\
-\path{integration/test_pdf_and_ui.py} & Integ. & 17 & PDF download through HTTP and UI-facing report routes. \\
+\path{integration/test_pdf_and_ui.py} & Integ. & 19 & PDF download through HTTP and UI-facing report routes. \\
 \rowcolor{VertexTableStripe}
 \path{integration/test_real_llm.py} & Integ. & 17 & Live Qwen3:8b contract with deterministic mock fallback. \\
 \path{integration/test_review_api.py} & Integ. & 7 & Suggestive review endpoint and doctor review API behavior. \\
@@ -28,12 +26,11 @@ The automated source inventory contains 384 test functions across unit, integrat
 \path{smoke/test_app.py} & Smoke & 6 & Application boot, route registration, and critical pages. \\
 \path{stress/test_stress.py} & Stress & 14 & Concurrency, sustained load, list invariants, and ID collisions. \\
 \rowcolor{VertexTableStripe}
-\path{unit/test_appointments.py} & Unit & 35 & Appointment domain, repository, scheduling service, and consultation handoff behavior. \\
 \path{unit/test_component_services.py} & Unit & 17 & Component-wired service construction and dependency contracts. \\
 \path{unit/test_document_versioning.py} & Unit & 19 & Edit history and generated-document versioning. \\
 \rowcolor{VertexTableStripe}
 \path{unit/test_domain.py} & Unit & 10 & Domain entities, status transitions, and invariants. \\
-\path{unit/test_faster_whisper_hallucination.py} & Unit & 10 & ASR silence, artifact, word-error, and session-isolation guards. \\
+\path{unit/test_faster_whisper_hallucination.py} & Unit & 16 & ASR silence, artifact, word-error, and session-isolation guards. \\
 \rowcolor{VertexTableStripe}
 \path{unit/test_llm_hallucination.py} & Unit & 17 & LLM content grounding, isolation, and structured-output guards. \\
 \path{unit/test_logging.py} & Unit & 19 & Structured logging, AOP decorators, and middleware timing. \\
@@ -44,7 +41,6 @@ The automated source inventory contains 384 test functions across unit, integrat
 \path{unit/test_pdf_generation.py} & Unit & 16 & PDF rendering correctness and report formatting. \\
 \path{unit/test_persistence_alignment.py} & Unit & 8 & ORM-to-domain mapping and persistence alignment. \\
 \rowcolor{VertexTableStripe}
-\path{unit/test_rbac_permissions.py} & Unit & 27 & Route-level role permissions, appointment access control, and patient data isolation. \\
 \path{unit/test_repositories.py} & Unit & 19 & In-memory repository contracts and list/create invariants. \\
 \path{unit/test_security.py} & Unit & 10 & JWT handling, password hashing, and role security. \\
 \rowcolor{VertexTableStripe}

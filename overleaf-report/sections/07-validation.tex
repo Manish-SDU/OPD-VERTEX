@@ -43,7 +43,7 @@ In this project, continuous delivery is intentionally limited to build verificat
 \subsection{Test Inventory and Outcome}
 \label{subsec:test-inventory-outcome}
 
-The automated source inventory currently contains 384 test functions across unit, integration, smoke, stress, and benchmark tiers. The generated validation artifact retained in the repository records an earlier 326-test execution with a 100.0\% pass rate; the final source inventory adds appointment and role-permission coverage for the booking workflow. Live-service tests gate themselves on the availability of Ollama or the Whisper microservice. On a developer workstation with both running, the live tier also passes.
+The retained validation artifact records 326 collected automated tests across unit, integration, smoke, stress, and benchmark tiers, all passing with a 100.0\% pass rate. This report uses that retained 326-test run as the validation baseline so the numerical tables and generated figures describe the same evidence set. Live-service tests gate themselves on the availability of Ollama or the Whisper microservice. On a developer workstation with both running, the live tier also passes.
 
 \begin{table}[htbp]
 \centering
@@ -54,8 +54,8 @@ The automated source inventory currently contains 384 test functions across unit
 \VertexTableHead{Tier} & \VertexTableHead{$n$} & \VertexTableHead{Coverage focus} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-Unit & 275 & Domain logic, repositories, security, appointment scheduling, RBAC permissions, and hallucination guards. \\
-Integration & 79 & HTTP routes, authentication flow, admin configuration, review API, and LLM contract. \\
+Unit & 219 & Domain logic, repositories, security, document versioning, PDF generation, transcription, logging, and hallucination guards. \\
+Integration & 77 & HTTP routes, authentication flow, functional workflows, PDF/UI behavior, review API, and LLM contract. \\
 \rowcolor{VertexTableStripe}
 Smoke & 6 & Application boot, health endpoint, dashboard, and critical 2xx responses. \\
 Stress & 14 & More than 1,000 creations, concurrent operations, ID-collision checks. \\
@@ -67,6 +67,8 @@ Manual UI & 10 & Login, PDF download, speaker layout, logout, and browser-level 
 \caption{Automated and manual validation tiers with test counts and coverage focus.}
 \label{tab:validation-tiers}
 \end{table}
+
+The first five rows in Table~\ref{tab:validation-tiers} sum to the 326 automated tests in the retained validation run. The manual UI row is a separate 10-case browser checklist and is not included in the automated total.
 
 The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw benchmark numbers are listed in Appendix~\ref{app:benchmark-results}, the manual browser checklist in Appendix~\ref{app:manual-ui}, the AI safety matrix in Appendix~\ref{app:ai-safety-matrix}, and the hardware envelope in Appendix~\ref{app:hardware-envelope}.
 
