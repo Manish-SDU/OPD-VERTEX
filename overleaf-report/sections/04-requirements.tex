@@ -10,7 +10,7 @@ Their implementation and validation evidence is traced in Section~\ref{subsec:re
 
 This subsection defines the system actors and the required user goals. The design chapter reuses these actors as inputs instead of redefining them, so role responsibilities and use cases remain traceable from one place.
 
-The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can book appointments and read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates. All three roles use the same email/password login screen. Staff and patient passwords are stored as bcrypt hashes, and the current implementation does not include doctor-generated password setup links or magic-login links for patients.
+The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can book appointments and read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates. All three roles use the same email/password login screen. Staff and patient passwords are stored as bcrypt hashes, and the current implementation does not include doctor-generated password setup links or magic-login links for patients. Table~\ref{tab:primary-use-cases} summarizes the primary implemented use cases used later as design inputs.
 
 \begin{figure}[htbp]
 \centering
@@ -28,17 +28,24 @@ The implemented workflow is centered on three roles: doctors, administrators, an
 \VertexTableHead{ID} & \VertexTableHead{Actor} & \VertexTableHead{Goal} & \VertexTableHead{Primary flow} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-UC-1 & Doctor & Authenticate and reach the clinical dashboard. & Doctor enters credentials, receives a JWT cookie, and lands on the dashboard. \\
-UC-2 & Doctor & Book or start a patient consultation. & Doctor confirms or opens an appointment, starts the linked consultation, selects the patient context, and begins recording. \\
+UC-1 & All roles & Authenticate and reach the correct dashboard. & User enters email and password, receives a JWT cookie, and is routed to the role-aware dashboard. \\
+UC-2 & Patient & Book an appointment. & Patient selects appointment details for themselves, submits reason and time, and creates appointment context. \\
 \rowcolor{VertexTableStripe}
-UC-3 & Doctor & Review AI-generated material. & Doctor reads the transcript, structured report, prescription draft, and suggestive alerts. \\
-UC-4 & Doctor & Approve and export the final record. & Doctor edits Markdown if needed, approves the draft, downloads the PDF, and can send the patient email. \\
+UC-3 & Doctor / Admin & Manage appointment status. & Doctor or administrator confirms, cancels, or marks no-show appointments; only doctors start consultations. \\
+UC-4 & Doctor & Record and transcribe a consultation. & Doctor starts the linked consultation, records audio, receives transcript updates, and finalizes transcription. \\
 \rowcolor{VertexTableStripe}
-UC-5 & Patient & Book appointments and view own clinical information. & Patient logs in with email/password, books an appointment for themselves, and sees only their own appointments, consultations, and prescriptions. \\
-UC-6 & Administrator & Maintain configurable content. & Administrator edits prompts and email templates, with changes written to the audit trail. \\
+UC-5 & Doctor & Generate AI-supported clinical material. & Doctor sends transcript and patient context through local AI services to create report, prescription, and alert drafts. \\
+UC-6 & Doctor & Review and edit generated drafts. & Doctor reads transcript, structured report, prescription draft, and suggestive alerts, then edits Markdown if needed. \\
+\rowcolor{VertexTableStripe}
+UC-7 & Doctor & Approve, export, and send final records. & Doctor approves or rejects drafts, downloads the PDF, and can send approved follow-up email with attachment. \\
+UC-8 & Doctor & Search patient history. & Doctor searches patients, opens a patient detail page, and reviews consultation and prescription history. \\
+\rowcolor{VertexTableStripe}
+UC-9 & Patient & View own clinical information. & Patient logs in with email/password and sees only their own appointments, consultations, and prescriptions. \\
+UC-10 & Administrator & Maintain configurable content and auditability. & Administrator edits prompts and email templates and reviews audit entries for those changes. \\
 \TableBottomRule
 \end{tabularx}
 \caption{Primary Med Flow use cases by actor.}
+\label{tab:primary-use-cases}
 \end{table}
 
 \subsection{Must-Have Requirements}
