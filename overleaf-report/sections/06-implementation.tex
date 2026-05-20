@@ -6,7 +6,7 @@ This chapter describes how the design was implemented in the codebase. The syste
 \subsection{API Layer and Routing}
 \label{subsec:api-layer}
 
-The API layer is built using FastAPI. It defines and serves HTTP endpoints and acts as the main entry point for browser and API interactions. The central registration point is \texttt{app/api/router.py}, which includes the actual route modules \texttt{auth}, \texttt{dashboard}, \texttt{llm}, \texttt{patients}, \texttt{consultations}, \texttt{review}, \texttt{prescriptions}, \texttt{admin}, \texttt{transcriptions}, and \texttt{profile}. PDF download and email sending are not standalone routers in the current implementation; they are actions inside the review workflow.
+The API layer is built using FastAPI. It defines and serves HTTP endpoints and acts as the main entry point for browser and API interactions. The central registration point is \texttt{app/api/router.py}, which includes the actual route modules \texttt{auth}, \texttt{dashboard}, \texttt{llm}, \texttt{patients}, \texttt{consultations}, \texttt{appointments}, \texttt{review}, \texttt{prescriptions}, \texttt{admin}, \texttt{transcriptions}, and \texttt{profile}. PDF download and email sending are not standalone routers in the current implementation; they are actions inside the review workflow.
 
 \begin{table}[htbp]
 \centering
@@ -18,8 +18,9 @@ The API layer is built using FastAPI. It defines and serves HTTP endpoints and a
 \TableMidRule
 \rowcolor{VertexTableStripe}
 \path{auth.py}, \path{dashboard.py}, \path{profile.py} & Login, logout, role-aware dashboard rendering, profile access, and appointment-count display. \\
-\path{patients.py}, \path{consultations.py} & Patient lookup, patient detail pages, consultation creation, and consultation detail views used by the booking-to-consultation flow. \\
+\path{appointments.py} & Appointment listing, booking, confirmation, cancellation, no-show marking, and starting a linked consultation from an appointment. \\
 \rowcolor{VertexTableStripe}
+\path{patients.py}, \path{consultations.py} & Patient lookup, patient detail pages, consultation creation, and consultation detail views used by the booking-to-consultation flow. \\
 \path{transcriptions.py} & Session start, WebSocket audio streaming, demo-text injection, completion, and transcript persistence. \\
 \path{review.py} & Report viewing, Markdown editing, PDF download, report generation, suggestive review, approval, rejection, and email sending. \\
 \rowcolor{VertexTableStripe}
@@ -47,8 +48,9 @@ The implementation uses application services to coordinate use cases and infrast
 \TableMidRule
 \rowcolor{VertexTableStripe}
 Authentication & \textbf{Application service:} \path{AuthApplicationService}. \textbf{Adapters:} JWT security helpers, bcrypt password verification, and staff/patient repositories. \\
-Consultation capture & \textbf{Application services:} \path{ConsultationApplicationService} and \path{TranscriptionApplicationService}. \textbf{Adapters:} \path{StreamingFasterWhisperService}, temporary transcript chunk repository, and Mongo-backed consultation documents. \\
+Appointment scheduling & \textbf{Application service:} \path{AppointmentApplicationService}. \textbf{Adapters:} appointment repositories, consultation repository linkage, and Jinja appointment templates. \\
 \rowcolor{VertexTableStripe}
+Consultation capture & \textbf{Application services:} \path{ConsultationApplicationService} and \path{TranscriptionApplicationService}. \textbf{Adapters:} \path{StreamingFasterWhisperService}, temporary transcript chunk repository, and Mongo-backed consultation documents. \\
 Clinical generation & \textbf{Application services:} \path{TranscriptNormalizationApplicationService} and \path{ClinicalNotesApplicationService}. \textbf{Adapters:} \path{OllamaTranscriptNormalizer}, \path{OllamaClinicalNoteGenerator}, prompt repositories, and \path{OllamaClient}. \\
 Suggestive review & \textbf{Application service:} \path{SuggestiveReviewApplicationService}. \textbf{Adapters:} \path{OllamaSuggestiveModeService} plus deterministic rules in \path{app/application/suggestive_mode/rules.py}. \\
 \rowcolor{VertexTableStripe}
@@ -58,6 +60,15 @@ Approval, PDF, email & \textbf{Application services:} \path{ReviewApplicationSer
 \caption{Concrete service and adapter boundaries in the implementation.}
 \label{tab:service-adapter-boundaries}
 \end{table}
+
+\subsection{Booking and Scheduling Implementation}
+\label{subsec:booking-scheduling-implementation}
+
+The booking and scheduling flow is implemented as a lightweight internal module rather than as a production external appointment provider. The appointment domain model contains patient ID, doctor ID, scheduled time, duration, status, reason, optional notes, and an optional \texttt{consultation\_id}. Status values cover pending, confirmed, cancelled, completed, and no-show appointments.
+
+\texttt{AppointmentApplicationService} owns the business rules. It filters appointment lists by role, prevents exact double-booking for the same doctor and time, confirms or cancels appointments, records no-shows, and starts a consultation from an appointment. Starting a consultation creates a consultation row using the appointment patient and reason, links the appointment to that consultation, and marks the appointment as completed.
+
+The FastAPI route module \path{appointments.py} exposes the HTML workflow: appointment list, booking form, detail page, confirm, cancel, no-show, and start-consultation actions. Role checks keep clinical actions restricted: doctors can start consultations, doctors and administrators can perform operational appointment actions, and patients can only book for themselves or view their own appointment list. The SQL implementation is backed by the \path{appointments} table introduced in Alembic revision \path{20260520_0002}, while the in-memory repository supports deterministic unit and RBAC tests.
 
 \subsection{Authentication and Authorization}
 \label{subsec:authentication-authorization}
@@ -114,18 +125,18 @@ PDF generation is implemented with ReportLab. The review workflow exposes a cons
 \subsection{Email Notification Service}
 \label{subsec:email-notification-service}
 
-The email notification service sends patient-friendly follow-up information after doctor approval. The report-send action calls the review application service, which refuses unapproved generated reports, loads the patient email address, builds a summary containing prescription, follow-up, and suggestions, and passes the message to the SMTP adapter.
+The email notification service sends patient-friendly follow-up information after doctor approval. The report-send action calls the review application service, which refuses unapproved generated reports, loads the patient email address, checks that an exported PDF exists, builds a summary containing prescription, follow-up, and suggestions, attaches the latest exported PDF, and passes the message to the SMTP adapter.
 
-Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart messages using Python's \texttt{email.mime} package and sends them with \texttt{smtplib}. The SMTP adapter supports plain text, optional HTML, and optional attachments, but the current patient follow-up workflow sends a plain-text summary without attaching the PDF. During development, MailHog was used as the SMTP server so outgoing emails could be inspected without sending real messages.
+Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart messages using Python's \texttt{email.mime} package and sends them with \texttt{smtplib}. The SMTP adapter supports plain text, optional HTML, and optional attachments; the current patient follow-up workflow sends a plain-text summary with the exported PDF attached. During development, MailHog was used as the SMTP server so outgoing emails could be inspected without sending real messages.
 
 \subsection{Database Integration}
 \label{subsec:database-integration}
 
-The system uses a dual-database architecture to manage structured and unstructured data. MySQL is used for structured data such as user accounts, patient records, consultations, prescriptions, and audit logs. MongoDB is used for semi-structured data such as clinical documents, consultation transcripts, generated reports, and finalized AI artifacts.
+The system uses a dual-database architecture to manage structured and unstructured data. MySQL is used for structured data such as user accounts, patient records, appointments, consultations, prescriptions, and audit logs. MongoDB is used for semi-structured data such as clinical documents, consultation transcripts, generated reports, and finalized AI artifacts.
 
 SQLAlchemy manages the MySQL connection and session lifecycle. Reusable database access is provided through functions such as \texttt{get\_engine()} and \texttt{get\_session()}. PyMongo manages MongoDB connections, with \texttt{get\_database()} returning the database handle used by document repositories.
 
-Both databases are abstracted behind repository classes. SQL repositories in \path{app/infrastructure/db/sql/repositories/sql_repos.py} manage relational records. Mongo repositories in \path{app/infrastructure/db/mongo/repositories/mongo_repos.py} manage prompts, templates, consultation documents, and generated artifacts. The test suite can swap these adapters for in-memory repositories, which is why the same application services can be tested without starting MySQL, MongoDB, Whisper, or Ollama.
+Both databases are abstracted behind repository classes. SQL repositories in \path{app/infrastructure/db/sql/repositories/sql_repos.py} manage relational records, including appointment rows and their links to consultations. Mongo repositories in \path{app/infrastructure/db/mongo/repositories/mongo_repos.py} manage prompts, templates, consultation documents, and generated artifacts. The test suite can swap these adapters for in-memory repositories, which is why the same application services can be tested without starting MySQL, MongoDB, Whisper, or Ollama.
 
 Auditability is implemented through two complementary mechanisms. \texttt{AuditApplicationService} appends SQL audit entries containing user ID, role, action, target table, target ID, JSON details, IP address, and timestamp. The current admin routes record prompt and email-template updates with explicit action names such as \path{ADMIN_PROMPT_UPDATED} and \path{ADMIN_EMAIL_TEMPLATE_UPDATED}. Doctor-facing report edits are traced through \texttt{DocumentEditingService}, which records field-level old and new values, edit timestamps, and version-history snapshots before each change. Approval and rejection are then represented as generated-document and consultation status transitions. This matches NF-6 as traceability across audit log entries, version history, and workflow state rather than as a single logging table for every event.
 

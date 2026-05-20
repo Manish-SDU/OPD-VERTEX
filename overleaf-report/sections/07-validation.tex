@@ -43,7 +43,7 @@ In this project, continuous delivery is intentionally limited to build verificat
 \subsection{Test Inventory and Outcome}
 \label{subsec:test-inventory-outcome}
 
-The most recent suite execution reported in the source report ran 326 automated tests in 18.0 seconds, yielding a 100.0\% pass rate with 326 passed, 0 failed, and 0 skipped. Live-service tests gate themselves on the availability of Ollama or the Whisper microservice. On a developer workstation with both running, the live tier also passes.
+The automated source inventory currently contains 384 test functions across unit, integration, smoke, stress, and benchmark tiers. The generated validation artifact retained in the repository records an earlier 326-test execution with a 100.0\% pass rate; the final source inventory adds appointment and role-permission coverage for the booking workflow. Live-service tests gate themselves on the availability of Ollama or the Whisper microservice. On a developer workstation with both running, the live tier also passes.
 
 \begin{table}[htbp]
 \centering
@@ -54,8 +54,8 @@ The most recent suite execution reported in the source report ran 326 automated 
 \VertexTableHead{Tier} & \VertexTableHead{$n$} & \VertexTableHead{Coverage focus} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-Unit & 219 & Domain logic, repositories, security, hallucination guards. \\
-Integration & 77 & HTTP routes, authentication flow, review API, and LLM contract. \\
+Unit & 275 & Domain logic, repositories, security, appointment scheduling, RBAC permissions, and hallucination guards. \\
+Integration & 79 & HTTP routes, authentication flow, admin configuration, review API, and LLM contract. \\
 \rowcolor{VertexTableStripe}
 Smoke & 6 & Application boot, health endpoint, dashboard, and critical 2xx responses. \\
 Stress & 14 & More than 1,000 creations, concurrent operations, ID-collision checks. \\
@@ -97,10 +97,10 @@ F-2--F-3 & Implemented & Local audio capture and speech-to-text are covered in S
 F-4 & Implemented & Structured note fields are defined in Section~\ref{subsubsec:functional-requirements} and designed in Section~\ref{subsec:main-workflow-ai-pipeline}; LLM orchestration and model selection are covered in Section~\ref{subsec:llm-orchestration} and Section~\ref{subsec:model-selection}. & Appendix~\ref{app:test-inventory} lists LLM and workflow tests; Appendix~\ref{app:ai-safety-matrix} maps generation risks to controls. \\
 F-5--F-6 & Implemented & Prescription draft content, review alerts, editing, approval, and rejection are described in Section~\ref{subsec:main-workflow-ai-pipeline}, Section~\ref{subsec:ui-overview}, and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:manual-ui} includes TC009; Appendix~\ref{app:test-inventory} includes versioning, suggestive-review, and workflow tests. \\
 \rowcolor{VertexTableStripe}
-F-7--F-8 & Implemented with deployment caveat & Approved-report PDF generation, email follow-up, and prevention of unapproved email sends are covered in Section~\ref{subsec:pdf-generation}, Section~\ref{subsec:email-notification-service}, and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:test-inventory} lists PDF/UI tests; Appendix~\ref{app:manual-ui} includes TC006. Production SMTP/TLS configuration remains a deployment concern. \\
+F-7--F-8 & Implemented with deployment caveat & Approved-report PDF generation, email follow-up with the exported PDF attached, and prevention of unapproved email sends are covered in Section~\ref{subsec:pdf-generation}, Section~\ref{subsec:email-notification-service}, and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:test-inventory} lists PDF/UI tests; Appendix~\ref{app:manual-ui} includes TC006. Production SMTP/TLS configuration remains a deployment concern. \\
 F-9--F-10 & Implemented & Live transcript handling and past-consultation access are described in Section~\ref{subsec:transcription-module}, Section~\ref{subsec:main-workflow-ai-pipeline}, and Section~\ref{subsec:ui-overview}. & Appendix~\ref{app:test-inventory} lists transcription and workflow tests; Appendix~\ref{app:manual-ui} includes browser checks for consultation views. \\
 \rowcolor{VertexTableStripe}
-F-12 & Designed integration boundary & Replaceable booking and scheduling is described in Section~\ref{subsec:scope-decisions}; implementation currently uses internal consultation context rather than a production public-sector booking provider. & No appendix claims production MitID/NemLog-in integration; this remains an adapter-level future enhancement. \\
+F-12 & Implemented internal flow and designed integration boundary & Internal appointment scheduling is described in Section~\ref{subsec:booking-scheduling-implementation}; replaceable booking and scheduling boundaries are described in Section~\ref{subsec:scope-decisions}. The implementation uses internal consultation context rather than a production public-sector booking provider. & Appendix~\ref{app:test-inventory} lists appointment and RBAC tests. No appendix claims production MitID/NemLog-in integration; that remains an adapter-level future enhancement. \\
 F-11 & Future extension & Cross-doctor sharing is discussed as a possible extension in Section~\ref{subsec:scope-decisions} and Section~\ref{sec:discussion}. & No appendix claims completion for this item; it remains outside the primary workflow. \\
 NF-1, NF-10 & Implemented & Local AI processing is justified in Section~\ref{subsec:ai-healthcare-security-privacy}, designed in Section~\ref{subsec:design-goals-principles}, and validated in Section~\ref{subsec:model-selection}. & Appendix~\ref{app:ai-safety-matrix} and Appendix~\ref{app:hardware-envelope} support the local model and hardware claims. \\
 \rowcolor{VertexTableStripe}

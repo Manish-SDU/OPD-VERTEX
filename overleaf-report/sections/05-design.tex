@@ -47,13 +47,25 @@ The system was decomposed into loosely coupled components. Each component has a 
 \label{fig:component-diagram}
 \end{figure}
 
-The final architecture and sequence diagrams can replace the slots below. Keeping them as dedicated spaces makes the report ready for the polished C4-style architecture view and the consultation-flow sequence diagram without mixing them with partial sketches.
+The runtime architecture in Figure~\ref{fig:runtime-architecture} shows how the implemented modules are deployed inside a local clinic network. Browser-based dashboards communicate with the FastAPI application over HTTPS. The backend coordinates authentication, booking, prescription workflow, AI orchestration, PDF generation, notification, and persistence, while Whisper, Ollama, MySQL, and MongoDB remain local infrastructure services.
 
-\diagramplaceholder{Architecture diagram slot}{Insert the final architecture diagram here, including the FastAPI app, Whisper sidecar, Ollama runtime, MySQL, MongoDB, SMTP service, and browser clients.}
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=\textwidth]{assets/img/Runtime_Architecture.png}
+\caption{Runtime architecture for the local Med Flow deployment.}
+\label{fig:runtime-architecture}
+\end{figure}
 
-\diagramplaceholder{Sequence diagram slot}{Insert the final sequence diagram here for the doctor consultation flow from login and recording through transcription, AI generation, review, PDF export, and email.}
+Figure~\ref{fig:consultation-sequence} focuses on the consultation documentation path after a consultation has been started. Booking and scheduling are intentionally omitted from this sequence diagram to keep the clinical AI flow readable. In the implementation, appointment creation, confirmation, cancellation, no-show marking, and the appointment-to-consultation handoff happen through backend API routes before the consultation manager begins the recording and review workflow shown here.
 
-On the user-facing side, the Doctor Dashboard is the main interface for doctors and gives access to the patient list, consultation context, recording, draft review, and prescription approval. The Patient Portal is used by patients to log in and read their own consultations and prescriptions. Both interfaces are server-rendered with Jinja2 templates and communicate with the backend through the Gateway API.
+\begin{figure}[p]
+\centering
+\optionalgraphic[width=\textwidth]{assets/img/Sequence.png}
+\caption{Consultation sequence from consultation start through audio transcription, local LLM generation, review, PDF generation, email delivery, and doctor edits.}
+\label{fig:consultation-sequence}
+\end{figure}
+
+On the user-facing side, the Doctor Dashboard is the main interface for doctors and gives access to appointments, the patient list, consultation context, recording, draft review, and prescription approval. The Patient Portal is used by patients to log in, book appointments, and read their own consultations and prescriptions. Both interfaces are server-rendered with Jinja2 templates and communicate with the backend through the Gateway API.
 
 Authentication and authorization validate credentials, issue JWT tokens, and enforce role-based access control. The Email Notification Service sends patient summaries through SMTP. The Document Editing and Versioning service manages generated report lifecycle, Markdown edits, and version history so every revision made by a doctor can be traced.
 
@@ -106,7 +118,7 @@ Med Flow uses a dual-database design to separate the system of record from itera
 \VertexTableHead{Database} & \VertexTableHead{Responsibility} \\
 \TableMidRule
 \rowcolor{VertexTableStripe}
-MySQL 8.4 & Stores staff, patients, consultations, approved prescriptions, and audit logs. It acts as the structured system of record. \\
+MySQL 8.4 & Stores staff, patients, appointments, consultations, approved prescriptions, and audit logs. It acts as the structured system of record. \\
 MongoDB 7 & Stores consultation documents, generated documents, prescription artifacts, LLM prompts, and email templates. It acts as the flexible document store for AI artifacts. \\
 \rowcolor{VertexTableStripe}
 Shared linkage & The \texttt{consultation\_id} connects relational records to document records across the two stores. \\
@@ -115,20 +127,34 @@ Shared linkage & The \texttt{consultation\_id} connects relational records to do
 \caption{Dual-database ownership model.}
 \end{table}
 
-MySQL stores doctors and administrators with roles, hashed passwords, license data, and specialization; patients with demographics, allergies, medical history, and hashed passwords; consultations with status transitions from recording to transcribing, processing, review, approved, rejected, or cancelled; prescriptions with versioning; and append-only audit logs.
+MySQL stores doctors and administrators with roles, hashed passwords, license data, and specialization; patients with demographics, allergies, medical history, and hashed passwords; appointments with patient, doctor, schedule, status, reason, notes, and optional consultation linkage; consultations with status transitions from recording to transcribing, processing, review, approved, rejected, or cancelled; prescriptions with versioning; and append-only audit logs.
 
 MongoDB stores semi-structured artifacts from the AI pipeline: transcripts and working notes, drafted reports, suggestive reviews, generated PDFs, versioned prompt templates, and editable patient communication templates. The iterative and fast-changing artifacts remain in MongoDB, while the legally meaningful approved prescription is moved into MySQL only after doctor approval.
+
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=0.45\textwidth]{assets/img/MySQL_ER.png}
+\caption{Relational MySQL entity overview, including the appointments table and its links to patients, staff, and consultations.}
+\label{fig:mysql-er}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=\textwidth]{assets/img/MongoDB_ER.png}
+\caption{MongoDB collection overview for clinical documents, generated artifacts, embedded AI outputs, prompts, and email templates.}
+\label{fig:mongodb-er}
+\end{figure}
 
 \subsection{Main Workflow and AI Pipeline}
 \label{subsec:main-workflow-ai-pipeline}
 
-The consultation flow is implemented as three smaller workflows: consultation creation, AI processing, and prescription approval. The doctor opens the patient list, selects a patient, and starts a consultation. The system creates a new record with status \texttt{recording}; audio is captured in the browser and streamed to the backend through a WebSocket, which forwards chunks to the Whisper sidecar in near real time. Partial transcripts are stored so the session can survive a disconnect. When the doctor stops recording, the consultation moves to \texttt{processing} and the AI pipeline starts.
+The consultation flow is implemented as four smaller workflows: appointment scheduling, consultation creation, AI processing, and prescription approval. The booking workflow creates appointment context with patient, doctor, schedule, duration, reason, and status. When the doctor starts the appointment, the backend creates the linked consultation and moves into the recording workflow. The system creates a new record with status \texttt{recording}; audio is captured in the browser and streamed to the backend through a WebSocket, which forwards chunks to the Whisper sidecar in near real time. Partial transcripts are stored so the session can survive a disconnect. When the doctor stops recording, the consultation moves to \texttt{processing} and the AI pipeline starts.
 
 The AI pipeline contains two LLM calls followed by a safety pass. The transcript normalizer converts the raw transcript into structured JSON and filters speech artifacts. The clinical-note generator combines the normalized transcript with patient context, including age, allergies, and medical history, and asks Qwen3:8b to produce a structured object containing presenting problem, relevant history, assessment, medication or treatment plan, patient instructions, follow-up date, requested lab or imaging tests, safety-net advice where supported, and a Markdown rendering of the full report.
 
 Suggestive Mode then performs a second pass. An LLM-based clinical safety review is merged with deterministic rule-based checks, such as missing dose, frequency, duration, allergy conflicts, and contraindication conflicts. The combined output is shown to the doctor as advisory alerts. Nothing is written to the prescription unless the doctor accepts it during editing.
 
-After generation, the doctor opens the review page, optionally edits the Markdown report, and either approves or rejects the draft. If approved, the system builds a prescription, saves it in MySQL with \texttt{is\_approved = true} and the next version number, marks the generated document as approved, and updates the consultation status. After approval, the doctor can download the PDF and send a plain-text summary email to the patient.
+After generation, the doctor opens the review page, optionally edits the Markdown report, and either approves or rejects the draft. If approved, the system builds a prescription, saves it in MySQL with \texttt{is\_approved = true} and the next version number, marks the generated document as approved, and updates the consultation status. After approval, the doctor can download the PDF and send the patient a follow-up email with the exported PDF attached.
 
 \subsection{Privacy, Security and Error Handling}
 \label{subsec:privacy-security-error-handling}

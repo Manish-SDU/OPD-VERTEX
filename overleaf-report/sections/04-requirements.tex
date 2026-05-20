@@ -8,9 +8,14 @@ Their implementation and validation evidence is traced in Section~\ref{subsec:re
 \subsection{Actors and Use Cases}
 \label{subsec:actors-use-cases}
 
-The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates.
+The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can book appointments and read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates.
 
-\diagramplaceholder{Use-case diagram slot}{Replace this panel with a UML use-case diagram showing Administrator, Doctor, and Patient actors and their main interactions with Med Flow.}
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=\textwidth]{assets/img/Use_Case.png}
+\caption{Implemented Med Flow use-case view for doctors, patients, administrators, infrastructure components, and external services.}
+\label{fig:use-case-diagram}
+\end{figure}
 
 \begin{table}[htbp]
 \centering
@@ -22,12 +27,12 @@ The implemented workflow is centered on three roles: doctors, administrators, an
 \TableMidRule
 \rowcolor{VertexTableStripe}
 UC-1 & Doctor & Authenticate and reach the clinical dashboard. & Doctor enters credentials, receives a JWT cookie, and lands on the dashboard. \\
-UC-2 & Doctor & Book or start a patient consultation. & Doctor creates or opens a scheduled consultation, selects the patient, and begins recording. \\
+UC-2 & Doctor & Book or start a patient consultation. & Doctor confirms or opens an appointment, starts the linked consultation, selects the patient context, and begins recording. \\
 \rowcolor{VertexTableStripe}
 UC-3 & Doctor & Review AI-generated material. & Doctor reads the transcript, structured report, prescription draft, and suggestive alerts. \\
 UC-4 & Doctor & Approve and export the final record. & Doctor edits Markdown if needed, approves the draft, downloads the PDF, and can send the patient email. \\
 \rowcolor{VertexTableStripe}
-UC-5 & Patient & View own clinical information. & Patient logs in and sees only their own consultations and prescriptions. \\
+UC-5 & Patient & Book appointments and view own clinical information. & Patient logs in, books an appointment for themselves, and sees only their own appointments, consultations, and prescriptions. \\
 UC-6 & Administrator & Maintain configurable content. & Administrator edits prompts and email templates, with changes written to the audit trail. \\
 \TableBottomRule
 \end{tabularx}
