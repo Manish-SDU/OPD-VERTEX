@@ -81,6 +81,10 @@ class AuthService(ABC):
 
 class StaffRepository(ABC):
     @abstractmethod
+    def list_all(self) -> list[Staff]:
+        """Return all staff members."""
+
+    @abstractmethod
     def get_by_email(self, email: str) -> Staff | None:
         """Fetch staff by email."""
 

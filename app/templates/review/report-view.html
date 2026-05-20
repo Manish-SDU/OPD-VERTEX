@@ -10,7 +10,7 @@
   {% if generated_document and generated_document.generated_output.report_markdown %}
   <div class="report-content">
     <div class="report-actions-bar">
-      {% if user and user.role in ['doctor', 'admin'] %}
+      {% if user and user.role == 'doctor' %}
       <a href="/review/report/{{ consultation_id }}/edit" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>

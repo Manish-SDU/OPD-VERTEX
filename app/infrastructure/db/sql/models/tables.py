@@ -61,6 +61,7 @@ class StaffRow(Base):
 
     consultations = relationship("ConsultationRow", back_populates="doctor")
     prescriptions = relationship("PrescriptionRow", back_populates="doctor")
+    appointments = relationship("AppointmentRow", back_populates="doctor")
 
 
 # ── Table 2: patients ──────────────────────────────────────────────────
@@ -101,6 +102,7 @@ class PatientRow(Base):
 
     consultations = relationship("ConsultationRow", back_populates="patient")
     prescriptions = relationship("PrescriptionRow", back_populates="patient")
+    appointments = relationship("AppointmentRow", back_populates="patient")
 
 
 # ── Table 3: consultations ─────────────────────────────────────────────
@@ -237,3 +239,65 @@ class AuditLogRow(Base):
         Index("ix_audit_logs_action", "action"),
         Index("ix_audit_logs_timestamp", "timestamp"),
     )
+
+
+# ── Table 6: appointments ──────────────────────────────────────────────
+
+
+class AppointmentRow(Base):
+    __tablename__ = "appointments"
+
+    appointment_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    patient_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("patients.patient_id", onupdate="CASCADE", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    doctor_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("staff.staff_id", onupdate="CASCADE", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    duration_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="30"
+    )
+    status: Mapped[str] = mapped_column(
+        Enum(
+            "pending",
+            "confirmed",
+            "cancelled",
+            "completed",
+            "no_show",
+            name="appointment_status",
+        ),
+        nullable=False,
+        server_default="pending",
+    )
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    consultation_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("consultations.consultation_id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        server_default=func.now(),
+        server_onupdate=func.now(),
+        onupdate=func.now(),
+    )
+
+    __table_args__ = (
+        Index("ix_appointments_patient_id", "patient_id"),
+        Index("ix_appointments_doctor_id", "doctor_id"),
+        Index("ix_appointments_scheduled_at", "scheduled_at"),
+        Index("ix_appointments_status", "status"),
+    )
+
+    patient = relationship("PatientRow", back_populates="appointments")
+    doctor = relationship("StaffRow", back_populates="appointments")
+    consultation = relationship("ConsultationRow", foreign_keys=[consultation_id])

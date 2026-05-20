@@ -192,15 +192,17 @@ class ReviewApplicationService:
         if not getattr(patient, "email", None):
             raise ValueError("Patient email is missing.")
 
-        project_root = Path(__file__).resolve().parents[3]
-        pdf_path = (
-            project_root / "storage" / "pdfs" / f"mock_report_{consultation_id}.pdf"
+        pdf_dir = Path(__file__).resolve().parents[3] / "storage" / "pdfs"
+        matches = sorted(
+            pdf_dir.glob(f"*_{consultation_id}.pdf"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
         )
-
-        if not pdf_path.exists():
+        if not matches:
             raise ValueError(
                 "PDF has not been exported yet. Please export the PDF first before sending to patient."
             )
+        pdf_path = matches[0]
 
         pdf_attachment = EmailAttachment(
             filename=pdf_path.name,

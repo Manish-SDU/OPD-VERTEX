@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     admin,
+    appointments,
     auth,
     consultations,
     dashboard,
@@ -33,5 +34,8 @@ router.include_router(admin.router, prefix="/admin", tags=["admin"])
 
 router.include_router(
     transcriptions.router, prefix="/transcriptions", tags=["transcriptions"]
+)
+router.include_router(
+    appointments.router, prefix="/appointments", tags=["appointments"]
 )
 router.include_router(profile.router, tags=["profile"])

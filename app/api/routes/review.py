@@ -13,6 +13,7 @@ from app.api.deps import (
     get_review_app_service,
     get_report_pdf_app_service,
     get_suggestive_review_app_service,
+    require_clinical_doctor,
 )
 from app.application.clinical_notes.services import ClinicalNotesApplicationService
 from app.application.pdf.services import ReportPdfApplicationService
@@ -89,12 +90,8 @@ def edit_report(
     user=Depends(get_current_user),
     review_service: ReviewApplicationService = Depends(get_review_app_service),
 ) -> HTMLResponse:
-    """Edit and approve the clinical report (doctor/admin only)."""
-    if user.get("role") not in ("doctor", "admin"):
-        raise HTTPException(
-            status_code=403,
-            detail="Only doctors and admins can edit reports",
-        )
+    """Edit and approve the clinical report (doctor only)."""
+    require_clinical_doctor(user)
 
     consultation_document, generated_document, suggestive_review = (
         review_service.build_review_context(consultation_id)
@@ -121,11 +118,7 @@ def update_report_markdown(
     review_service: ReviewApplicationService = Depends(get_review_app_service),
 ) -> dict:
     """Update the markdown content of the clinical report."""
-    if user.get("role") not in ("doctor", "admin"):
-        raise HTTPException(
-            status_code=403,
-            detail="Only doctors and admins can edit reports",
-        )
+    require_clinical_doctor(user)
 
     try:
         review_service.update_report_markdown(consultation_id, payload.report_markdown)
@@ -193,8 +186,10 @@ def download_report_pdf(
 @router.post("/{consultation_id}/generate-report")
 def generate_report(
     consultation_id: int,
+    user=Depends(get_current_user),
     service: ClinicalNotesApplicationService = Depends(get_clinical_notes_app_service),
 ) -> dict:
+    require_clinical_doctor(user)
     try:
         document = service.generate_report(consultation_id, regenerate=False)
     except ValueError as exc:
@@ -212,8 +207,10 @@ def generate_report(
 @router.post("/{consultation_id}/regenerate")
 def regenerate_report(
     consultation_id: int,
+    user=Depends(get_current_user),
     service: ClinicalNotesApplicationService = Depends(get_clinical_notes_app_service),
 ) -> dict:
+    require_clinical_doctor(user)
     try:
         document = service.generate_report(consultation_id, regenerate=True)
     except ValueError as exc:
@@ -231,10 +228,12 @@ def regenerate_report(
 @router.post("/{consultation_id}/suggestive-review")
 def run_suggestive_review(
     consultation_id: int,
+    user=Depends(get_current_user),
     service: SuggestiveReviewApplicationService = Depends(
         get_suggestive_review_app_service
     ),
 ) -> dict:
+    require_clinical_doctor(user)
     try:
         review = service.run_review(consultation_id, regenerate=False)
     except ValueError as exc:
@@ -250,10 +249,12 @@ def run_suggestive_review(
 @router.post("/{consultation_id}/suggestive-review/regenerate")
 def regenerate_suggestive_review(
     consultation_id: int,
+    user=Depends(get_current_user),
     service: SuggestiveReviewApplicationService = Depends(
         get_suggestive_review_app_service
     ),
 ) -> dict:
+    require_clinical_doctor(user)
     try:
         review = service.run_review(consultation_id, regenerate=True)
     except ValueError as exc:
@@ -288,8 +289,10 @@ def get_suggestive_review(
 @router.post("/{consultation_id}/approve")
 def approve_review(
     consultation_id: int,
+    user=Depends(get_current_user),
     service: ReviewApplicationService = Depends(get_review_app_service),
 ) -> dict:
+    require_clinical_doctor(user)
     try:
         prescription = service.approve_review(consultation_id)
     except ValueError as exc:
@@ -306,8 +309,10 @@ def approve_review(
 @router.post("/{consultation_id}/reject")
 def reject_review(
     consultation_id: int,
+    user=Depends(get_current_user),
     service: ReviewApplicationService = Depends(get_review_app_service),
 ) -> dict:
+    require_clinical_doctor(user)
     document = service.reject_review(consultation_id)
 
     return {
@@ -326,11 +331,7 @@ def send_report_email(
     review_service: ReviewApplicationService = Depends(get_review_app_service),
 ) -> dict:
     """Send approved report to patient email."""
-    if user.get("role") not in ("doctor", "admin"):
-        raise HTTPException(
-            status_code=403,
-            detail="Only doctors and admins can send reports",
-        )
+    require_clinical_doctor(user)
 
     try:
         result = review_service.send_report_to_patient(consultation_id)

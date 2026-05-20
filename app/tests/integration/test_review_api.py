@@ -27,14 +27,14 @@ class TestReviewEndpoints:
         assert "print-report-rendered" in response.text
 
     def test_generate_report_succeeds_for_seeded_demo_transcript(self):
-        response = client.post("/review/4101/generate-report")
+        response = client.post("/review/4101/generate-report", cookies=_doctor_cookie())
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "generated"
         assert body["consultation_id"] == 4101
 
     def test_approve_returns_json(self):
-        response = client.post("/review/1/approve")
+        response = client.post("/review/1/approve", cookies=_doctor_cookie())
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "approved"
@@ -42,14 +42,14 @@ class TestReviewEndpoints:
         assert body["prescription_id"] is not None
 
     def test_reject_returns_json(self):
-        response = client.post("/review/1/reject")
+        response = client.post("/review/1/reject", cookies=_doctor_cookie())
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "rejected"
         assert body["consultation_id"] == 1
 
     def test_generate_report_requires_transcript(self):
-        response = client.post("/review/2/generate-report")
+        response = client.post("/review/2/generate-report", cookies=_doctor_cookie())
         assert response.status_code == 400
 
     def test_llm_health_endpoint_exists(self):

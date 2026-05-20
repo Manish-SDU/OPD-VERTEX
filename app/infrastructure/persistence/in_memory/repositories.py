@@ -6,8 +6,14 @@ Once the real DB repositories are ready, swap them in via app/api/deps.py.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 
+from app.domain.appointments.models import (
+    Appointment,
+    AppointmentCreateRequest,
+    AppointmentRepository,
+    AppointmentStatus,
+)
 from app.domain.audit.models import AuditLog, AuditLogRepository
 from app.domain.auth.models import Staff, StaffRepository
 from app.domain.email.models import (
@@ -102,6 +108,9 @@ class InMemoryStaffRepository(StaffRepository):
                 role="admin",
             ),
         ]
+
+    def list_all(self) -> list[Staff]:
+        return list(self._staff)
 
     def get_by_email(self, email: str) -> Staff | None:
         return next((s for s in self._staff if s.email == email), None)
@@ -608,6 +617,105 @@ class InMemoryAuditLogRepository(AuditLogRepository):
         return entry
 
 
+# ── appointments ──────────────────────────────────────────────────────
+
+
+def _strip_tz(dt: datetime) -> datetime:
+    """Normalize to naive datetime so aware and naive values sort consistently."""
+    return dt.replace(tzinfo=None) if dt and dt.tzinfo is not None else dt
+
+
+class InMemoryAppointmentRepository(AppointmentRepository):
+    def __init__(self) -> None:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)  # naive UTC
+        self._appointments: list[Appointment] = [
+            Appointment(
+                id=1,
+                patient_id=1,
+                doctor_id=1,
+                scheduled_at=now,
+                duration_minutes=30,
+                status=AppointmentStatus.CONFIRMED,
+                reason="Follow-up hypertension",
+            ),
+            Appointment(
+                id=2,
+                patient_id=2,
+                doctor_id=1,
+                scheduled_at=now,
+                duration_minutes=30,
+                status=AppointmentStatus.PENDING,
+                reason="Annual check-up",
+            ),
+        ]
+        self._next_id = 3
+
+    @staticmethod
+    def _status_priority(a: Appointment) -> tuple:
+        order = {
+            AppointmentStatus.CONFIRMED: 0,
+            AppointmentStatus.PENDING: 1,
+        }
+        sched = _strip_tz(a.scheduled_at)
+        fallback = _strip_tz(a.created_at) if a.created_at else sched
+        return (order.get(a.status, 2), sched, fallback)
+
+    def list_all(self) -> list[Appointment]:
+        return sorted(self._appointments, key=self._status_priority)
+
+    def get_by_id(self, appointment_id: int) -> Appointment | None:
+        return next((a for a in self._appointments if a.id == appointment_id), None)
+
+    def list_by_patient(self, patient_id: int) -> list[Appointment]:
+        return sorted(
+            [a for a in self._appointments if a.patient_id == patient_id],
+            key=self._status_priority,
+        )
+
+    def list_by_doctor(self, doctor_id: int) -> list[Appointment]:
+        return sorted(
+            [a for a in self._appointments if a.doctor_id == doctor_id],
+            key=self._status_priority,
+        )
+
+    def create(self, request: AppointmentCreateRequest) -> Appointment:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        appointment = Appointment(
+            id=self._next_id,
+            patient_id=request.patient_id,
+            doctor_id=request.doctor_id,
+            scheduled_at=_strip_tz(request.scheduled_at),  # always naive
+            duration_minutes=request.duration_minutes,
+            status=AppointmentStatus.PENDING,
+            reason=request.reason,
+            notes=request.notes,
+            created_at=now,
+            updated_at=now,
+        )
+        self._next_id += 1
+        self._appointments.append(appointment)
+        return appointment
+
+    def update_status(
+        self, appointment_id: int, status: AppointmentStatus
+    ) -> Appointment | None:
+        a = self.get_by_id(appointment_id)
+        if a:
+            a.status = status
+        return a
+
+    def cancel(self, appointment_id: int) -> Appointment | None:
+        return self.update_status(appointment_id, AppointmentStatus.CANCELLED)
+
+    def link_consultation(
+        self, appointment_id: int, consultation_id: int
+    ) -> Appointment | None:
+        a = self.get_by_id(appointment_id)
+        if a:
+            a.consultation_id = consultation_id
+        return a
+
+
 # ── Mock services (transcription, LLM, suggestive, PDF, email) ────────
 
 
@@ -1007,146 +1115,59 @@ class MockPdfGenerator(PdfGenerator):
         except Exception:
             out_dir = None
 
+        from datetime import datetime as _dt
+
+        def _pdf_filename(meta) -> str:
+            last = (meta.patient_name or "unknown").strip().split()[-1]
+            safe_last = re.sub(r"[^a-z0-9]", "", last.lower()) or "unknown"
+            date_str = (
+                meta.consultation_date.strftime("%Y%m%d")
+                if meta.consultation_date
+                else _dt.now().strftime("%Y%m%d")
+            )
+            return f"report_{safe_last}_{date_str}_{meta.consultation_id}.pdf"
+
+        filename = _pdf_filename(consultation_metadata)
+
         if out_dir:
             out_dir.mkdir(parents=True, exist_ok=True)
-            file_path = str(
-                out_dir / f"mock_report_{consultation_metadata.consultation_id}.pdf"
-            )
+            file_path = str(out_dir / filename)
         else:
             tmp_dir = tempfile.gettempdir()
-            file_path = os.path.join(
-                tmp_dir, f"mock_report_{consultation_metadata.consultation_id}.pdf"
-            )
+            file_path = os.path.join(tmp_dir, filename)
 
-        # Try to produce a real, viewable PDF using ReportLab with markdown content.
+        # Produce a styled PDF using the shared rendering helpers.
         try:
-            from reportlab.platypus import (
-                SimpleDocTemplate,
-                Paragraph,
-                Spacer,
-                Table,
-                TableStyle,
+            from app.infrastructure.pdf.reportlab_adapter import (
+                _build_banner,
+                _build_info_card,
+                _parse_content,
+                _footer_cb,
             )
-            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.platypus import SimpleDocTemplate, Spacer
             from reportlab.lib.pagesizes import A4
             from reportlab.lib.units import inch
-            from reportlab.lib import colors
-            from reportlab.lib.enums import TA_CENTER
+
+            usable_w = A4[0] - 1.5 * inch
 
             doc = SimpleDocTemplate(
                 str(file_path),
                 pagesize=A4,
                 rightMargin=0.75 * inch,
                 leftMargin=0.75 * inch,
-                topMargin=0.75 * inch,
-                bottomMargin=0.75 * inch,
-            )
-
-            styles = getSampleStyleSheet()
-
-            # Create custom styles similar to ReportLabPdfGenerator
-            title_style = ParagraphStyle(
-                "ReportTitle",
-                parent=styles["Heading1"],
-                fontSize=16,
-                textColor=colors.HexColor("#1a1a1a"),
-                spaceAfter=12,
-                alignment=TA_CENTER,
-                fontName="Helvetica-Bold",
-            )
-            section_style = ParagraphStyle(
-                "SectionHeading",
-                parent=styles["Heading2"],
-                fontSize=12,
-                textColor=colors.HexColor("#2c3e50"),
-                spaceAfter=8,
-                spaceBefore=12,
-                fontName="Helvetica-Bold",
+                topMargin=0.85 * inch,
+                bottomMargin=0.85 * inch,
             )
 
             flowables = [
-                Paragraph(
-                    f"Clinical Report - Consultation #{consultation_metadata.consultation_id}",
-                    title_style,
-                ),
+                _build_banner(consultation_metadata, usable_w),
                 Spacer(1, 0.2 * inch),
+                _build_info_card(consultation_metadata, usable_w),
+                Spacer(1, 0.25 * inch),
+                *_parse_content(report_markdown),
             ]
 
-            # Add metadata table
-            header_data = [
-                [
-                    Paragraph(
-                        f"<b>Patient:</b> {consultation_metadata.patient_name}",
-                        styles["Normal"],
-                    ),
-                    Paragraph(
-                        f"<b>Date:</b> {consultation_metadata.consultation_date.strftime('%Y-%m-%d %H:%M')}",
-                        styles["Normal"],
-                    ),
-                ],
-                [
-                    Paragraph(
-                        f"<b>Clinician:</b> {consultation_metadata.clinician_name}",
-                        styles["Normal"],
-                    ),
-                    Paragraph(
-                        f"<b>Visit Type:</b> {consultation_metadata.visit_type or 'General'}",
-                        styles["Normal"],
-                    ),
-                ],
-            ]
-            header_table = Table(header_data, colWidths=[3.5 * inch, 3.5 * inch])
-            header_table.setStyle(
-                TableStyle(
-                    [
-                        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#ecf0f1")),
-                        ("TOPPADDING", (0, 0), (-1, -1), 6),
-                        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                    ]
-                )
-            )
-            flowables.append(header_table)
-            flowables.append(Spacer(1, 0.2 * inch))
-
-            # Parse and render markdown content
-            if report_markdown and report_markdown.strip():
-                lines = report_markdown.split("\n")
-                for line in lines:
-                    # Section headers (## Section Name or similar)
-                    if line.startswith("## "):
-                        flowables.append(
-                            Paragraph(line.replace("## ", "").strip(), section_style)
-                        )
-                    # Subsection headers (### Subsection)
-                    elif line.startswith("### "):
-                        flowables.append(
-                            Paragraph(
-                                f"<b>{line.replace('### ', '').strip()}</b>",
-                                styles["Normal"],
-                            )
-                        )
-                    # List items (- item)
-                    elif line.strip().startswith("- "):
-                        item = line.replace("- ", "").strip()
-                        # Convert markdown formatting
-                        item = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", item)
-                        item = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", item)
-                        flowables.append(Paragraph(f"• {item}", styles["Normal"]))
-                    # Regular text
-                    elif line.strip():
-                        text = line.strip()
-                        # Convert markdown formatting
-                        text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
-                        text = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", text)
-                        flowables.append(Paragraph(text, styles["Normal"]))
-                    # Empty lines
-                    elif not line.strip():
-                        flowables.append(Spacer(1, 0.1 * inch))
-
-            doc.build(flowables)
+            doc.build(flowables, onFirstPage=_footer_cb, onLaterPages=_footer_cb)
             return file_path
         except Exception:
             # Fallback: write a minimal PDF so FileResponse can serve it
