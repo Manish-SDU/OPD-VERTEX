@@ -6,7 +6,7 @@ This chapter describes the design of Med Flow, focusing on the principles used t
 \subsection{Design Goals and Principles}
 \label{subsec:design-goals-principles}
 
-Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. The design principles translate the privacy and AI-governance concerns from the problem analysis into implementation boundaries\refcite{3,5,12}. Six principles guided the design decisions:
+Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. The actors and use cases are defined once in Section~\ref{subsec:actors-use-cases}; this chapter uses them as design inputs and focuses on architectural decisions, component boundaries, data ownership, and workflow design. The design principles translate the privacy and AI-governance concerns from the problem analysis into implementation boundaries\refcite{3,5,12}. Six principles guided the design decisions:
 
 \begin{itemize}
   \item \textbf{Local-first execution:} sensitive processing runs inside the clinic environment, so no consultation data is sent to a third-party cloud LLM.
@@ -22,7 +22,7 @@ These principles keep the system maintainable through a layered architecture and
 \subsection{System Overview and Architecture}
 \label{subsec:system-overview}
 
-Before writing code, the team sketched the main user journeys and screen layouts in Figma. The mockups were intentionally lightweight because UI design was not the main focus. They were used to agree on the doctor login, doctor dashboard, consultation page with audio recording, draft review page, and patient view. The three implemented user roles were doctor, administrator, and patient. The review page evolved during development and was split into view, editor, and print modes after the team decided to support Markdown editing.
+Before writing code, the team sketched the main user journeys and screen layouts in Figma. The mockups were intentionally lightweight because UI design was not the main focus. They were used to agree on how the actor goals from Section~\ref{subsec:actors-use-cases} would appear as screens: unified login, doctor dashboard, appointment scheduling, consultation recording, draft review, patient portal, and administrator configuration. The review page evolved during development and was split into view, editor, and print modes after the team decided to support Markdown editing.
 
 \begin{figure}[htbp]
 \centering
@@ -159,7 +159,7 @@ After generation, the doctor opens the review page, optionally edits the Markdow
 \subsection{Privacy, Security and Error Handling}
 \label{subsec:privacy-security-error-handling}
 
-The design treats clinical data as information that must not leave the local environment. Speech-to-text and LLM services run locally, so there is no path that sends transcripts or reports to a remote provider. Login is handled with bcrypt password hashing and short-lived JWT tokens stored in an HTTP-only cookie. Role-based access control protects routes that mutate clinical content, and patients can see only their own consultations and prescriptions.
+The design treats clinical data as information that must not leave the local environment. Speech-to-text and LLM services run locally, so there is no path that sends transcripts or reports to a remote provider. Login is handled with email/password credentials, bcrypt password hashing, and short-lived JWT tokens stored in an HTTP-only cookie. Role-based access control protects routes that mutate clinical content, and patients can see only their own consultations and prescriptions. Patient invitation links, password setup links, and password reset flows are not implemented in the prototype; they are suitable future additions at the identity boundary.
 
 Traceability is split across audit entries, document version history, and workflow status fields. Audit entries include user, role, action, target, IP address, timestamp, and JSON details; administrative prompt and email-template changes use this mechanism. Doctor edits to generated reports are preserved through version history with old and new values, while approval or rejection changes the generated document and consultation status. The manual approval gate ensures that no AI output is written into the relational prescriptions table without explicit doctor approval, and email gating ensures that patient summaries are sent only after approval.
 
@@ -209,4 +209,4 @@ For example, a patient signs in with MitID and books a follow-up visit with a do
 \end{minipage}
 \end{figure}
 
-Future enhancements include a queued retry layer for transient Whisper or Ollama failures, hardened deployment security, expanded Suggestive Mode rules with a broader interaction database, and production-grade adapters that can feed or replace the internal scheduling module with external booking, identity, and access-control services.
+Future enhancements include a queued retry layer for transient Whisper or Ollama failures, hardened deployment security, expanded Suggestive Mode rules with a broader interaction database, patient onboarding and password-reset links, and production-grade adapters that can feed or replace the internal scheduling module with external booking, identity, and access-control services.

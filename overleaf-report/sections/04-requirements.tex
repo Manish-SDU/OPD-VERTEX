@@ -8,7 +8,9 @@ Their implementation and validation evidence is traced in Section~\ref{subsec:re
 \subsection{Actors and Use Cases}
 \label{subsec:actors-use-cases}
 
-The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can book appointments and read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates.
+This subsection defines the system actors and the required user goals. The design chapter reuses these actors as inputs instead of redefining them, so role responsibilities and use cases remain traceable from one place.
+
+The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can book appointments and read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates. All three roles use the same email/password login screen. Staff and patient passwords are stored as bcrypt hashes, and the current implementation does not include doctor-generated password setup links or magic-login links for patients.
 
 \begin{figure}[htbp]
 \centering
@@ -32,7 +34,7 @@ UC-2 & Doctor & Book or start a patient consultation. & Doctor confirms or opens
 UC-3 & Doctor & Review AI-generated material. & Doctor reads the transcript, structured report, prescription draft, and suggestive alerts. \\
 UC-4 & Doctor & Approve and export the final record. & Doctor edits Markdown if needed, approves the draft, downloads the PDF, and can send the patient email. \\
 \rowcolor{VertexTableStripe}
-UC-5 & Patient & Book appointments and view own clinical information. & Patient logs in, books an appointment for themselves, and sees only their own appointments, consultations, and prescriptions. \\
+UC-5 & Patient & Book appointments and view own clinical information. & Patient logs in with email/password, books an appointment for themselves, and sees only their own appointments, consultations, and prescriptions. \\
 UC-6 & Administrator & Maintain configurable content. & Administrator edits prompts and email templates, with changes written to the audit trail. \\
 \TableBottomRule
 \end{tabularx}
