@@ -7,6 +7,7 @@ from functools import lru_cache
 from fastapi import HTTPException, Request
 from jose import JWTError, jwt
 
+from app.application.appointments.services import AppointmentApplicationService
 from app.application.audit.services import AuditApplicationService
 from app.application.auth.services import AuthApplicationService
 from app.application.clinical_notes.services import (
@@ -34,6 +35,7 @@ from app.infrastructure.ai.llm.ollama_client import OllamaClient
 from app.infrastructure.auth.mock import MockAuthService
 from app.infrastructure.pdf.reportlab_adapter import ReportLabPdfGenerator
 from app.infrastructure.persistence.in_memory.repositories import (
+    InMemoryAppointmentRepository,
     InMemoryAuditLogRepository,
     InMemoryConsultationDocumentRepository,
     InMemoryConsultationRepository,
@@ -78,6 +80,51 @@ def get_current_user(request: Request):
         detail = "Not authenticated" if not token else "Invalid token"
         raise HTTPException(status_code=401, detail=detail)
     return payload
+
+
+# ── Permission helpers ─────────────────────────────────────────────────
+
+
+def is_patient(user: dict) -> bool:
+    return user.get("role") == "patient"
+
+
+def is_doctor(user: dict) -> bool:
+    return user.get("role") == "doctor"
+
+
+def is_admin(user: dict) -> bool:
+    return user.get("role") == "admin"
+
+
+def require_patient(user: dict) -> None:
+    if not is_patient(user):
+        raise HTTPException(status_code=403, detail="Patient access only")
+
+
+def require_doctor(user: dict) -> None:
+    if not is_doctor(user):
+        raise HTTPException(status_code=403, detail="Doctor access only")
+
+
+def require_admin(user: dict) -> None:
+    if not is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access only")
+
+
+def require_doctor_or_admin(user: dict) -> None:
+    """For operational (non-clinical) actions shared by doctors and admins."""
+    if not (is_doctor(user) or is_admin(user)):
+        raise HTTPException(status_code=403, detail="Doctor or admin access only")
+
+
+def require_clinical_doctor(user: dict) -> None:
+    """For doctor-only clinical actions: consultations, prescription approval, report editing."""
+    if not is_doctor(user):
+        raise HTTPException(
+            status_code=403,
+            detail="Clinical actions are restricted to doctors",
+        )
 
 
 @lru_cache
@@ -394,6 +441,27 @@ def get_report_pdf_app_service() -> ReportPdfApplicationService:
 
 def get_llm_health_app_service() -> LlmHealthApplicationService:
     return LlmHealthApplicationService(llm_health_service())
+
+
+@lru_cache
+def _in_memory_appointment_repo() -> InMemoryAppointmentRepository:
+    return InMemoryAppointmentRepository()
+
+
+def appointment_repository():
+    if _use_mock():
+        return _in_memory_appointment_repo()
+    from app.infrastructure.db.sql.connection import get_session
+    from app.infrastructure.db.sql.repositories.sql_repos import SqlAppointmentRepository
+
+    return SqlAppointmentRepository(get_session())
+
+
+def get_appointment_app_service() -> AppointmentApplicationService:
+    return AppointmentApplicationService(
+        repository=appointment_repository(),
+        consultation_repository=consultation_repository(),
+    )
 
 
 def get_transcription_service() -> TranscriptionApplicationService:

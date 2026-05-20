@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 from app.domain.clinical_notes.models import (
     ConsultationDocument,
@@ -13,10 +14,10 @@ from app.domain.clinical_notes.models import (
 )
 from app.domain.common.types import utcnow
 from app.domain.consultations.models import ConsultationRepository, ConsultationStatus
+from app.domain.email.models import EmailAttachment, EmailMessage
 from app.domain.prescriptions.models import Prescription, PrescriptionRepository
 from app.domain.suggestive_mode.models import SuggestiveReview
 from app.infrastructure.logging import apply_logging_aspect
-from app.domain.email.models import EmailMessage
 
 
 @apply_logging_aspect("service", "review")
@@ -29,6 +30,7 @@ class ReviewApplicationService:
         prescription_repository: PrescriptionRepository,
         patient_repository,
         email_service,
+        pdf_app_service=None,
     ) -> None:
         self.consultation_repository = consultation_repository
         self.consultation_doc_repository = consultation_doc_repository
@@ -36,6 +38,7 @@ class ReviewApplicationService:
         self.prescription_repository = prescription_repository
         self.patient_repository = patient_repository
         self.email_service = email_service
+        self.pdf_app_service = pdf_app_service
 
     def build_review_context(
         self, consultation_id: int
@@ -171,7 +174,7 @@ class ReviewApplicationService:
     def send_report_to_patient(self, consultation_id: int) -> dict:
         """
         Send a patient-friendly summary email with prescription, follow-up, and suggestions.
-        No PDF attachment is included.
+        Includes the latest exported PDF attachment.
         """
         generated_document = self.generated_repository.get_by_consultation_id(
             consultation_id
@@ -189,6 +192,24 @@ class ReviewApplicationService:
 
         if not getattr(patient, "email", None):
             raise ValueError("Patient email is missing.")
+
+        pdf_dir = Path(__file__).resolve().parents[3] / "storage" / "pdfs"
+        matches = sorted(
+            pdf_dir.glob(f"*_{consultation_id}.pdf"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if not matches:
+            raise ValueError(
+                "PDF has not been exported yet. Please export the PDF first before sending to patient."
+            )
+        pdf_path = matches[0]
+
+        pdf_attachment = EmailAttachment(
+            filename=pdf_path.name,
+            content_type="application/pdf",
+            data=pdf_path.read_bytes(),
+        )
 
         notes = generated_document.generated_output
 
@@ -211,7 +232,7 @@ class ReviewApplicationService:
             subject=f"Your consultation summary (#{consultation_id})",
             text_body=body,
             html_body=None,
-            attachment=None,  # <- key: no PDF
+            attachment=pdf_attachment,
         )
 
         return self.email_service.send_email(message)

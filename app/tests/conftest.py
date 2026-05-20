@@ -21,6 +21,7 @@ from app.core.config import get_settings
 get_settings.cache_clear()
 
 from app.infrastructure.persistence.in_memory.repositories import (
+    InMemoryAppointmentRepository,
     InMemoryAuditLogRepository,
     InMemoryConsultationDocumentRepository,
     InMemoryConsultationRepository,
@@ -41,6 +42,7 @@ from app.infrastructure.persistence.in_memory.repositories import (
 )
 from app.infrastructure.auth.mock import MockAuthService
 from app.application.audit.services import AuditApplicationService
+from app.application.appointments.services import AppointmentApplicationService
 from app.application.auth.services import AuthApplicationService
 from app.application.clinical_notes.services import (
     ClinicalNotesApplicationService,
@@ -54,6 +56,11 @@ from app.application.suggestive_mode.services import SuggestiveReviewApplication
 
 
 # ── Repository fixtures ────────────────────────────────────────────────
+
+
+@pytest.fixture
+def appointment_repo():
+    return InMemoryAppointmentRepository()
 
 
 @pytest.fixture
@@ -175,6 +182,14 @@ def prescription_app_service(prescription_repo):
 @pytest.fixture
 def audit_app_service(audit_repo):
     return AuditApplicationService(audit_repo)
+
+
+@pytest.fixture
+def appointment_app_service(appointment_repo, consultation_repo):
+    return AppointmentApplicationService(
+        repository=appointment_repo,
+        consultation_repository=consultation_repo,
+    )
 
 
 @pytest.fixture

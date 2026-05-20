@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.api.deps import (
+    get_appointment_app_service,
     get_audit_app_service,
     get_consultation_app_service,
     get_current_user,
@@ -50,8 +51,11 @@ def dashboard_page(request: Request, user=Depends(get_current_user)) -> HTMLResp
         all_prescriptions = get_prescription_app_service().list_prescriptions()
         my_consultations = [c for c in all_consultations if c.patient_id == user_id]
         my_prescriptions = [p for p in all_prescriptions if p.patient_id == user_id]
+        upcoming_appointments = get_appointment_app_service().list_upcoming(
+            current_user=user
+        )
         stats = {
-            "appointment_count": len(my_consultations),
+            "appointment_count": len(upcoming_appointments),
             "prescription_count": len(my_prescriptions),
             "record_count": len(my_consultations),
         }

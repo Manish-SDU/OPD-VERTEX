@@ -27,7 +27,7 @@ class TestMockPdfGenerator:
             consultation_date=datetime(2026, 1, 1),
         )
         path = gen.generate_report_pdf("# Report", meta)
-        assert "mock_report_1" in path
+        assert "report_smith_20260101_1" in path
 
     def test_generate_prescription_pdf_returns_artifact(self):
         gen = MockPdfGenerator()

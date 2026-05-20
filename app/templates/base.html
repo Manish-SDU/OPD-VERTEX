@@ -28,15 +28,17 @@
           {% if user.role == 'doctor' %}
             <a href="/patients">Patients</a>
             <a href="/consultations">Consultations</a>
+            <a href="/appointments">Appointments</a>
             <a href="/prescriptions">Prescriptions</a>
             <a href="/profile">Profile</a>
           {% elif user.role == 'admin' %}
             <a href="/patients">Patients</a>
             <a href="/consultations">Consultations</a>
-            <a href="/prescriptions">Prescriptions</a>
+            <a href="/appointments">Appointments</a>
             <a href="/profile">Profile</a>
             <a href="/admin/config">Admin</a>
           {% elif user.role == 'patient' %}
+            <a href="/appointments">My Appointments</a>
             <a href="/prescriptions">My Prescriptions</a>
             <a href="/profile">Profile</a>
           {% else %}

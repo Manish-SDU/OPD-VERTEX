@@ -12,6 +12,12 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
+from app.domain.appointments.models import (
+    Appointment,
+    AppointmentCreateRequest,
+    AppointmentRepository,
+    AppointmentStatus,
+)
 from app.domain.audit.models import AuditLog, AuditLogRepository
 from app.domain.auth.models import Staff, StaffCreateRequest, StaffRepository
 from app.domain.consultations.models import (
@@ -26,6 +32,7 @@ from app.domain.prescriptions.models import (
     PrescriptionRepository,
 )
 from app.infrastructure.db.sql.models.tables import (
+    AppointmentRow,
     StaffRow,
     PatientRow,
     ConsultationRow,
@@ -69,6 +76,10 @@ class SqlStaffRepository(StaffRepository):
             created_at=row.created_at,
             updated_at=row.updated_at,
         )
+
+    def list_all(self) -> list[Staff]:
+        rows = self.session.query(StaffRow).all()
+        return [self._to_domain(row) for row in rows]
 
     def get_by_email(self, email: str) -> Staff | None:
         row = self.session.query(StaffRow).filter_by(email=email).first()
@@ -324,3 +335,119 @@ class SqlAuditLogRepository(AuditLogRepository):
             ip_address=row.ip_address,
             timestamp=row.timestamp,
         )
+
+
+# ── SqlAppointmentRepository ─────────────────────────────────────────
+@apply_logging_aspect("repository", "appointments")
+class SqlAppointmentRepository(AppointmentRepository):
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def _to_domain(self, row: AppointmentRow) -> Appointment:
+        return Appointment(
+            id=row.appointment_id,
+            patient_id=row.patient_id,
+            doctor_id=row.doctor_id,
+            scheduled_at=row.scheduled_at,
+            duration_minutes=row.duration_minutes,
+            status=AppointmentStatus(row.status),
+            reason=row.reason,
+            notes=row.notes,
+            consultation_id=row.consultation_id,
+            created_at=row.created_at,
+            updated_at=row.updated_at,
+        )
+
+    def _priority_order(self):
+        from sqlalchemy import case
+        return (
+            case(
+                (AppointmentRow.status == "confirmed", 0),
+                (AppointmentRow.status == "pending", 1),
+                else_=2,
+            ),
+            AppointmentRow.scheduled_at,
+            AppointmentRow.created_at,
+        )
+
+    def list_all(self) -> list[Appointment]:
+        rows = (
+            self.session.query(AppointmentRow)
+            .order_by(*self._priority_order())
+            .all()
+        )
+        return [self._to_domain(r) for r in rows]
+
+    def get_by_id(self, appointment_id: int) -> Appointment | None:
+        row = (
+            self.session.query(AppointmentRow)
+            .filter_by(appointment_id=appointment_id)
+            .first()
+        )
+        return self._to_domain(row) if row else None
+
+    def list_by_patient(self, patient_id: int) -> list[Appointment]:
+        rows = (
+            self.session.query(AppointmentRow)
+            .filter_by(patient_id=patient_id)
+            .order_by(*self._priority_order())
+            .all()
+        )
+        return [self._to_domain(r) for r in rows]
+
+    def list_by_doctor(self, doctor_id: int) -> list[Appointment]:
+        rows = (
+            self.session.query(AppointmentRow)
+            .filter_by(doctor_id=doctor_id)
+            .order_by(*self._priority_order())
+            .all()
+        )
+        return [self._to_domain(r) for r in rows]
+
+    def create(self, request: AppointmentCreateRequest) -> Appointment:
+        row = AppointmentRow(
+            patient_id=request.patient_id,
+            doctor_id=request.doctor_id,
+            scheduled_at=request.scheduled_at,
+            duration_minutes=request.duration_minutes,
+            status="pending",
+            reason=request.reason,
+            notes=request.notes,
+        )
+        self.session.add(row)
+        self.session.commit()
+        self.session.refresh(row)
+        return self._to_domain(row)
+
+    def update_status(
+        self, appointment_id: int, status: AppointmentStatus
+    ) -> Appointment | None:
+        row = (
+            self.session.query(AppointmentRow)
+            .filter_by(appointment_id=appointment_id)
+            .first()
+        )
+        if not row:
+            return None
+        row.status = status.value
+        self.session.commit()
+        self.session.refresh(row)
+        return self._to_domain(row)
+
+    def cancel(self, appointment_id: int) -> Appointment | None:
+        return self.update_status(appointment_id, AppointmentStatus.CANCELLED)
+
+    def link_consultation(
+        self, appointment_id: int, consultation_id: int
+    ) -> Appointment | None:
+        row = (
+            self.session.query(AppointmentRow)
+            .filter_by(appointment_id=appointment_id)
+            .first()
+        )
+        if not row:
+            return None
+        row.consultation_id = consultation_id
+        self.session.commit()
+        self.session.refresh(row)
+        return self._to_domain(row)

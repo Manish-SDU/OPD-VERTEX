@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2 class="page-head__title">{% if user.role == "patient" %}My Appointments{% else %}Appointments{% endif %}</h2>
+    <p class="page-head__sub">
+      {% if appointments %}
+        {{ appointments|length }} record{{ '' if appointments|length == 1 else 's' }}
+      {% else %}
+        No appointments yet
+      {% endif %}
+    </p>
+  </div>
+  <a href="/appointments/new" class="btn-cta">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Book Appointment
+  </a>
+</div>
+
+{% if appointments %}
+<section class="card" style="padding: 0; overflow: hidden;">
+  <table style="margin: 0;">
+    <thead>
+      <tr>
+        <th style="width: 70px;">ID</th>
+        <th>Patient</th>
+        <th>Scheduled</th>
+        <th>Duration</th>
+        <th>Status</th>
+        <th>Reason</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for appt in appointments %}
+      {% set p = patients.get(appt.patient_id) %}
+      <tr>
+        <td><strong>#{{ appt.id }}</strong></td>
+        <td>{% if p %}{{ p.first_name }} {{ p.last_name }}{% else %}Patient #{{ appt.patient_id }}{% endif %}</td>
+        <td style="color: var(--muted); font-size: .9rem;">
+          {{ appt.scheduled_at.strftime('%d %b %Y %H:%M') if appt.scheduled_at else "—" }}
+        </td>
+        <td style="color: var(--muted); font-size: .9rem;">{{ appt.duration_minutes }} min</td>
+        <td>
+          <span class="status-pill status-pill--{{ appt.status|lower|replace(' ', '_') }}">
+            {{ appt.status|replace('_', ' ') }}
+          </span>
+        </td>
+        <td style="color: var(--text);">{{ appt.reason[:50] }}{% if appt.reason|length > 50 %}…{% endif %}</td>
+        <td style="vertical-align: middle; white-space: nowrap;">
+          <div style="display: flex; gap: .4rem; justify-content: flex-end; align-items: center; flex-wrap: nowrap;">
+            <a href="/appointments/{{ appt.id }}" class="btn-cta btn-cta--ghost" style="padding: .35rem .8rem; font-size: .85rem; white-space: nowrap; line-height: 1;">View →</a>
+            {% if user.role in ["doctor", "admin"] and appt.status == "pending" %}
+            <form method="post" action="/appointments/{{ appt.id }}/confirm" style="margin:0;">
+              <button type="submit" class="btn-cta btn-cta--success" style="padding: .35rem .8rem; font-size: .85rem; white-space: nowrap; line-height: 1;">Confirm</button>
+            </form>
+            {% endif %}
+            {% if appt.status in ["pending", "confirmed"] %}
+            <form method="post" action="/appointments/{{ appt.id }}/cancel" style="margin:0;">
+              <button type="submit" class="btn-cta btn-cta--danger" style="padding: .35rem .8rem; font-size: .85rem; white-space: nowrap; line-height: 1;"
+                onclick="return confirm('Cancel this appointment?')">Cancel</button>
+            </form>
+            {% endif %}
+            {% if user.role == "doctor" and appt.status in ["pending", "confirmed"] and not appt.consultation_id %}
+            <form method="post" action="/appointments/{{ appt.id }}/start-consultation" style="margin:0;">
+              <button type="submit" class="btn-cta" style="padding: .35rem .8rem; font-size: .85rem; white-space: nowrap; line-height: 1;">Start →</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+<section class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon">📅</div>
+    <p class="empty-state__title">No appointments yet</p>
+    <p>{% if user.role == "patient" %}Book your first appointment with a doctor.{% else %}No appointments have been booked yet.{% endif %}</p>
+    <a href="/appointments/new" class="btn-cta" style="margin-top: 1rem;">Book an appointment</a>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
