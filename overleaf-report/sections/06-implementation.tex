@@ -83,7 +83,7 @@ The main authentication logic is implemented in \texttt{AuthApplicationService},
   \item \textbf{AuthService:} defines an abstract interface for authentication logic and allows alternative implementations.
 \end{itemize}
 
-After successful authentication, the system assigns a JWT to the user. The token is used for later authenticated requests and includes user identity and role. Authentication checks are enforced through FastAPI dependencies that validate JWTs from incoming requests and ensure that only authenticated users can reach protected endpoints. Route-level checks then restrict sensitive actions such as report editing, approval, and email sending to doctors and administrators.
+After successful authentication, the system assigns a JWT to the user. The token is used for later authenticated requests and includes user identity and role. Authentication checks are enforced through FastAPI dependencies that validate JWTs from incoming requests and ensure that only authenticated users can reach protected endpoints. Route-level checks separate operational and clinical actions: administrators can manage configuration and perform appointment operations such as confirmation or no-show marking, while report generation, report editing, suggestive review, consultation start, prescription approval, and rejection remain doctor-only clinical actions.
 
 \subsection{Transcription Module}
 \label{subsec:transcription-module}
