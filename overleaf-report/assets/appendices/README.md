@@ -15,7 +15,6 @@ The LaTeX appendix currently includes these final application screenshots:
 - Recorings.jpeg
 - Suggestions.png
 - Report.png
-- Clinical_Report.png
 - EditMode.png
 - PDF_Report.png
 - Prescriptions.png

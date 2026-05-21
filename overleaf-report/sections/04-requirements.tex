@@ -14,7 +14,79 @@ The implemented workflow is centered on three roles: doctors, administrators, an
 
 \begin{figure}[htbp]
 \centering
-\optionalgraphic[width=\textwidth]{assets/img/Use_Case.png}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+	font=\scriptsize,
+	actor/.style={draw=VertexBlue!75, fill=VertexBlue!8, rounded corners=1mm, align=center, minimum width=1.6cm, minimum height=0.58cm},
+	usecase/.style={draw=VertexBlue!55, fill=white, ellipse, align=center, text width=2.15cm, minimum height=0.58cm, inner sep=1.4mm},
+	authbox/.style={draw=VertexInk, fill=VertexPanel, rounded corners=1.5mm, inner sep=2.2mm},
+	doctorbox/.style={draw=VertexInk, fill=VertexTeal!8, rounded corners=1.5mm, inner sep=2.2mm},
+	patientbox/.style={draw=VertexInk, fill=VertexBlue!6, rounded corners=1.5mm, inner sep=2.2mm},
+	adminbox/.style={draw=VertexInk, fill=VertexRed!5, rounded corners=1.5mm, inner sep=2.2mm},
+	service/.style={draw=VertexAmber!75, fill=VertexAmber!10, rounded corners=1mm, align=center, text width=1.65cm, minimum height=0.62cm, inner sep=1.2mm},
+	data/.style={draw=VertexTeal!75, fill=VertexTeal!10, cylinder, shape border rotate=90, aspect=0.25, align=center, text width=1.25cm, minimum height=0.68cm, inner sep=1.2mm},
+	link/.style={-{Latex[length=1.8mm]}, draw=VertexInk!62, line width=0.45pt},
+	assoc/.style={draw=VertexInk!50, line width=0.45pt}
+]
+\node[font=\bfseries] at (0,5.15) {OPD-VERTEX (MedFlow)};
+
+\node[actor] (doctor) at (-5.35,4.35) {Doctor};
+\node[actor] (patient) at (0,4.35) {Patient};
+\node[actor] (admin) at (5.35,4.35) {Admin};
+
+\node[usecase, text width=1.25cm] (login) at (-0.80,3.62) {Log In};
+\node[usecase, text width=1.25cm] (logout) at (0.80,3.62) {Log Out};
+\node[authbox, fit=(login)(logout), label={[font=\bfseries]above:Authentication}] (auth) {};
+
+\node[usecase] (record) at (-6.15,2.92) {Record \& Transcribe Audio};
+\node[usecase] (create) at (-3.88,2.92) {Create Consultation};
+\node[usecase] (browse) at (-1.62,2.92) {Browse \& Search Patients};
+\node[usecase] (viewconsult) at (-6.15,2.18) {View Consultations};
+\node[usecase] (review) at (-3.88,2.18) {Review Draft Notes};
+\node[usecase] (approve) at (-1.62,2.18) {Approve / Reject Draft};
+\node[usecase] (report) at (-6.15,1.44) {Generate Clinical Report};
+\node[usecase] (suggest) at (-3.88,1.44) {Suggestive Safety Review};
+\node[usecase] (pdf) at (-1.62,1.44) {Generate Prescription PDF};
+\node[usecase] (email) at (-5.02,0.70) {Email Prescription};
+\node[usecase] (appt) at (-2.75,0.70) {View/Create/Accept Appointments};
+\node[doctorbox, fit=(record)(create)(browse)(viewconsult)(review)(approve)(report)(suggest)(pdf)(email)(appt), label={[font=\bfseries]above:Doctor - Clinical Workflow}] (doctorflow) {};
+
+\node[usecase] (profile) at (1.65,2.92) {View Own Profile};
+\node[usecase] (ownrx) at (3.92,2.92) {View Own Prescriptions};
+\node[usecase] (ownappt) at (2.78,2.18) {View/Create/Delete Appointments};
+\node[patientbox, fit=(profile)(ownrx)(ownappt), label={[font=\bfseries]above:Patient Features}] (patientfeatures) {};
+
+\node[usecase] (prompts) at (4.35,1.42) {Manage Prompt Templates};
+\node[usecase] (templates) at (6.62,1.42) {Manage Email Templates};
+\node[usecase] (health) at (5.48,0.68) {View System Health};
+\node[adminbox, fit=(prompts)(templates)(health), label={[font=\bfseries]above:Admin}] (adminfeatures) {};
+
+\node[service] (ollama) at (-6.15,-0.52) {Ollama LLM\\Report Gen};
+\node[service] (whisper) at (-3.78,-0.52) {Whisper API\\Speech-to-Text};
+\node[service] (reportlab) at (-1.42,-0.52) {ReportLab\\PDF};
+\node[service] (smtp) at (0.92,-0.52) {SMTP\\Email};
+\node[data] (mysql) at (3.35,-0.52) {MySQL};
+\node[data] (mongo) at (5.45,-0.52) {MongoDB};
+
+\draw[assoc] (doctor) -- (auth);
+\draw[assoc] (patient) -- (auth);
+\draw[assoc] (admin) -- (auth);
+\draw[assoc] (doctor) -- (doctorflow.north);
+\draw[assoc] (patient) -- (patientfeatures.north);
+\draw[assoc] (admin) -- (adminfeatures.north);
+\draw[link] (record) -- (whisper);
+\draw[link] (report) -- (ollama);
+\draw[link] (suggest) -- (ollama);
+\draw[link] (pdf) -- (reportlab);
+\draw[link] (email) -- (smtp);
+\draw[link] (appt) -- (mysql);
+\draw[link] (ownappt) -- (mysql);
+\draw[link] (prompts) -- (mongo);
+\draw[link] (templates) -- (mongo);
+
+\node[anchor=north west, align=left, font=\tiny] at (-7.32,-1.08) {\textbf{Legend:} actors = role boxes; ovals = use cases; rounded rectangles = functional modules; amber boxes = external/service adapters; cylinders = databases; arrows = direct service or data dependency.};
+\end{tikzpicture}%
+}
 \caption{Implemented Med Flow use-case view for doctors, patients, administrators, infrastructure components, and external services.}
 \label{fig:use-case-diagram}
 \end{figure}
@@ -53,12 +125,10 @@ UC-10 & Administrator & Maintain configurable content and auditability. & Admini
 \subsection{Must-Have Requirements}
 \label{subsec:must-have-requirements}
 
-\textbf{Functional requirements.}
-
 \begingroup
 \small
 \begin{longtable}{@{}P{0.16\textwidth}P{0.76\textwidth}@{}}
-\caption{Must-have functional requirements.}\\
+\caption{Must-have requirements.}\\
 \TableTopRule
 \rowcolor{VertexTableBlue}
 \VertexTableHead{ID} & \VertexTableHead{Requirement} \\
@@ -69,30 +139,19 @@ F-2 & The system must capture consultation audio locally. \\
 \rowcolor{VertexTableStripe}
 F-3 & The system must transcribe speech to text locally. \\
 F-4 & The system must generate a doctor-editable structured clinical note from the transcript and patient context, including presenting problem, relevant history, assessment, treatment or medication plan, follow-up, and patient instructions when supported by the consultation. \\
+\rowcolor{VertexTableStripe}
 F-5 & The system must generate a doctor-editable prescription draft with medication name, dosage, frequency, duration, patient instructions, and review alerts for missing dosage information or possible allergy/contraindication conflicts. \\
 F-6 & The system must allow doctors to edit, approve, or reject generated clinical notes and prescription drafts before they become final records. \\
+\rowcolor{VertexTableStripe}
 F-7 & The system must generate downloadable PDFs from approved clinical report and prescription data. \\
 F-8 & The system must send approved patient follow-up or prescription summaries by configured email and prevent unapproved drafts from being emailed. \\
-\TableBottomRule
-\end{longtable}
-\endgroup
-
-\textbf{Non-functional requirements.}
-
-\begingroup
-\small
-\begin{longtable}{@{}P{0.16\textwidth}P{0.76\textwidth}@{}}
-\caption{Must-have non-functional requirements.}\\
-\TableTopRule
-\rowcolor{VertexTableBlue}
-\VertexTableHead{ID} & \VertexTableHead{Requirement} \\
-\TableMidRule
 \rowcolor{VertexTableStripe}
 NF-1 & Privacy: all AI processing must be performed locally. \\
 NF-2 & Security: the system must use authentication and role-based access for doctors, administrators, and patients, with patients restricted to their own records. \\
 \rowcolor{VertexTableStripe}
 NF-3 & Data protection: the system must hash stored passwords and be designed for encrypted deployment channels and storage. \\
 NF-4 & Modularity: components must be loosely coupled and replaceable. \\
+\rowcolor{VertexTableStripe}
 NF-5 & Reliability: the system must persist consultation state, transcripts, generated documents, and prescription versions so interrupted workflows can be retried without losing approved data. \\
 NF-6 & Auditability: the system must preserve traceability for important actions and edits, including prompt updates, email-template updates, doctor report edits with version history, and review approval or rejection status changes. \\
 \TableBottomRule
