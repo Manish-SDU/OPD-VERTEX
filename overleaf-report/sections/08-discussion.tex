@@ -25,9 +25,9 @@ At the same time, the validation evidence should be interpreted with the same bo
 \subsection{Integration and Deployment Limitations}
 \label{subsec:integration-deployment-limitations}
 
-Local execution reduces dependence on cloud AI providers, but a real clinic deployment would still require operational and legal controls beyond the semester implementation. This includes TLS termination, at-rest encryption, service-to-service authentication, retention enforcement, backup policy, operational monitoring, and governance for audit logs and prompt changes. OWASP guidance for service-oriented systems recommends treating these controls as part of the deployed architecture rather than as afterthoughts\refcite{13}.
+Local execution reduces dependence on cloud AI providers, but a real clinic deployment would still require operational and legal controls beyond the semester implementation. This includes TLS termination, at-rest encryption, service-to-service authentication, retention enforcement, backup policy, operational monitoring, and governance for audit logs and prompt changes. OWASP guidance for service-oriented systems recommends treating these controls as part of the deployed architecture rather than as afterthoughts\refcite{17}.
 
-The same applies to booking and identity integration. The system can create consultation context internally, but production use in Denmark should avoid duplicating national or organisational identity infrastructure where MitID, NemLog-in, or MitID Erhverv are already appropriate for the deployment context\refcite{14,15,16}. Med Flow should therefore expose stable interfaces for receiving appointment metadata and verified user identity, while keeping the consultation documentation pipeline independent.
+The same applies to booking and identity integration. The system can create consultation context internally, but production use in Denmark should avoid duplicating national or organisational identity infrastructure where MitID, NemLog-in, or MitID Erhverv are already appropriate for the deployment context\refcite{5,6,18}. Med Flow should therefore expose stable interfaces for receiving appointment metadata and verified user identity, while keeping the consultation documentation pipeline independent.
 
 \subsection{Future Direction}
 \label{subsec:discussion-future-direction}

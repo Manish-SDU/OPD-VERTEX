@@ -1,14 +1,26 @@
 # Appendix screenshots
 
-Add final application screenshots to this folder using these filenames so the LaTeX appendix can pick them up automatically:
+The LaTeX appendix currently includes these final application screenshots:
 
-- 01-login.png
-- 02-doctor-dashboard.png
-- 03-appointment-scheduling.png
-- 04-consultation-recording.png
-- 05-ai-review-editor.png
-- 06-prescription-safety-review.png
-- 07-patient-portal.png
-- 08-admin-configuration.png
+- Login.png
+- Dashboard.png
+- Appointments_Overview.png
+- Appointments.png
+- Book_Appointment.png
+- Appointment.png
+- Consultations.png
+- Consultation.png
+- Consultation_recording.png
+- Transcription.png
+- Recorings.jpeg
+- Suggestions.png
+- Report.png
+- Clinical_Report.png
+- EditMode.png
+- PDF_Report.png
+- Prescriptions.png
+- PatientsList.png
+- Profile.png
+- Admin.png
 
-PNG is preferred. If you use JPG files instead, update the matching paths in `overleaf-report/sections/appendix-final-app-screens.tex`.
+Update `overleaf-report/sections/appendix-final-app-screens.tex` if files are renamed or replaced.

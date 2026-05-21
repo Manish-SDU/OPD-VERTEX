@@ -30,6 +30,7 @@ The API layer is built using FastAPI. It defines and serves HTTP endpoints and a
 \caption{Implemented FastAPI route modules and their concrete responsibilities.}
 \label{tab:implemented-route-modules}
 \end{table}
+\FloatBarrier
 
 FastAPI dependency injection is used to manage authentication, repositories, adapters, and shared services. Dependencies are defined in \path{app/api/deps.py}. For example, the clinical-notes dependency wires consultation repositories, the prompt repository, transcript normalization, and the note generator into the application service. This keeps route functions focused on HTTP concerns while application services own workflow orchestration.
 
@@ -60,6 +61,7 @@ Approval, PDF, email & \textbf{Application services:} \path{ReviewApplicationSer
 \caption{Concrete service and adapter boundaries in the implementation.}
 \label{tab:service-adapter-boundaries}
 \end{table}
+\FloatBarrier
 
 \subsection{Booking and Scheduling Implementation}
 \label{subsec:booking-scheduling-implementation}
@@ -73,7 +75,7 @@ The FastAPI route module \path{appointments.py} exposes the HTML workflow: appoi
 \subsection{Authentication and Authorization}
 \label{subsec:authentication-authorization}
 
-Authentication ensures secure access control using role-based authorization. The system uses FastAPI dependency injection, JWT tokens, bcrypt password verification, and a modular service structure. Doctors, administrators, and patients all authenticate through the same login route with email/password credentials; there is no implemented workflow where a doctor generates a patient password link or URL-based login token. The doctor's patient email action sends approved follow-up content and the exported PDF attachment, not a login link. This internal login is sufficient for the semester implementation, while the architecture keeps identity at a boundary where a Danish deployment could add patient invitation links or integrate with MitID/NemLog-in through a dedicated adapter\refcite{14,15}.
+Authentication ensures secure access control using role-based authorization. The system uses FastAPI dependency injection, JWT tokens, bcrypt password verification, and a modular service structure. Doctors, administrators, and patients all authenticate through the same login route with email/password credentials; there is no implemented workflow where a doctor generates a patient password link or URL-based login token. The doctor's patient email action sends approved follow-up content and the exported PDF attachment, not a login link. This internal login is sufficient for the semester implementation, while the architecture keeps identity at a boundary where a Danish deployment could add patient invitation links or integrate with MitID/NemLog-in through a dedicated adapter\refcite{5,6}.
 
 The main authentication logic is implemented in \texttt{AuthApplicationService}, which bridges the API layer and domain logic. Domain models represent users, login requests, and the authentication interface, creating a consistent contract between application and infrastructure layers.
 
@@ -104,7 +106,7 @@ The transcription application service handles streaming audio data, temporary au
 
 The LLM orchestration component enables transcript normalization, clinical note generation, and suggestions using the locally integrated Ollama model. The implementation uses an Ollama client for low-level HTTP communication and adapter classes in \path{ollama_adapter.py} for domain-specific tasks. Separate adapters return the normalized transcript, validated clinical notes, and structured suggestive review.
 
-The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{5,12}.
+The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{12,13}.
 
 The orchestration workflow is:
 
@@ -153,4 +155,4 @@ Runtime configuration is centralized in \path{app/core/config.py}. The most impo
 
 The application currently supports \path{qwen3:8b} as the validated local LLM configuration, while the benchmark table documents other candidates that were evaluated before selecting it.
 
-Observability is implemented through request middleware and aspect decorators. The middleware logs HTTP method, path, client IP, status code, and duration. The \texttt{apply\_logging\_aspect} decorator wraps public service methods with entry, exit, error, and duration logging. Keeping this behavior outside the business logic follows the same separation-of-concerns principle as the repository and adapter boundaries, and it supports later production hardening work such as centralized metrics and tracing\refcite{13}.
+Observability is implemented through request middleware and aspect decorators. The middleware logs HTTP method, path, client IP, status code, and duration. The \texttt{apply\_logging\_aspect} decorator wraps public service methods with entry, exit, error, and duration logging. Keeping this behavior outside the business logic follows the same separation-of-concerns principle as the repository and adapter boundaries, and it supports later production hardening work such as centralized metrics and tracing\refcite{17}.

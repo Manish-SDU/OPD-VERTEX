@@ -1,60 +1,35 @@
 \section{Final Application Screens}
 \label{app:final-application-screens}
 
-This appendix is reserved for final screenshots of the implemented Med Flow application. The images are kept in \path{assets/appendices} so they are separated from architecture diagrams and validation charts. Each figure below uses a stable filename; adding screenshots with these filenames updates the appendix without changing the LaTeX structure.
+This appendix collects the final screenshots of the implemented Med Flow application. The images are kept in \path{assets/appendices} so they are separated from architecture diagrams and validation charts. Each screenshot is bounded by both page width and page height so large images move to a float page without being cut.
 
+\newcommand{\appscreen}[3]{%
 \begin{figure}[p]
 \centering
-\optionalgraphic[width=0.92\textwidth]{assets/appendices/01-login.png}
-\caption{Final login screen for the unified doctor, administrator, and patient email/password sign-in flow.}
-\label{fig:app-login-screen}
+\optionalgraphic[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{assets/appendices/#1}
+\caption{#2}
+\label{#3}
 \end{figure}
+\FloatBarrier
+}
 
-\begin{figure}[p]
-\centering
-\optionalgraphic[width=0.92\textwidth]{assets/appendices/02-doctor-dashboard.png}
-\caption{Doctor dashboard showing the clinician's starting point for appointments, patients, consultations, review, and prescriptions.}
-\label{fig:app-doctor-dashboard}
-\end{figure}
-
-\begin{figure}[p]
-\centering
-\optionalgraphic[width=0.92\textwidth]{assets/appendices/03-appointment-scheduling.png}
-\caption{Appointment scheduling workflow used to create appointment context before a consultation begins.}
-\label{fig:app-appointment-scheduling}
-\end{figure}
-
-\begin{figure}[p]
-\centering
-\optionalgraphic[width=0.92\textwidth]{assets/appendices/04-consultation-recording.png}
-\caption{Consultation recording screen with live transcription support.}
-\label{fig:app-consultation-recording}
-\end{figure}
-
-\begin{figure}[p]
-\centering
-\optionalgraphic[width=0.92\textwidth]{assets/appendices/05-ai-review-editor.png}
-\caption{AI-generated report review and Markdown editing interface used before doctor approval.}
-\label{fig:app-ai-review-editor}
-\end{figure}
-
-\begin{figure}[p]
-\centering
-\optionalgraphic[width=0.92\textwidth]{assets/appendices/06-prescription-safety-review.png}
-\caption{Prescription and suggestive safety review screen showing doctor-controlled approval of generated clinical content.}
-\label{fig:app-prescription-safety-review}
-\end{figure}
-
-\begin{figure}[p]
-\centering
-\optionalgraphic[width=0.92\textwidth]{assets/appendices/07-patient-portal.png}
-\caption{Patient portal where patients can book appointments and view their own consultations and prescriptions.}
-\label{fig:app-patient-portal}
-\end{figure}
-
-\begin{figure}[p]
-\centering
-\optionalgraphic[width=0.92\textwidth]{assets/appendices/08-admin-configuration.png}
-\caption{Administrator configuration screen for prompt and email-template management with audit visibility.}
-\label{fig:app-admin-configuration}
-\end{figure}
+\appscreen{Login.png}{Unified login screen for doctor, administrator, and patient email/password sign-in.}{fig:app-login-screen}
+\appscreen{Dashboard.png}{Doctor dashboard showing the clinician's starting point for appointments, patients, consultations, reviews, and prescriptions.}{fig:app-dashboard-screen}
+\appscreen{Appointments_Overview.png}{Appointment overview used by staff to monitor booking status and upcoming consultation context.}{fig:app-appointments-overview-screen}
+\appscreen{Appointments.png}{Appointment list view showing scheduled patient appointments.}{fig:app-appointments-screen}
+\appscreen{Book_Appointment.png}{Patient-facing appointment booking form used to create appointment context before consultation.}{fig:app-book-appointment-screen}
+\appscreen{Appointment.png}{Single appointment detail view with operational status controls.}{fig:app-appointment-detail-screen}
+\appscreen{Consultations.png}{Consultation list view used to access past and active consultations.}{fig:app-consultations-screen}
+\appscreen{Consultation.png}{Consultation detail page linking patient context, transcript, report, prescription, and review actions.}{fig:app-consultation-screen}
+\appscreen{Consultation_recording.png}{Consultation recording screen used while capturing audio for transcription.}{fig:app-consultation-recording-screen}
+\appscreen{Transcription.png}{Transcription view showing captured consultation text for the review workflow.}{fig:app-transcription-screen}
+\appscreen{Recorings.jpeg}{Recording history view used to inspect captured audio sessions during validation.}{fig:app-recordings-screen}
+\appscreen{Suggestions.png}{Suggestive Mode screen showing AI-supported alerts before doctor approval.}{fig:app-suggestions-screen}
+\appscreen{Report.png}{Generated report view before final export.}{fig:app-report-screen}
+\appscreen{Clinical_Report.png}{Structured clinical report screen used by the doctor during review.}{fig:app-clinical-report-screen}
+\appscreen{EditMode.png}{Markdown edit mode for doctor-controlled changes to generated clinical content.}{fig:app-edit-mode-screen}
+\appscreen{PDF_Report.png}{Exported PDF report produced from approved consultation data.}{fig:app-pdf-report-screen}
+\appscreen{Prescriptions.png}{Prescription overview showing generated prescription records and approval state.}{fig:app-prescriptions-screen}
+\appscreen{PatientsList.png}{Patient list view used by doctors to find patient records.}{fig:app-patients-list-screen}
+\appscreen{Profile.png}{Patient profile page with demographic and clinical context.}{fig:app-profile-screen}
+\appscreen{Admin.png}{Administrator configuration screen for prompts, templates, and audit-related maintenance.}{fig:app-admin-screen}

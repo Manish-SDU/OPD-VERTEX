@@ -39,6 +39,7 @@ In this project, continuous delivery is intentionally limited to build verificat
 \caption{How the GitHub Actions pipeline turns each code change into quality feedback and a reproducible build candidate.}
 \label{fig:cicd-pipeline}
 \end{figure}
+\FloatBarrier
 
 \subsection{Test Inventory and Outcome}
 \label{subsec:test-inventory-outcome}
@@ -67,10 +68,11 @@ Manual UI & 10 & Login, PDF download, speaker layout, logout, and browser-level 
 \caption{Automated and manual validation tiers with test counts and coverage focus.}
 \label{tab:validation-tiers}
 \end{table}
+\FloatBarrier
 
 The first five rows in Table~\ref{tab:validation-tiers} sum to the 326 automated tests in the retained validation run. The manual UI row is a separate 10-case browser checklist and is not included in the automated total.
 
-The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw benchmark numbers are listed in Appendix~\ref{app:benchmark-results}, the manual browser checklist in Appendix~\ref{app:manual-ui}, the AI safety matrix in Appendix~\ref{app:ai-safety-matrix}, and the hardware envelope in Appendix~\ref{app:hardware-envelope}.
+The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw benchmark numbers are listed in Appendix~\ref{app:benchmark-results}, the manual browser checklist in Appendix~\ref{app:manual-ui}, the final application screenshots in Appendix~\ref{app:final-application-screens}, the AI safety matrix in Appendix~\ref{app:ai-safety-matrix}, and the hardware envelope in Appendix~\ref{app:hardware-envelope}.
 
 \begin{figure}[htbp]
 \centering
@@ -78,6 +80,7 @@ The module-level inventory is retained in Appendix~\ref{app:test-inventory}. Raw
 \caption{Automated validation distribution across unit, integration, smoke, stress, and benchmark tiers.}
 \label{fig:test-distribution}
 \end{figure}
+\FloatBarrier
 
 \subsection{Requirements Coverage}
 \label{subsec:requirements-coverage}
@@ -96,7 +99,7 @@ The validation evidence is tied back to the requirements from Section~\ref{sec:r
 F-1 & Implemented & Doctor queue, booking context, and consultation creation are described in Section~\ref{subsec:actors-use-cases}, Section~\ref{subsec:system-overview}, Section~\ref{subsec:main-workflow-ai-pipeline}, Section~\ref{subsec:api-layer}, and Section~\ref{subsec:scope-decisions}. & Appendix~\ref{app:test-inventory} lists workflow and API tests; Appendix~\ref{app:manual-ui} includes TC003 and TC004. \\
 F-2--F-3 & Implemented & Local audio capture and speech-to-text are covered in Section~\ref{subsec:main-workflow-ai-pipeline} and Section~\ref{subsec:transcription-module}. & Appendix~\ref{app:test-inventory} lists transcription and ASR tests; Appendix~\ref{app:hardware-envelope} documents the local runtime envelope. \\
 \rowcolor{VertexTableStripe}
-F-4 & Implemented & Structured note fields are defined in Section~\ref{subsubsec:functional-requirements} and designed in Section~\ref{subsec:main-workflow-ai-pipeline}; LLM orchestration and model selection are covered in Section~\ref{subsec:llm-orchestration} and Section~\ref{subsec:model-selection}. & Appendix~\ref{app:test-inventory} lists LLM and workflow tests; Appendix~\ref{app:ai-safety-matrix} maps generation risks to controls. \\
+F-4 & Implemented & Structured note fields are defined in Section~\ref{subsec:must-have-requirements} and designed in Section~\ref{subsec:main-workflow-ai-pipeline}; LLM orchestration and model selection are covered in Section~\ref{subsec:llm-orchestration} and Section~\ref{subsec:model-selection}. & Appendix~\ref{app:test-inventory} lists LLM and workflow tests; Appendix~\ref{app:ai-safety-matrix} maps generation risks to controls. \\
 F-5--F-6 & Implemented & Prescription draft content, review alerts, editing, approval, and rejection are described in Section~\ref{subsec:main-workflow-ai-pipeline}, Section~\ref{subsec:ui-overview}, and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:manual-ui} includes TC009; Appendix~\ref{app:test-inventory} includes versioning, suggestive-review, and workflow tests. \\
 \rowcolor{VertexTableStripe}
 F-7--F-8 & Implemented with deployment caveat & Approved-report PDF generation, email follow-up with the exported PDF attached, and prevention of unapproved email sends are covered in Section~\ref{subsec:pdf-generation}, Section~\ref{subsec:email-notification-service}, and Section~\ref{subsec:privacy-security-error-handling}. & Appendix~\ref{app:test-inventory} lists PDF/UI tests; Appendix~\ref{app:manual-ui} includes TC006. Production SMTP/TLS configuration remains a deployment concern. \\
@@ -119,6 +122,7 @@ NF-11 & Implemented by workflow design & The human-in-the-loop boundary is state
 \TableBottomRule
 \end{longtable}
 \endgroup
+\FloatBarrier
 
 \subsection{LLM Hallucination Resistance}
 \label{subsec:llm-hallucination-resistance}
@@ -169,6 +173,7 @@ qwen3:4b & 4.0 B & 3.2 GB & 3.6 s & 71\% & 6/30 & Fast fallback, but too small f
 \caption{Open-source model comparison for the Med Flow prompt set.}
 \label{tab:model-selection}
 \end{table}
+\FloatBarrier
 
 \begin{figure}[htbp]
 \centering
@@ -176,6 +181,7 @@ qwen3:4b & 4.0 B & 3.2 GB & 3.6 s & 71\% & 6/30 & Fast fallback, but too small f
 \caption{Model comparison visualization for the evaluated local Ollama candidates.}
 \label{fig:model-comparison}
 \end{figure}
+\FloatBarrier
 
 Qwen3:8b was selected because it achieved 100\% JSON validity and zero hallucinations within the 8 GB VRAM budget. Phi3:medium was more accurate than smaller models but exceeded the budget, while the 4B model traded too much accuracy for speed. In the current implementation, the deployed model is read from \texttt{LLM\_MODEL\_NAME} and validated as \texttt{qwen3:8b} in \texttt{app/core/config.py}. Replacing it with another model would therefore require updating the configuration validator, prompt targets, and live LLM validation suite rather than only changing an environment variable.
 
@@ -201,6 +207,7 @@ The numerical results are listed in Appendix~\ref{app:benchmark-results}, and Fi
 \caption{Benchmark latency distribution for the measured hot-path operations.}
 \label{fig:benchmark-latency}
 \end{figure}
+\FloatBarrier
 
 The results are favorable: every operation finishes in well under a millisecond at the 99th percentile. This indicates that the application layer is not the bottleneck. Production latency will be higher because real MySQL and MongoDB adapters add network and disk I/O, but the benchmark establishes that the domain logic imposes negligible overhead.
 
