@@ -48,6 +48,8 @@ The retained validation artifact records 326 collected automated tests across un
 
 \begin{table}[htbp]
 \centering
+\caption{Automated and manual validation tiers with test counts and coverage focus.}
+\label{tab:validation-tiers}
 \small
 \begin{tabularx}{\textwidth}{@{}P{0.18\textwidth}P{0.10\textwidth}Y@{}}
 \TableTopRule
@@ -65,8 +67,6 @@ Benchmarks & 10 & p50, p95, and p99 latency for 10 hot-path operations. \\
 Manual UI & 10 & Login, PDF download, speaker layout, logout, and browser-level release checks. \\
 \TableBottomRule
 \end{tabularx}
-\caption{Automated and manual validation tiers with test counts and coverage focus.}
-\label{tab:validation-tiers}
 \end{table}
 \FloatBarrier
 
@@ -153,6 +153,8 @@ Six open-source models served by Ollama were ranked on four criteria: JSON-schem
 
 \begin{table}[htbp]
 \centering
+\caption{Open-source model comparison for the Med Flow prompt set.}
+\label{tab:model-selection}
 \scriptsize
 \begin{tabularx}{\textwidth}{@{}P{0.15\textwidth}P{0.09\textwidth}P{0.10\textwidth}P{0.11\textwidth}P{0.09\textwidth}P{0.10\textwidth}Y@{}}
 \TableTopRule
@@ -170,8 +172,6 @@ gemma2:9b & 9.0 B & 6.6 GB & 8.8 s & 81\% & 4/30 & Prompt drift and less stable 
 qwen3:4b & 4.0 B & 3.2 GB & 3.6 s & 71\% & 6/30 & Fast fallback, but too small for reliable clinical JSON generation. \\
 \TableBottomRule
 \end{tabularx}
-\caption{Open-source model comparison for the Med Flow prompt set.}
-\label{tab:model-selection}
 \end{table}
 \FloatBarrier
 

@@ -1,10 +1,10 @@
 @startuml use_case_diagram
 ' Med Flow - Use Case Diagram
-skinparam dpi 220
+skinparam dpi 160
 skinparam defaultFontName "Helvetica"
-skinparam defaultFontSize 14
+skinparam defaultFontSize 13
 skinparam shadowing false
-skinparam roundCorner 12
+skinparam roundCorner 10
 skinparam packageStyle rectangle
 
 skinparam actor {
@@ -17,7 +17,7 @@ skinparam usecase {
   BackgroundColor #FFFFFF
   BorderColor #2E5DA4
   FontColor #1F2A44
-  BorderThickness 1.1
+  BorderThickness 1.2
 }
 skinparam package {
   BackgroundColor #FAFBFD
@@ -26,9 +26,9 @@ skinparam package {
   FontStyle bold
 }
 skinparam arrow {
-  Color #4A6FA5
+  Color #1F3A68
   FontColor #4A6FA5
-  Thickness 1.1
+  Thickness 1.6
 }
 
 left to right direction
@@ -71,12 +71,11 @@ rectangle "Med Flow Web Application" as Sys {
   }
 }
 
-' Patient
+' Actor associations (solid)
 PA --> UC_LOGIN
 PA --> UC_BOOK
 PA --> UC_VIEW
 
-' Doctor
 DR --> UC_LOGIN
 DR --> UC_MANAGE
 DR --> UC_START
@@ -86,15 +85,14 @@ DR --> UC_APPR
 DR --> UC_PDF
 DR --> UC_MAIL
 
-' Administrator
 AD --> UC_LOGIN
 AD --> UC_CFG
 AD --> UC_AUD
 
-' Includes (automated steps triggered by primary use cases)
-UC_REC  ..> UC_TR  : <<include>>
+' Include relationships (dashed)
+UC_REC   ..> UC_TR  : <<include>>
 UC_START ..> UC_REP : <<include>>
 UC_START ..> UC_RX  : <<include>>
-UC_APPR ..> UC_SUG : <<include>>
+UC_APPR  ..> UC_SUG : <<include>>
 
 @enduml

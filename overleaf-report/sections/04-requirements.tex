@@ -14,7 +14,7 @@ The implemented workflow is centered on three roles: doctors, administrators, an
 
 \begin{figure}[p]
 \centering
-\includegraphics[width=\textwidth,height=0.88\textheight,keepaspectratio]{assets/img/use_case_diagram.png}
+\includegraphics[width=0.82\textwidth,height=0.80\textheight,keepaspectratio]{assets/img/use_case_diagram.png}
 \caption{Implemented Med Flow use-case diagram showing the three actors, the grouped use cases inside the system boundary, and the \emph{include} relationships that capture automated speech-to-text and AI drafting behaviour.}
 \label{fig:use-case-diagram}
 \end{figure}
@@ -22,6 +22,8 @@ The implemented workflow is centered on three roles: doctors, administrators, an
 
 \begin{table}[htbp]
 \centering
+\caption{Primary Med Flow use cases by actor.}
+\label{tab:primary-use-cases}
 \small
 \begin{tabularx}{\textwidth}{@{}P{0.10\textwidth}P{0.16\textwidth}YP{0.30\textwidth}@{}}
 \TableTopRule
@@ -45,8 +47,6 @@ UC-9 & Patient & View own clinical information. & Patient logs in with email/pas
 UC-10 & Administrator & Maintain configurable content and auditability. & Administrator edits prompts and email templates and reviews audit entries for those changes. \\
 \TableBottomRule
 \end{tabularx}
-\caption{Primary Med Flow use cases by actor.}
-\label{tab:primary-use-cases}
 \end{table}
 \FloatBarrier
 

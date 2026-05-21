@@ -116,6 +116,7 @@ Med Flow uses a dual-database design to separate the system of record from itera
 
 \begin{table}[htbp]
 \centering
+\caption{Dual-database ownership model.}
 \small
 \begin{tabularx}{\textwidth}{@{}P{0.22\textwidth}Y@{}}
 \TableTopRule
@@ -129,7 +130,6 @@ MongoDB 7 & Stores consultation documents, generated documents, prescription art
 Shared linkage & The \texttt{consultation\_id} connects relational records to document records across the two stores. \\
 \TableBottomRule
 \end{tabularx}
-\caption{Dual-database ownership model.}
 \end{table}
 \FloatBarrier
 
