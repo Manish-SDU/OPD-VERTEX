@@ -12,82 +12,97 @@ This subsection defines the system actors and the required user goals. The desig
 
 The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can book appointments and read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates. All three roles use the same email/password login screen. Staff and patient passwords are stored as bcrypt hashes, and the current implementation does not include doctor-generated password setup links, magic-login links, or patient login URLs sent by doctors. The doctor email workflow sends approved follow-up material with a PDF attachment rather than an authentication link. Table~\ref{tab:primary-use-cases} summarizes the primary implemented use cases used later as design inputs.
 
-\begin{figure}[htbp]
+\begin{figure}[p]
 \centering
-\resizebox{\textwidth}{!}{%
+\resizebox{0.97\textwidth}{!}{%
 \begin{tikzpicture}[
 	font=\scriptsize,
-	actor/.style={draw=VertexBlue!75, fill=VertexBlue!8, rounded corners=1mm, align=center, minimum width=1.6cm, minimum height=0.58cm},
-	usecase/.style={draw=VertexBlue!55, fill=white, ellipse, align=center, text width=2.15cm, minimum height=0.58cm, inner sep=1.4mm},
-	authbox/.style={draw=VertexInk, fill=VertexPanel, rounded corners=1.5mm, inner sep=2.2mm},
-	doctorbox/.style={draw=VertexInk, fill=VertexTeal!8, rounded corners=1.5mm, inner sep=2.2mm},
-	patientbox/.style={draw=VertexInk, fill=VertexBlue!6, rounded corners=1.5mm, inner sep=2.2mm},
-	adminbox/.style={draw=VertexInk, fill=VertexRed!5, rounded corners=1.5mm, inner sep=2.2mm},
-	service/.style={draw=VertexAmber!75, fill=VertexAmber!10, rounded corners=1mm, align=center, text width=1.65cm, minimum height=0.62cm, inner sep=1.2mm},
-	data/.style={draw=VertexTeal!75, fill=VertexTeal!10, cylinder, shape border rotate=90, aspect=0.25, align=center, text width=1.25cm, minimum height=0.68cm, inner sep=1.2mm},
-	link/.style={-{Latex[length=1.8mm]}, draw=VertexInk!62, line width=0.45pt},
-	assoc/.style={draw=VertexInk!50, line width=0.45pt}
+	boundary/.style={draw=VertexInk!82, fill=VertexPanel!45, rounded corners=2.2mm, line width=0.7pt},
+	sectionlabel/.style={font=\scriptsize\bfseries, text=VertexMuted, fill=VertexPanel!45, inner xsep=2mm, inner ysep=0.5mm},
+	usecase/.style={draw=VertexBlue!72, fill=white, ellipse, align=center, text width=3.05cm, minimum height=0.82cm, inner sep=1.8mm, line width=0.55pt},
+	support/.style={draw=VertexAmber!80, fill=VertexAmber!10, rounded corners=1.2mm, align=center, text width=2.15cm, minimum height=0.78cm, inner sep=1.4mm, line width=0.55pt},
+	store/.style={draw=VertexTeal!80, fill=VertexTeal!10, cylinder, shape border rotate=90, aspect=0.28, align=center, text width=1.9cm, minimum height=0.82cm, inner sep=1.4mm, line width=0.55pt},
+	assoc/.style={draw=VertexInk!54, line width=0.5pt},
+	include/.style={-{Latex[length=2mm]}, dashed, draw=VertexTeal!78, line width=0.5pt},
+	supportlink/.style={-{Latex[length=2mm]}, draw=VertexAmber!85, line width=0.55pt}
 ]
-\node[font=\bfseries] at (0,5.15) {OPD-VERTEX (MedFlow)};
+\tikzset{umlactor/.pic={%
+	\draw[VertexInk, line width=0.65pt] (0,0.34) circle (0.18);
+	\draw[VertexInk, line width=0.65pt] (0,0.16) -- (0,-0.46);
+	\draw[VertexInk, line width=0.65pt] (-0.38,-0.06) -- (0.38,-0.06);
+	\draw[VertexInk, line width=0.65pt] (0,-0.46) -- (-0.34,-0.92);
+	\draw[VertexInk, line width=0.65pt] (0,-0.46) -- (0.34,-0.92);
+}}
 
-\node[actor] (doctor) at (-5.35,4.35) {Doctor};
-\node[actor] (patient) at (0,4.35) {Patient};
-\node[actor] (admin) at (5.35,4.35) {Admin};
+\draw[boundary] (-4.35,-7.05) rectangle (4.35,7.15);
+\node[font=\bfseries\large, text=VertexInk] at (0,6.82) {Med Flow system boundary};
+\node[font=\scriptsize, text=VertexMuted] at (0,6.46) {implemented FastAPI web application and role-aware browser workflows};
 
-\node[usecase, text width=1.25cm] (login) at (-0.80,3.62) {Log In};
-\node[usecase, text width=1.25cm] (logout) at (0.80,3.62) {Log Out};
-\node[authbox, fit=(login)(logout), label={[font=\bfseries]above:Authentication}] (auth) {};
+\node[sectionlabel] at (0,5.84) {Access and appointment context};
+\node[usecase] (login) at (0,5.22) {Authenticate and reach role dashboard};
+\node[usecase] (book) at (-2.05,4.14) {Book appointment};
+\node[usecase] (manageappt) at (2.05,4.14) {Confirm, cancel, or mark no-show};
+\node[usecase] (start) at (0,3.05) {Start consultation from appointment};
 
-\node[usecase] (record) at (-6.15,2.92) {Record \& Transcribe Audio};
-\node[usecase] (create) at (-3.88,2.92) {Create Consultation};
-\node[usecase] (browse) at (-1.62,2.92) {Browse \& Search Patients};
-\node[usecase] (viewconsult) at (-6.15,2.18) {View Consultations};
-\node[usecase] (review) at (-3.88,2.18) {Review Draft Notes};
-\node[usecase] (approve) at (-1.62,2.18) {Approve / Reject Draft};
-\node[usecase] (report) at (-6.15,1.44) {Generate Clinical Report};
-\node[usecase] (suggest) at (-3.88,1.44) {Suggestive Safety Review};
-\node[usecase] (pdf) at (-1.62,1.44) {Generate Prescription PDF};
-\node[usecase] (email) at (-5.02,0.70) {Email Prescription};
-\node[usecase] (appt) at (-2.75,0.70) {View/Create/Accept Appointments};
-\node[doctorbox, fit=(record)(create)(browse)(viewconsult)(review)(approve)(report)(suggest)(pdf)(email)(appt), label={[font=\bfseries]above:Doctor - Clinical Workflow}] (doctorflow) {};
+\node[sectionlabel] at (0,2.37) {Consultation documentation};
+\node[usecase] (record) at (-2.05,1.74) {Record consultation audio};
+\node[usecase] (transcribe) at (2.05,1.74) {Transcribe speech locally};
+\node[usecase] (history) at (-2.05,0.64) {Search patients and view history};
+\node[usecase] (viewown) at (2.05,0.64) {View own consultations and prescriptions};
 
-\node[usecase] (profile) at (1.65,2.92) {View Own Profile};
-\node[usecase] (ownrx) at (3.92,2.92) {View Own Prescriptions};
-\node[usecase] (ownappt) at (2.78,2.18) {View/Create/Delete Appointments};
-\node[patientbox, fit=(profile)(ownrx)(ownappt), label={[font=\bfseries]above:Patient Features}] (patientfeatures) {};
+\node[sectionlabel] at (0,-0.08) {AI drafting and doctor review};
+\node[usecase] (report) at (-2.05,-0.72) {Generate structured report draft};
+\node[usecase] (rx) at (2.05,-0.72) {Generate prescription draft};
+\node[usecase] (suggest) at (-2.05,-1.82) {Run suggestive safety review};
+\node[usecase] (approve) at (2.05,-1.82) {Edit, approve, or reject drafts};
 
-\node[usecase] (prompts) at (4.35,1.42) {Manage Prompt Templates};
-\node[usecase] (templates) at (6.62,1.42) {Manage Email Templates};
-\node[usecase] (health) at (5.48,0.68) {View System Health};
-\node[adminbox, fit=(prompts)(templates)(health), label={[font=\bfseries]above:Admin}] (adminfeatures) {};
+\node[sectionlabel] at (0,-2.55) {Follow-up and administration};
+\node[usecase] (pdf) at (-2.05,-3.18) {Export approved PDF};
+\node[usecase] (email) at (2.05,-3.18) {Send approved follow-up email};
+\node[usecase] (admincfg) at (-2.05,-4.28) {Maintain prompts and email templates};
+\node[usecase] (audit) at (2.05,-4.28) {Review audit and system health};
 
-\node[service] (ollama) at (-6.15,-0.52) {Ollama LLM\\Report Gen};
-\node[service] (whisper) at (-3.78,-0.52) {Whisper API\\Speech-to-Text};
-\node[service] (reportlab) at (-1.42,-0.52) {ReportLab\\PDF};
-\node[service] (smtp) at (0.92,-0.52) {SMTP\\Email};
-\node[data] (mysql) at (3.35,-0.52) {MySQL};
-\node[data] (mongo) at (5.45,-0.52) {MongoDB};
+\pic (allrolespic) at (6.55,6.08) {umlactor};
+\node[font=\small\bfseries, align=center] (allroles) at (6.55,4.83) {All roles};
+\pic (doctorpic) at (-6.55,2.35) {umlactor};
+\node[font=\small\bfseries, align=center] (doctor) at (-6.55,1.10) {Doctor};
+\pic (patientpic) at (-6.55,5.04) {umlactor};
+\node[font=\small\bfseries, align=center] (patient) at (-6.55,3.79) {Patient};
+\pic (adminpic) at (6.55,0.15) {umlactor};
+\node[font=\small\bfseries, align=center] (admin) at (6.55,-1.10) {Administrator};
 
-\draw[assoc] (doctor) -- (auth);
-\draw[assoc] (patient) -- (auth);
-\draw[assoc] (admin) -- (auth);
-\draw[assoc] (doctor) -- (doctorflow.north);
-\draw[assoc] (patient) -- (patientfeatures.north);
-\draw[assoc] (admin) -- (adminfeatures.north);
-\draw[link] (record) -- (whisper);
-\draw[link] (report) -- (ollama);
-\draw[link] (suggest) -- (ollama);
-\draw[link] (pdf) -- (reportlab);
-\draw[link] (email) -- (smtp);
-\draw[link] (appt) -- (mysql);
-\draw[link] (ownappt) -- (mysql);
-\draw[link] (prompts) -- (mongo);
-\draw[link] (templates) -- (mongo);
+\node[support] (whisper) at (-3.15,-6.10) {Whisper API\\speech-to-text};
+\node[support] (ollama) at (-1.05,-6.10) {Ollama\\Qwen3:8b};
+\node[support] (comm) at (1.05,-6.10) {ReportLab + SMTP\\PDF and email};
+\node[store] (stores) at (3.15,-6.10) {MySQL\\MongoDB};
+\node[sectionlabel] at (0,-5.35) {Supporting local infrastructure};
 
-\node[anchor=north west, align=left, font=\tiny] at (-7.32,-1.08) {\textbf{Legend:} actors = role boxes; ovals = use cases; rounded rectangles = functional modules; amber boxes = external/service adapters; cylinders = databases; arrows = direct service or data dependency.};
+\draw[assoc] (allroles) -- (login);
+\draw[assoc] (patient) -- (book);
+\draw[assoc] (patient) -- (viewown);
+\draw[assoc] (doctor) -- (manageappt);
+\draw[assoc] (doctor) -- (start);
+\draw[assoc] (doctor) -- (record);
+\draw[assoc] (doctor) -- (history);
+\draw[assoc] (doctor) -- (approve);
+\draw[assoc] (doctor) -- (pdf);
+\draw[assoc] (doctor) -- (email);
+\draw[assoc] (admin) -- (manageappt);
+\draw[assoc] (admin) -- (admincfg);
+\draw[assoc] (admin) -- (audit);
+
+\draw[include] (record) -- node[above, sloped, font=\tiny, fill=white, inner sep=0.4mm] {includes} (transcribe);
+\draw[include] (report) -- node[above, sloped, font=\tiny, fill=white, inner sep=0.4mm] {uses} (ollama);
+\draw[include] (rx) -- node[above, sloped, font=\tiny, fill=white, inner sep=0.4mm] {uses} (ollama);
+\draw[include] (suggest) -- node[above, sloped, font=\tiny, fill=white, inner sep=0.4mm] {uses} (ollama);
+\draw[supportlink] (transcribe) -- (whisper);
+\draw[supportlink] (pdf) -- (comm);
+\draw[supportlink] (email) -- (comm);
+
+\node[align=left, font=\tiny, text=VertexMuted, anchor=north west] at (-4.22,-6.70) {Solid lines show actor participation. Dashed arrows show included or supporting technical behavior.\\Supporting systems run locally through Docker Compose; MySQL and MongoDB store relational and document data.};
 \end{tikzpicture}%
 }
-\caption{Implemented Med Flow use-case view for doctors, patients, administrators, infrastructure components, and external services.}
+\caption{Implemented Med Flow use-case diagram showing role workflows and supporting local infrastructure.}
 \label{fig:use-case-diagram}
 \end{figure}
 \FloatBarrier
