@@ -1,0 +1,100 @@
+@startuml use_case_diagram
+' Med Flow - Use Case Diagram
+skinparam dpi 220
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam packageStyle rectangle
+
+skinparam actor {
+  BackgroundColor #F4F7FB
+  BorderColor #1F3A68
+  FontColor #1F3A68
+  FontStyle bold
+}
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #2E5DA4
+  FontColor #1F2A44
+  BorderThickness 1.1
+}
+skinparam package {
+  BackgroundColor #FAFBFD
+  BorderColor #4A6FA5
+  FontColor #1F3A68
+  FontStyle bold
+}
+skinparam arrow {
+  Color #4A6FA5
+  FontColor #4A6FA5
+  Thickness 1.1
+}
+
+left to right direction
+
+actor "Patient" as PA
+actor "Doctor" as DR
+actor "Administrator" as AD
+
+rectangle "Med Flow Web Application" as Sys {
+
+  package "Access" {
+    usecase "Authenticate and\nreach role dashboard" as UC_LOGIN
+  }
+
+  package "Appointments" {
+    usecase "Book appointment" as UC_BOOK
+    usecase "Confirm, cancel, or\nmark no-show" as UC_MANAGE
+    usecase "Start consultation\nfrom appointment" as UC_START
+  }
+
+  package "Consultation & Records" {
+    usecase "Record consultation\naudio" as UC_REC
+    usecase "Transcribe speech\nlocally (Whisper)" as UC_TR
+    usecase "Search patients and\nview history" as UC_HIST
+    usecase "View own consultations\nand prescriptions" as UC_VIEW
+  }
+
+  package "AI-Assisted Review" {
+    usecase "Generate structured\nreport draft (Ollama)" as UC_REP
+    usecase "Generate prescription\ndraft (Ollama)" as UC_RX
+    usecase "Run suggestive\nsafety review" as UC_SUG
+    usecase "Edit, approve, or\nreject drafts" as UC_APPR
+  }
+
+  package "Delivery & Administration" {
+    usecase "Export approved PDF\n(ReportLab)" as UC_PDF
+    usecase "Send approved\nfollow-up email" as UC_MAIL
+    usecase "Maintain prompts and\nemail templates" as UC_CFG
+    usecase "Review audit and\nsystem health" as UC_AUD
+  }
+}
+
+' Patient
+PA --> UC_LOGIN
+PA --> UC_BOOK
+PA --> UC_VIEW
+
+' Doctor
+DR --> UC_LOGIN
+DR --> UC_MANAGE
+DR --> UC_START
+DR --> UC_REC
+DR --> UC_HIST
+DR --> UC_APPR
+DR --> UC_PDF
+DR --> UC_MAIL
+
+' Administrator
+AD --> UC_LOGIN
+AD --> UC_CFG
+AD --> UC_AUD
+
+' Includes (automated steps triggered by primary use cases)
+UC_REC  ..> UC_TR  : <<include>>
+UC_START ..> UC_REP : <<include>>
+UC_START ..> UC_RX  : <<include>>
+UC_APPR ..> UC_SUG : <<include>>
+
+@enduml
