@@ -12,9 +12,9 @@ This subsection defines the system actors and the required user goals. The desig
 
 The implemented workflow is centered on three roles: doctors, administrators, and patients. Doctors own the consultation and approval flow, patients can book appointments and read their own consultation and prescription information, and administrators manage configuration that affects AI prompts and email templates. All three roles use the same email/password login screen. Staff and patient passwords are stored as bcrypt hashes, and the current implementation does not include doctor-generated password setup links, magic-login links, or patient login URLs sent by doctors. The doctor email workflow sends approved follow-up material with a PDF attachment rather than an authentication link. Table~\ref{tab:primary-use-cases} summarizes the primary implemented use cases used later as design inputs.
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.82\textwidth,height=0.80\textheight,keepaspectratio]{assets/img/use_case_diagram.png}
+\includegraphics[width=0.78\textwidth,height=0.55\textheight,keepaspectratio]{assets/img/use_case_diagram.png}
 \caption{Implemented Med Flow use-case diagram showing the three actors, the grouped use cases inside the system boundary, and the \emph{include} relationships that capture automated speech-to-text and AI drafting behaviour.}
 \label{fig:use-case-diagram}
 \end{figure}
