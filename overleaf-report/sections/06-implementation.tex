@@ -32,12 +32,30 @@ The API layer is built using FastAPI. It defines and serves HTTP endpoints and a
 \end{table}
 \FloatBarrier
 
-FastAPI dependency injection is used to manage authentication, repositories, adapters, and shared services. Dependencies are defined in \path{app/api/deps.py}. For example, the clinical-notes dependency wires consultation repositories, the prompt repository, transcript normalization, and the note generator into the application service. This keeps route functions focused on HTTP concerns while application services own workflow orchestration.
+FastAPI dependency injection is used to manage authentication, repositories, adapters, and shared services. Dependencies are defined in \path{app/api/deps.py}. For example, the clinical-notes dependency wires consultation repositories, the prompt repository, transcript normalization, and the note generator into the application service. This keeps route functions focused on HTTP concerns while application services own workflow orchestration. Figure~\ref{fig:implementation-fastapi-setup} shows the route registration and dependency factory pattern used for this setup.
 
 \begin{figure}[htbp]
 \centering
-\optionalgraphic[width=0.88\textwidth]{assets/Code Snippets (Implementation)/api.png}
-\caption{FastAPI setup.}
+\begin{minipage}{0.92\textwidth}
+\begin{minted}[fontsize=\scriptsize,breaklines,linenos,frame=single,framesep=2mm,bgcolor=VertexPanel]{python}
+# app/api/router.py
+router = APIRouter()
+router.include_router(auth.router, tags=["auth"])
+router.include_router(llm.router, prefix="/llm", tags=["llm"])
+router.include_router(patients.router, prefix="/patients", tags=["patients"])
+router.include_router(review.router, prefix="/review", tags=["review"])
+router.include_router(transcriptions.router, prefix="/transcriptions", tags=["transcriptions"])
+
+# app/api/deps.py
+def get_clinical_notes_app_service() -> ClinicalNotesApplicationService:
+  return ClinicalNotesApplicationService(
+    consultation_repository(), consultation_doc_repository(), generated_repository(),
+    prompt_repository(), patient_repository(), staff_repository(),
+    get_transcript_normalization_app_service(), note_generator(),
+  )
+\end{minted}
+\end{minipage}
+\caption{FastAPI setup from \texttt{app/api/router.py} and \texttt{app/api/deps.py}, showing how route modules stay thin while dependency factories assemble application services.}
 \label{fig:implementation-fastapi-setup}
 \end{figure}
 \FloatBarrier
@@ -93,10 +111,33 @@ The main authentication logic is implemented in \texttt{AuthApplicationService},
   \item \textbf{AuthService:} defines an abstract interface for authentication logic and allows alternative implementations.
 \end{itemize}
 
+The interface and application-service bridge are shown in Figure~\ref{fig:implementation-auth-service}, where authentication remains replaceable behind the domain contract.
+
 \begin{figure}[htbp]
 \centering
-\optionalgraphic[width=0.88\textwidth]{assets/Code Snippets (Implementation)/auth.png}
-\caption{Auth service.}
+\begin{minipage}{0.92\textwidth}
+\begin{minted}[fontsize=\scriptsize,breaklines,linenos,frame=single,framesep=2mm,bgcolor=VertexPanel]{python}
+# app/domain/auth/models.py
+class AuthService(ABC):
+  @abstractmethod
+  def authenticate(self, email: str, password: str) -> User | None:
+    """Try staff first, then patient authentication."""
+
+  @abstractmethod
+  def get_current_user(self) -> User | None:
+    """Return current authenticated user object."""
+
+# app/application/auth/services.py
+@apply_logging_aspect("service", "auth")
+class AuthApplicationService:
+  def __init__(self, auth_service: AuthService) -> None:
+    self.auth_service = auth_service
+
+  def login(self, payload: LoginRequest) -> User | None:
+    return self.auth_service.authenticate(payload.email, payload.password)
+\end{minted}
+\end{minipage}
+\caption{Auth service boundary from \texttt{app/domain/auth/models.py} and \texttt{app/application/auth/services.py}, showing the abstract authentication port and the application service that delegates login requests to it.}
 \label{fig:implementation-auth-service}
 \end{figure}
 \FloatBarrier
@@ -108,12 +149,35 @@ After successful authentication, the system assigns a JWT to the user. The token
 
 The transcription component enables live conversion of audio into text, which can then be processed into clinical documentation. It is designed to be scalable, replaceable, and integrated with the other components.
 
-The transcription application service handles streaming audio data, temporary audio and text chunks, and finalization of the complete transcription. The route module \path{transcriptions.py} exposes session start, WebSocket streaming, completion endpoints, and demo-text injection for presentations. The actual speech-to-text conversion is handled by Faster-Whisper through the local Whisper adapter, which communicates with the microservice configured by \path{WHISPER_API_URL}.
+The transcription application service handles streaming audio data, temporary audio and text chunks, and finalization of the complete transcription. The route module \path{transcriptions.py} exposes session start, WebSocket streaming, completion endpoints, and demo-text injection for presentations. The actual speech-to-text conversion is handled by Faster-Whisper through the local Whisper adapter, which communicates with the microservice configured by \path{WHISPER_API_URL}. Figure~\ref{fig:implementation-transcription-service} shows the adapter reading this endpoint and sending session requests to the sidecar service.
 
 \begin{figure}[htbp]
 \centering
-\optionalgraphic[width=0.88\textwidth]{assets/Code Snippets (Implementation)/transcription.png}
-\caption{Transcription service.}
+\begin{minipage}{0.92\textwidth}
+\begin{minted}[fontsize=\scriptsize,breaklines,linenos,frame=single,framesep=2mm,bgcolor=VertexPanel]{python}
+# app/infrastructure/ai/transcription/faster_whisper_adapter.py
+class StreamingFasterWhisperService(StreamingTranscriptionService):
+  def __init__(self, model_size: str = "base", device: str = "cuda",
+         chunk_duration: float = 2.0, sample_rate: int = 16000):
+    self.chunk_duration = chunk_duration
+    self.sample_rate = sample_rate
+    self.chunk_size = int(chunk_duration * sample_rate)
+    self.http_client = None
+    self.whisper_api_url = get_settings().whisper_api_url
+
+  def start_streaming(self, consultation_id: int) -> str:
+    client = self._get_client()
+    response = client.post(
+      "/sessions/start",
+      json={"consultation_id": consultation_id,
+          "chunk_duration": self.chunk_duration,
+          "sample_rate": self.sample_rate},
+    )
+    response.raise_for_status()
+    return response.json()["session_id"]
+\end{minted}
+\end{minipage}
+\caption{Transcription service adapter from \texttt{faster\_whisper\_adapter.py}, showing how the backend connects to the local Whisper microservice and starts a streaming transcription session.}
 \label{fig:implementation-transcription-service}
 \end{figure}
 \FloatBarrier
@@ -130,12 +194,42 @@ The transcription application service handles streaming audio data, temporary au
 
 The LLM orchestration component enables transcript normalization, clinical note generation, and suggestions using the locally integrated Ollama model. The implementation uses an Ollama client for low-level HTTP communication and adapter classes in \path{ollama_adapter.py} for domain-specific tasks. Separate adapters return the normalized transcript, validated clinical notes, and structured suggestive review.
 
-The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{12,13}.
+The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{12,13}. The local client setup and JSON generation path are shown in Figure~\ref{fig:implementation-ollama-client-setup}.
 
 \begin{figure}[htbp]
 \centering
-\optionalgraphic[width=0.88\textwidth]{assets/Code Snippets (Implementation)/llm.png}
-\caption{Ollama client setup.}
+\begin{minipage}{0.92\textwidth}
+\begin{minted}[fontsize=\scriptsize,breaklines,linenos,frame=single,framesep=2mm,bgcolor=VertexPanel]{python}
+# app/api/deps.py
+@lru_cache
+def ollama_client() -> OllamaClient:
+  settings = get_settings()
+  return OllamaClient(
+    base_url=settings.local_llm_endpoint,
+    model_name=settings.llm_model_name,
+    timeout_seconds=settings.ollama_timeout_seconds,
+    max_retries=settings.ollama_max_retries,
+  )
+
+# app/infrastructure/ai/llm/ollama_client.py
+def generate_json(self, *, system_prompt: str, user_prompt: str,
+          temperature: float, max_tokens: int) -> dict[str, Any]:
+  raw_response = self._generate_once(system_prompt=system_prompt,
+                     user_prompt=user_prompt,
+                     temperature=temperature,
+                     max_tokens=max_tokens)
+  parsed = self._parse_json(raw_response)
+  if parsed is not None:
+    return parsed
+  repaired = self._parse_json(self._repair_json(raw_response=raw_response,
+                          temperature=temperature,
+                          max_tokens=max_tokens))
+  if repaired is None:
+    raise OllamaClientError("Qwen3 returned malformed JSON twice.")
+  return repaired
+\end{minted}
+\end{minipage}
+\caption{Ollama client setup from \texttt{app/api/deps.py} and \texttt{ollama\_client.py}, showing cached local endpoint configuration and the JSON parsing/repair path used for structured AI output.}
 \label{fig:implementation-ollama-client-setup}
 \end{figure}
 \FloatBarrier
@@ -154,12 +248,48 @@ The orchestration workflow is:
 
 The PDF generation module creates structured PDF documents from clinical data produced by consultations and prescriptions. This feature is important for shareable and printable records.
 
-PDF generation is implemented with ReportLab. The review workflow exposes a consultation PDF download action that loads the approved Markdown report, fetches consultation, patient, and clinician metadata, and delegates rendering to the ReportLab PDF adapter. The resulting file is stored in the configured PDF output directory and returned to the browser as a PDF response.
+PDF generation is implemented with ReportLab. The review workflow exposes a consultation PDF download action that loads the approved Markdown report, fetches consultation, patient, and clinician metadata, and delegates rendering to the ReportLab PDF adapter. The resulting file is stored in the configured PDF output directory and returned to the browser as a PDF response. Figure~\ref{fig:implementation-pdf-generator-setup} shows the adapter creating the output directory, rendering the document, and returning the generated file path.
 
 \begin{figure}[htbp]
 \centering
-\optionalgraphic[width=0.88\textwidth]{assets/Code Snippets (Implementation)/pdf.png}
-\caption{PDF generator setup.}
+\begin{minipage}{0.92\textwidth}
+\begin{minted}[fontsize=\scriptsize,breaklines,linenos,frame=single,framesep=2mm,bgcolor=VertexPanel]{python}
+# app/infrastructure/pdf/reportlab_adapter.py
+class ReportLabPdfGenerator(PdfGenerator):
+  def __init__(self):
+    self.settings = get_settings()
+    self.pdf_output_dir = Path(self.settings.pdf_output_dir)
+    self.pdf_output_dir.mkdir(parents=True, exist_ok=True)
+
+  def generate_report_pdf(self, report_markdown: str,
+              consultation_metadata: ConsultationMetadata) -> str:
+    if not report_markdown or not report_markdown.strip():
+      raise ValueError("Report markdown cannot be empty")
+
+    last = (consultation_metadata.patient_name or "unknown").strip().split()[-1]
+    safe_last = re.sub(r"[^a-z0-9]", "", last.lower()) or "unknown"
+    date_str = (
+      consultation_metadata.consultation_date.strftime("%Y%m%d")
+      if consultation_metadata.consultation_date
+      else datetime.now().strftime("%Y%m%d")
+    )
+    filename = f"report_{safe_last}_{date_str}_{consultation_metadata.consultation_id}.pdf"
+    file_path = self.pdf_output_dir / filename
+    usable_w = A4[0] - 1.5 * inch
+
+    doc = SimpleDocTemplate(str(file_path), pagesize=A4,
+                rightMargin=0.75 * inch, leftMargin=0.75 * inch)
+    flowables = [_build_banner(consultation_metadata, usable_w),
+           _build_info_card(consultation_metadata, usable_w),
+           *_parse_content(report_markdown)]
+    doc.build(flowables, onFirstPage=_footer_cb, onLaterPages=_footer_cb)
+
+    if not file_path.exists():
+      raise IOError(f"Failed to create PDF at {file_path}")
+    return str(file_path)
+\end{minted}
+\end{minipage}
+\caption{PDF generator setup from \texttt{reportlab\_adapter.py}, showing how approved Markdown content is converted into a ReportLab document and stored as a generated PDF file.}
 \label{fig:implementation-pdf-generator-setup}
 \end{figure}
 \FloatBarrier
@@ -169,12 +299,48 @@ PDF generation is implemented with ReportLab. The review workflow exposes a cons
 
 The email notification service sends patient-friendly follow-up information after doctor approval. The report-send action calls the review application service, which refuses unapproved generated reports, loads the patient email address, checks that an exported PDF exists, builds a summary containing prescription, follow-up, and suggestions, attaches the latest exported PDF, and passes the message to the SMTP adapter.
 
-Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart messages using Python's \texttt{email.mime} package and sends them with \texttt{smtplib}. The SMTP adapter supports plain text, optional HTML, and optional attachments; the current patient follow-up workflow sends a plain-text summary with the exported PDF attached. During development, MailHog was used as the SMTP server so outgoing emails could be inspected without sending real messages.
+Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart messages using Python's \texttt{email.mime} package and sends them with \texttt{smtplib}. The SMTP adapter supports plain text, optional HTML, and optional attachments; the current patient follow-up workflow sends a plain-text summary with the exported PDF attached. During development, MailHog was used as the SMTP server so outgoing emails could be inspected without sending real messages. Figure~\ref{fig:implementation-email-sender} shows this SMTP adapter and its development fallback.
 
 \begin{figure}[htbp]
 \centering
-\optionalgraphic[width=0.88\textwidth]{assets/Code Snippets (Implementation)/email.png}
-\caption{Email sender.}
+\begin{minipage}{0.92\textwidth}
+\begin{minted}[fontsize=\scriptsize,breaklines,linenos,frame=single,framesep=2mm,bgcolor=VertexPanel]{python}
+# app/api/deps.py
+@lru_cache
+def email_service():
+  settings = get_settings()
+  return SmtpEmailService(
+    host=settings.smtp_host or "mailhog",
+    port=settings.smtp_port or 1025,
+    from_email=settings.smtp_from or "no-reply@example.local",
+    from_name=settings.smtp_from_name or "Med Flow",
+  )
+
+# app/infrastructure/email/smtp_sender.py
+class SmtpEmailService(EmailService):
+  def send_email(self, message: EmailMessage) -> dict:
+    msg = MIMEMultipart("mixed")
+    msg["Subject"] = message.subject
+    msg["From"] = f"{self.from_name} <{self.from_email}>"
+    msg["To"] = str(message.to_email)
+
+    alt = MIMEMultipart("alternative")
+    alt.attach(MIMEText(message.text_body or "", "plain", "utf-8"))
+    msg.attach(alt)
+
+    if message.attachment:
+      part = MIMEApplication(message.attachment.data,
+                   Name=message.attachment.filename)
+      part["Content-Disposition"] = f'attachment; filename="{message.attachment.filename}"'
+      msg.attach(part)
+
+    # Plain SMTP is used for MailHog on port 1025 in development.
+    with smtplib.SMTP(self.host, self.port) as server:
+      server.send_message(msg)
+    return {"status": "sent", "provider": "smtp-dev", "host": self.host}
+\end{minted}
+\end{minipage}
+\caption{Email sender setup from \texttt{app/api/deps.py} and \texttt{smtp\_sender.py}, showing the MailHog-friendly SMTP configuration and multipart message delivery path.}
 \label{fig:implementation-email-sender}
 \end{figure}
 \FloatBarrier
@@ -184,22 +350,40 @@ Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart m
 
 The system uses a dual-database architecture to manage structured and unstructured data. MySQL is used for structured data such as user accounts, patient records, appointments, consultations, prescriptions, and audit logs. MongoDB is used for semi-structured data such as clinical documents, consultation transcripts, generated reports, and finalized AI artifacts.
 
-SQLAlchemy manages the MySQL connection and session lifecycle. Reusable database access is provided through functions such as \texttt{get\_engine()} and \texttt{get\_session()}. PyMongo manages MongoDB connections, with \texttt{get\_database()} returning the database handle used by document repositories.
+SQLAlchemy manages the MySQL connection and session lifecycle. Reusable database access is provided through functions such as \texttt{get\_engine()} and \texttt{get\_session()}. PyMongo manages MongoDB connections, with \texttt{get\_database()} returning the database handle used by document repositories. Figure~\ref{fig:implementation-database-connection-setup} shows the two connection helpers that keep SQL and document persistence behind small factory functions.
 
 \begin{figure}[htbp]
 \centering
-\begin{subfigure}{0.88\textwidth}
-\centering
-\optionalgraphic[width=\linewidth]{assets/Code Snippets (Implementation)/sql.png}
-\caption{MySQL engine and session setup.}
-\end{subfigure}
-\vspace{0.75em}
-\begin{subfigure}{0.88\textwidth}
-\centering
-\optionalgraphic[width=\linewidth]{assets/Code Snippets (Implementation)/nosql.png}
-\caption{MongoDB database handle setup.}
-\end{subfigure}
-\caption{SQL and MongoDB connection setup.}
+\begin{minipage}{0.92\textwidth}
+\begin{minted}[fontsize=\scriptsize,breaklines,linenos,frame=single,framesep=2mm,bgcolor=VertexPanel]{python}
+# app/infrastructure/db/sql/connection.py
+_engine: Engine | None = None
+_session_factory: sessionmaker[Session] | None = None
+
+def get_engine() -> Engine:
+  global _engine
+  if _engine is None:
+    _engine = create_engine(get_mysql_url(), pool_pre_ping=True)
+  return _engine
+
+def get_session() -> Session:
+  global _session_factory
+  if _session_factory is None:
+    _session_factory = sessionmaker(bind=get_engine())
+  return _session_factory()
+
+# app/infrastructure/db/mongo/connection.py
+_client: MongoClient | None = None
+
+def get_database() -> Database:
+  global _client
+  if _client is None:
+    s = get_settings()
+    _client = MongoClient(s.mongo_uri)
+  return _client[get_settings().mongo_db]
+\end{minted}
+\end{minipage}
+\caption{SQL and MongoDB connection setup from \texttt{sql/connection.py} and \texttt{mongo/connection.py}, showing how MySQL sessions and MongoDB database handles are created lazily for repository adapters.}
 \label{fig:implementation-database-connection-setup}
 \end{figure}
 \FloatBarrier
