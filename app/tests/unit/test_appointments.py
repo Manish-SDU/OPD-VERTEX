@@ -251,6 +251,25 @@ class TestAppointmentApplicationService:
         assert updated_appt.consultation_id == consultation.id
         assert updated_appt.status == AppointmentStatus.COMPLETED
 
+    def test_start_consultation_returns_existing_linked_consultation(self, appt_svc):
+        req = _req(patient_id=1, doctor_id=1, scheduled_at=_future(1010))
+        a = appt_svc.create_appointment(req)
+        user = {"role": "doctor", "sub": "1"}
+
+        first_appt, first_consultation = appt_svc.start_consultation_from_appointment(
+            a.id,
+            current_user=user,  # type: ignore[arg-type]
+        )
+        second_appt, second_consultation = (
+            appt_svc.start_consultation_from_appointment(
+                a.id,
+                current_user=user,  # type: ignore[arg-type]
+            )
+        )
+
+        assert first_appt.consultation_id == second_appt.consultation_id
+        assert first_consultation.id == second_consultation.id
+
     def test_start_consultation_raises_for_cancelled(self, appt_svc):
         req = _req(scheduled_at=_future(1100))
         a = appt_svc.create_appointment(req)

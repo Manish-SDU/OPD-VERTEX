@@ -124,6 +124,12 @@ class TestConsultationListUI:
         # The consultation has chief_complaint in seeded data
         assert resp.status_code == 200
 
+    def test_consultation_detail_shows_transcription_actions_for_doctor(self):
+        resp = client.get("/consultations/1", cookies=_doctor_cookies())
+        html = resp.text
+        assert "Save Transcript" in html
+        assert "Start Recording" in html
+
 
 # ── Patient UI enhancements ──────────────────────────────────────────────────
 

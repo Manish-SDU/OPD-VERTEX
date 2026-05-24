@@ -98,6 +98,78 @@
     </div>
   </aside>
 </div>
+
+{% if user and user.role == 'doctor' %}
+<section class="card" style="margin-top: 1.5rem;">
+  <div style="display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; flex-wrap:wrap; margin-bottom:1rem;">
+    <div>
+      <h3 style="margin:0 0 .35rem 0;">Transcript Capture</h3>
+      <p style="margin:0; color: var(--muted);">
+        Record the consultation live or paste a demo transcript, then save it before opening the review workflow.
+      </p>
+    </div>
+    <a href="/review/{{ consultation.id }}" class="btn-cta btn-cta--ghost">Open Review</a>
+  </div>
+
+  <div id="transcription-ui">
+    <div class="trx-card">
+      <div class="trx-header">
+        <div class="trx-header__title">
+          <span class="trx-mic-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </span>
+          <div>
+            <h3 class="trx-title">Live Transcription</h3>
+            <p class="trx-sub">Capture or paste the consultation transcript</p>
+          </div>
+        </div>
+        <span class="trx-status" id="trx-status">
+          <span class="trx-dot"></span>
+          <span class="trx-status__text">Ready</span>
+        </span>
+      </div>
+
+      <div class="trx-actions">
+        <button id="start-transcription" class="btn-cta">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+          Start Recording
+        </button>
+        <button id="stop-transcription" class="btn-cta btn-cta--ghost" disabled>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          Stop
+        </button>
+        <button id="save-transcription" class="btn-cta btn-cta--success" style="margin-left:auto;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Transcript &amp; Open Review
+        </button>
+      </div>
+
+      <textarea id="transcript-display" rows="12" class="trx-textarea"
+        placeholder="Click Start Recording or paste the transcript here, then save it."></textarea>
+
+      <span id="partial-text" style="display:none;"></span>
+      <ul id="transcription-chunks" style="display:none;"></ul>
+
+      <div id="transcription-error" class="trx-msg trx-msg--err"></div>
+      <div id="transcription-saved" class="trx-msg trx-msg--ok"></div>
+
+      <p class="trx-manual-hint">
+        If you are demoing the flow, you can paste the transcript directly here and save it without using the microphone.
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+window.__CONSULTATION_CONTEXT__ = { consultationId: {{ consultation.id }} };
+</script>
+<script src="/static/js/consultation_create.js"></script>
+{% endif %}
 {% else %}
 <section class="card">
   <div class="empty-state">

@@ -182,6 +182,15 @@ def _in_memory_temp_chunk_repo() -> InMemoryTemporaryTranscriptChunkRepository:
     return InMemoryTemporaryTranscriptChunkRepository()
 
 
+@lru_cache
+def _mock_streaming_transcription_service():
+    from app.infrastructure.persistence.in_memory.repositories import (
+        MockStreamingTranscriptionService,
+    )
+
+    return MockStreamingTranscriptionService()
+
+
 def staff_repository():
     if _use_mock():
         return _in_memory_staff_repo()
@@ -469,11 +478,7 @@ def get_appointment_app_service() -> AppointmentApplicationService:
 
 def get_transcription_service() -> TranscriptionApplicationService:
     if _use_mock():
-        from app.infrastructure.persistence.in_memory.repositories import (
-            MockStreamingTranscriptionService,
-        )
-
-        streaming_service = MockStreamingTranscriptionService()
+        streaming_service = _mock_streaming_transcription_service()
     else:
         from app.infrastructure.ai.transcription.faster_whisper_adapter import (
             StreamingFasterWhisperService,

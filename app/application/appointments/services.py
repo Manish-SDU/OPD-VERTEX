@@ -154,9 +154,20 @@ class AppointmentApplicationService:
         Only doctor/admin may call this.
         """
         appointment = self._get_or_raise(appointment_id)
+        if appointment.consultation_id is not None:
+            consultation = self.consultation_repository.get_by_id(
+                appointment.consultation_id
+            )
+            if consultation is None:
+                raise AppError(
+                    "This appointment is linked to a consultation that could not be found."
+                )
+            return appointment, consultation
+
         if appointment.status in (
             AppointmentStatus.CANCELLED,
             AppointmentStatus.NO_SHOW,
+            AppointmentStatus.COMPLETED,
         ):
             raise AppError(
                 f"Cannot start a consultation from an appointment with status '{appointment.status}'."

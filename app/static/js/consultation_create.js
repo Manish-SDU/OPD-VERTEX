@@ -137,6 +137,7 @@ let isRecording = false;
 let finalTranscript = '';
 let consultationId = null;
 let sessionId = null;
+const consultationContext = window.__CONSULTATION_CONTEXT__ || null;
 
 console.log('[MedFlow] consultation_create.js loaded, SpeechRecognition available:', !!SpeechRecognition);
 
@@ -164,6 +165,15 @@ function setStatus(state, text) {
   if (state === 'saved')     statusEl.classList.add('trx-status--saved');
   const txt = statusEl.querySelector('.trx-status__text');
   if (txt) txt.textContent = text;
+}
+
+function initializeExistingConsultation() {
+  if (!consultationContext || !consultationContext.consultationId) return;
+  consultationId = consultationContext.consultationId;
+  if (transcriptionUI) transcriptionUI.style.display = '';
+  if (startBtn) startBtn.disabled = false;
+  if (saveBtn) saveBtn.disabled = false;
+  setStatus('ready', 'Ready');
 }
 
 if (form) {
@@ -208,6 +218,8 @@ if (form) {
     }
   };
 }
+
+initializeExistingConsultation();
 
 function stopRecognition() {
   isRecording = false;
@@ -326,6 +338,14 @@ if (stopBtn) {
 
 if (saveBtn) {
   saveBtn.onclick = async function () {
+    const transcriptText = transcriptArea ? transcriptArea.value.trim() : '';
+    if (!transcriptText) {
+      transcriptionSaved.textContent = '';
+      transcriptionError.textContent = 'Please record, type, or paste a transcript before saving.';
+      if (transcriptArea) transcriptArea.focus();
+      return;
+    }
+
     saveBtn.disabled = true;
     transcriptionSaved.textContent = 'Saving transcription…';
     transcriptionError.textContent = '';
@@ -346,11 +366,11 @@ if (saveBtn) {
       }
       // If textarea has content but no streaming chunks were saved, persist
       // the typed text so the save flow has something to write.
-      if (transcriptArea && transcriptArea.value.trim() && sessionId) {
+      if (transcriptText && sessionId) {
         await fetch(`/transcriptions/session/${sessionId}/inject-demo`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: transcriptArea.value }),
+          body: JSON.stringify({ text: transcriptText }),
         });
       }
     } catch (e) {
@@ -368,7 +388,14 @@ if (saveBtn) {
       });
       const responseText = await resp.text();
       if (!resp.ok) {
-        transcriptionError.textContent = `Server error (${resp.status}): ${responseText.substring(0, 200)}`;
+        let errorMessage = `Server error (${resp.status})`;
+        try {
+          const payload = JSON.parse(responseText);
+          errorMessage = payload.detail || errorMessage;
+        } catch (_) {
+          if (responseText) errorMessage = `${errorMessage}: ${responseText.substring(0, 200)}`;
+        }
+        transcriptionError.textContent = errorMessage;
         saveBtn.disabled = false;
         return;
       }

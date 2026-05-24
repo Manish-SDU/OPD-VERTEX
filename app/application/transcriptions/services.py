@@ -129,6 +129,10 @@ class TranscriptionApplicationService:
     ) -> TranscriptResult:
         """Persist the transcript assembled from temporary chunks."""
         result = self.save_final_transcript(consultation_id, session_id)
+        if not result.full_text.strip():
+            raise ValueError(
+                f"Consultation {consultation_id} cannot be saved without a transcript."
+            )
         self._persist_transcript(consultation_id, result)
         return result
 

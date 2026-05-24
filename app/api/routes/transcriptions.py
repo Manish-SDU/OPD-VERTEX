@@ -184,9 +184,12 @@ async def save_transcription(
     service: TranscriptionApplicationService = Depends(get_transcription_service),
 ):
     """Save partial chunks from temp storage to main database."""
-    result = service.persist_saved_transcription(
-        request.consultation_id, request.session_id
-    )
+    try:
+        result = service.persist_saved_transcription(
+            request.consultation_id, request.session_id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     return {
         "status": "saved",
