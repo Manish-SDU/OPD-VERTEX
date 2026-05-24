@@ -22,7 +22,7 @@ To reduce these risks, Med Flow is designed as a locally hosted system using ope
 \subsection{Architectural Challenges}
 \label{subsec:architectural-challenges}
 
-Traditional EHR systems are often built as monolithic or tightly coupled structures. This creates a major problem because updating a single feature can require modifying and risking the stability of the entire system. This becomes especially challenging when working with AI and speech-to-text components, which evolve quickly and need to be replaceable independently.
+Traditional EHR systems are often built as monolithic or tightly coupled structures\refcite{19}. This creates a major problem because updating a single feature can require modifying and risking the stability of the entire system. This becomes especially challenging when working with AI and speech-to-text components, which evolve quickly and need to be replaceable independently.
 
 The system also handles diverse data types: live audio metadata, raw speech-to-text transcriptions, generated reports, user authentication, patient records, prescriptions, and audit logs. User and patient records require relational consistency, while transcripts and AI-generated artifacts require schema flexibility.
 
