@@ -260,11 +260,9 @@ class TestAppointmentApplicationService:
             a.id,
             current_user=user,  # type: ignore[arg-type]
         )
-        second_appt, second_consultation = (
-            appt_svc.start_consultation_from_appointment(
-                a.id,
-                current_user=user,  # type: ignore[arg-type]
-            )
+        second_appt, second_consultation = appt_svc.start_consultation_from_appointment(
+            a.id,
+            current_user=user,  # type: ignore[arg-type]
         )
 
         assert first_appt.consultation_id == second_appt.consultation_id

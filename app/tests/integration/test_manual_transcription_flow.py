@@ -29,7 +29,9 @@ class TestManualTranscriptionFlow:
         )
         assert create_response.status_code == 303
 
-        consultation_id = int(create_response.headers["location"].rstrip("/").split("/")[-1])
+        consultation_id = int(
+            create_response.headers["location"].rstrip("/").split("/")[-1]
+        )
 
         session_response = client.post(
             "/transcriptions/session/start",
@@ -40,9 +42,7 @@ class TestManualTranscriptionFlow:
 
         inject_response = client.post(
             f"/transcriptions/session/{session_id}/inject-demo",
-            json={
-                "text": "Patient reports sore throat for three days and mild fever."
-            },
+            json={"text": "Patient reports sore throat for three days and mild fever."},
         )
         assert inject_response.status_code == 200
 
@@ -75,7 +75,9 @@ class TestManualTranscriptionFlow:
         )
         assert create_response.status_code == 303
 
-        consultation_id = int(create_response.headers["location"].rstrip("/").split("/")[-1])
+        consultation_id = int(
+            create_response.headers["location"].rstrip("/").split("/")[-1]
+        )
 
         session_response = client.post(
             "/transcriptions/session/start",
