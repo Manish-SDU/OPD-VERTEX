@@ -1,7 +1,7 @@
 \section{Implementation}
 \label{sec:implementation}
 
-This chapter describes how the design was implemented in the codebase. The system follows a component-based architecture with a FastAPI backend, MySQL and MongoDB persistence, Faster-Whisper transcription\refcite{11}, local Ollama/Qwen3:8b generation, ReportLab PDF generation, and SMTP email delivery. The application is containerized with Docker Compose for repeatable local deployment. Runtime settings are loaded through Pydantic settings, while logging and request tracing are handled by the project's middleware and aspect infrastructure.
+This chapter describes how the design was implemented in the codebase. The system follows a component-based architecture with a FastAPI backend, MySQL and MongoDB persistence, Faster-Whisper transcription\refcite{10}, local Ollama/Qwen3:8b generation, ReportLab PDF generation, and SMTP email delivery. The application is containerized with Docker Compose for repeatable local deployment. Runtime settings are loaded through Pydantic settings, while logging and request tracing are handled by the project's middleware and aspect infrastructure.
 
 \subsection{API Layer and Routing}
 \label{subsec:api-layer}
@@ -194,7 +194,7 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
 
 The LLM orchestration component enables transcript normalization, clinical note generation, and suggestions using the locally integrated Ollama model. The implementation uses an Ollama client for low-level HTTP communication and adapter classes in \path{ollama_adapter.py} for domain-specific tasks. Separate adapters return the normalized transcript, validated clinical notes, and structured suggestive review.
 
-The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{12,13}. The local client setup and JSON generation path are shown in Figure~\ref{fig:implementation-ollama-client-setup}.
+The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{11,12}. The local client setup and JSON generation path are shown in Figure~\ref{fig:implementation-ollama-client-setup}.
 
 \begin{figure}[htbp]
 \centering
