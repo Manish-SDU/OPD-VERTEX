@@ -137,7 +137,6 @@ let isRecording = false;
 let finalTranscript = '';
 let consultationId = null;
 let sessionId = null;
-const consultationContext = window.__CONSULTATION_CONTEXT__ || null;
 
 console.log('[MedFlow] consultation_create.js loaded, SpeechRecognition available:', !!SpeechRecognition);
 
@@ -167,13 +166,60 @@ function setStatus(state, text) {
   if (txt) txt.textContent = text;
 }
 
+function resolveConsultationId() {
+  if (consultationId) return consultationId;
+
+  const runtimeContext = window.__CONSULTATION_CONTEXT__;
+  if (runtimeContext && runtimeContext.consultationId) {
+    consultationId = String(runtimeContext.consultationId);
+    return consultationId;
+  }
+
+  if (transcriptionUI && transcriptionUI.dataset.consultationId) {
+    consultationId = String(transcriptionUI.dataset.consultationId);
+    return consultationId;
+  }
+
+  const match = window.location.pathname.match(/\/consultations\/(\d+)/);
+  if (match) {
+    consultationId = match[1];
+    return consultationId;
+  }
+
+  return null;
+}
+
 function initializeExistingConsultation() {
-  if (!consultationContext || !consultationContext.consultationId) return;
-  consultationId = consultationContext.consultationId;
+  const resolvedConsultationId = resolveConsultationId();
+  if (!resolvedConsultationId) return;
   if (transcriptionUI) transcriptionUI.style.display = '';
   if (startBtn) startBtn.disabled = false;
   if (saveBtn) saveBtn.disabled = false;
   setStatus('ready', 'Ready');
+}
+
+async function ensureTranscriptionSession() {
+  const resolvedConsultationId = resolveConsultationId();
+  if (!resolvedConsultationId) {
+    throw new Error('Could not determine the consultation ID for this page.');
+  }
+
+  if (sessionId) return sessionId;
+
+  const response = await fetch('/transcriptions/session/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ consultation_id: parseInt(resolvedConsultationId, 10) }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.detail || `Could not start transcription session (${response.status})`);
+  }
+
+  const data = await response.json();
+  sessionId = data.session_id;
+  return sessionId;
 }
 
 if (form) {
@@ -238,7 +284,13 @@ if (startBtn && !SpeechRecognition) {
 }
 
 if (startBtn) {
-  startBtn.onclick = function () {
+  startBtn.onclick = async function () {
+    const resolvedConsultationId = resolveConsultationId();
+    if (!resolvedConsultationId) {
+      transcriptionError.textContent =
+        'Could not determine which consultation to save this transcript to. Please reload the page and try again.';
+      return;
+    }
     if (!SpeechRecognition) {
       transcriptionError.textContent =
         '\u26a0\ufe0f Your browser does not support live transcription. '
@@ -257,10 +309,20 @@ if (startBtn) {
     finalTranscript = '';
     setStatus('recording', 'Starting\u2026');
 
-    console.log('[MedFlow] Starting SpeechRecognition, consultationId=', consultationId);
+    console.log('[MedFlow] Starting SpeechRecognition, consultationId=', resolvedConsultationId);
 
-    // Start recording immediately — no server call needed to hear audio.
-    // Session is created lazily on Save.
+    // Start recording immediately once the backend transcription session exists.
+    try {
+      await ensureTranscriptionSession();
+    } catch (err) {
+      transcriptionError.textContent = err.message || err;
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      isRecording = false;
+      setStatus('ready', 'Ready');
+      return;
+    }
+
     recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -338,6 +400,14 @@ if (stopBtn) {
 
 if (saveBtn) {
   saveBtn.onclick = async function () {
+    const resolvedConsultationId = resolveConsultationId();
+    if (!resolvedConsultationId) {
+      transcriptionSaved.textContent = '';
+      transcriptionError.textContent =
+        'Could not determine which consultation to save this transcript to. Please reload the page and try again.';
+      return;
+    }
+
     const transcriptText = transcriptArea ? transcriptArea.value.trim() : '';
     if (!transcriptText) {
       transcriptionSaved.textContent = '';
@@ -350,20 +420,8 @@ if (saveBtn) {
     transcriptionSaved.textContent = 'Saving transcription…';
     transcriptionError.textContent = '';
 
-    // Make sure we have a session even if Start Recording was never pressed
-    // (e.g. doctor typed the transcript directly into the textarea).
     try {
-      if (!sessionId && consultationId) {
-        const sResp = await fetch('/transcriptions/session/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ consultation_id: parseInt(consultationId) }),
-        });
-        if (sResp.ok) {
-          const sData = await sResp.json();
-          sessionId = sData.session_id;
-        }
-      }
+      await ensureTranscriptionSession();
       // If textarea has content but no streaming chunks were saved, persist
       // the typed text so the save flow has something to write.
       if (transcriptText && sessionId) {
@@ -382,7 +440,7 @@ if (saveBtn) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          consultation_id: parseInt(consultationId),
+          consultation_id: parseInt(resolvedConsultationId, 10),
           session_id: sessionId,
         }),
       });
@@ -400,7 +458,7 @@ if (saveBtn) {
         return;
       }
       transcriptionSaved.textContent = 'Transcription saved! Opening review workflow…';
-      const reviewId = consultationId;
+      const reviewId = resolvedConsultationId;
       startBtn.disabled = true;
       stopBtn.disabled = true;
       setStatus('saved', 'Saved');

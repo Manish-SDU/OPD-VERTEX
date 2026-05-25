@@ -129,6 +129,8 @@ class TestConsultationListUI:
         html = resp.text
         assert "Save Transcript" in html
         assert "Start Recording" in html
+        assert 'data-consultation-id="1"' in html
+        assert "window.__CONSULTATION_CONTEXT__" in html
 
 
 # ── Patient UI enhancements ──────────────────────────────────────────────────
