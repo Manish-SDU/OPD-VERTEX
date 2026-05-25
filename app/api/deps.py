@@ -477,14 +477,15 @@ def get_appointment_app_service() -> AppointmentApplicationService:
 
 
 def get_transcription_service() -> TranscriptionApplicationService:
-    if _use_mock():
+    settings = get_settings()
+    use_mock_streaming = _use_mock() and not settings.use_real_whisper_streaming
+    if use_mock_streaming:
         streaming_service = _mock_streaming_transcription_service()
     else:
         from app.infrastructure.ai.transcription.faster_whisper_adapter import (
             StreamingFasterWhisperService,
         )
 
-        settings = get_settings()
         streaming_service = StreamingFasterWhisperService(
             model_size=settings.whisper_model_name,
             device="cpu",

@@ -1,7 +1,6 @@
 // consultation_create.js
-// Patient lookup + consultation creation + live transcription UI.
+// Patient lookup + consultation creation + Faster-Whisper transcription UI.
 
-// ── Patient lookup (two fields: name ↔ ID) ───────────────────────────
 const nameInput = document.getElementById('patient-name');
 const idInput = document.getElementById('patient-id-input');
 const idField = document.getElementById('patient-id-field');
@@ -60,7 +59,7 @@ if (nameInput) {
         if (patients.length === 0) {
           const li = document.createElement('li');
           li.className = 'ac-empty';
-          li.textContent = 'No patients found — check the spelling';
+          li.textContent = 'No patients found - check the spelling';
           suggestionsList.appendChild(li);
           showPatientError('No matching patient. Check the name.');
         } else {
@@ -70,7 +69,7 @@ if (nameInput) {
             idInput.value = p.id;
             showPatientSuccess(`\u2713 ${p.first_name} ${p.last_name} (ID ${p.id})`);
           }
-          patients.forEach(p => {
+          patients.forEach((p) => {
             const li = document.createElement('li');
             li.className = 'ac-item';
             li.innerHTML = `<strong>${p.first_name} ${p.last_name}</strong> <span class="ac-meta">ID ${p.id} \u00b7 ${p.email}</span>`;
@@ -86,7 +85,9 @@ if (nameInput) {
           });
         }
         suggestionsList.style.display = '';
-      } catch (e) { /* ignore */ }
+      } catch (_) {
+        // Ignore transient lookup errors while typing
+      }
     }, 250);
   });
 
@@ -114,7 +115,7 @@ if (idInput) {
         const resp = await fetch(`/patients/search?q=${encodeURIComponent(q)}`);
         if (!resp.ok) return;
         const patients = await resp.json();
-        const exact = patients.find(p => String(p.id) === q);
+        const exact = patients.find((p) => String(p.id) === q);
         if (exact) {
           idField.value = exact.id;
           nameInput.value = `${exact.first_name} ${exact.last_name}`;
@@ -122,23 +123,25 @@ if (idInput) {
         } else {
           showPatientError(`No patient found with ID ${q}.`);
         }
-      } catch (e) { /* ignore */ }
+      } catch (_) {
+        // Ignore transient lookup errors while typing
+      }
     }, 300);
   });
 }
 
-// ── Consultation creation + transcription ─────────────────────────────
+const TARGET_SAMPLE_RATE = 16000;
 
-// Web Speech API — Chrome/Edge only. Falls back gracefully.
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-let recognition = null;
 let isRecording = false;
-let finalTranscript = '';
+let finalizedTranscript = '';
 let consultationId = null;
 let sessionId = null;
-
-console.log('[MedFlow] consultation_create.js loaded, SpeechRecognition available:', !!SpeechRecognition);
+let usedMicrophoneCapture = false;
+let audioContext = null;
+let mediaStream = null;
+let mediaSource = null;
+let processorNode = null;
+let transcriptionSocket = null;
 
 const form = document.getElementById('create-consultation-form');
 const successDiv = document.getElementById('consultation-success');
@@ -147,21 +150,18 @@ const transcriptionUI = document.getElementById('transcription-ui');
 const startBtn = document.getElementById('start-transcription');
 const stopBtn = document.getElementById('stop-transcription');
 const saveBtn = document.getElementById('save-transcription');
-const partialText = document.getElementById('partial-text');
-const chunksList = document.getElementById('transcription-chunks');
 const transcriptionError = document.getElementById('transcription-error');
 const transcriptionSaved = document.getElementById('transcription-saved');
 const transcriptArea = document.getElementById('transcript-display');
 const statusEl = document.getElementById('trx-status');
 
-// Make transcript editable so doctors can correct in-place before save.
 if (transcriptArea) transcriptArea.removeAttribute('readonly');
 
 function setStatus(state, text) {
   if (!statusEl) return;
   statusEl.classList.remove('trx-status--recording', 'trx-status--saved');
   if (state === 'recording') statusEl.classList.add('trx-status--recording');
-  if (state === 'saved')     statusEl.classList.add('trx-status--saved');
+  if (state === 'saved') statusEl.classList.add('trx-status--saved');
   const txt = statusEl.querySelector('.trx-status__text');
   if (txt) txt.textContent = text;
 }
@@ -222,6 +222,160 @@ async function ensureTranscriptionSession() {
   return sessionId;
 }
 
+function updateTranscriptArea(partialText) {
+  if (!transcriptArea) return;
+  const finalText = finalizedTranscript.trim();
+  const partial = (partialText || '').trim();
+  transcriptArea.value = [finalText, partial].filter(Boolean).join(finalText && partial ? ' ' : '');
+}
+
+function resetTranscriptionState() {
+  isRecording = false;
+  finalizedTranscript = '';
+  usedMicrophoneCapture = false;
+}
+
+function downsampleBuffer(buffer, inputSampleRate, outputSampleRate) {
+  if (inputSampleRate === outputSampleRate) {
+    return buffer;
+  }
+
+  const sampleRateRatio = inputSampleRate / outputSampleRate;
+  const newLength = Math.round(buffer.length / sampleRateRatio);
+  const result = new Float32Array(newLength);
+  let offsetResult = 0;
+  let offsetBuffer = 0;
+
+  while (offsetResult < result.length) {
+    const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+    let accum = 0;
+    let count = 0;
+
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i += 1) {
+      accum += buffer[i];
+      count += 1;
+    }
+
+    result[offsetResult] = count > 0 ? accum / count : 0;
+    offsetResult += 1;
+    offsetBuffer = nextOffsetBuffer;
+  }
+
+  return result;
+}
+
+function floatTo16BitPCM(floatBuffer) {
+  const output = new Int16Array(floatBuffer.length);
+  for (let i = 0; i < floatBuffer.length; i += 1) {
+    const sample = Math.max(-1, Math.min(1, floatBuffer[i]));
+    output[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return output;
+}
+
+function cleanupAudioPipeline() {
+  if (processorNode) {
+    processorNode.onaudioprocess = null;
+    try { processorNode.disconnect(); } catch (_) {}
+    processorNode = null;
+  }
+
+  if (mediaSource) {
+    try { mediaSource.disconnect(); } catch (_) {}
+    mediaSource = null;
+  }
+
+  if (mediaStream) {
+    mediaStream.getTracks().forEach((track) => track.stop());
+    mediaStream = null;
+  }
+
+  if (audioContext) {
+    try { audioContext.close(); } catch (_) {}
+    audioContext = null;
+  }
+
+  if (transcriptionSocket) {
+    try {
+      if (transcriptionSocket.readyState === WebSocket.OPEN) {
+        transcriptionSocket.send('FINALIZE');
+      }
+      transcriptionSocket.close();
+    } catch (_) {
+      // Ignore cleanup errors
+    }
+    transcriptionSocket = null;
+  }
+}
+
+async function startAudioCapture() {
+  mediaStream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
+  });
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    throw new Error('This browser does not support Web Audio capture.');
+  }
+
+  audioContext = new AudioContextClass();
+  mediaSource = audioContext.createMediaStreamSource(mediaStream);
+  processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+
+  processorNode.onaudioprocess = (event) => {
+    if (!isRecording || !transcriptionSocket || transcriptionSocket.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    const inputData = event.inputBuffer.getChannelData(0);
+    const downsampled = downsampleBuffer(inputData, audioContext.sampleRate, TARGET_SAMPLE_RATE);
+    const pcm16 = floatTo16BitPCM(downsampled);
+    transcriptionSocket.send(pcm16.buffer);
+  };
+
+  mediaSource.connect(processorNode);
+  processorNode.connect(audioContext.destination);
+}
+
+async function openTranscriptionSocket(activeSessionId) {
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const socketUrl = `${protocol}://${window.location.host}/transcriptions/ws/${activeSessionId}`;
+
+  await new Promise((resolve, reject) => {
+    transcriptionSocket = new WebSocket(socketUrl);
+    transcriptionSocket.binaryType = 'arraybuffer';
+
+    transcriptionSocket.onopen = () => resolve();
+    transcriptionSocket.onerror = () => reject(new Error('Could not connect to the transcription stream.'));
+    transcriptionSocket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.error) {
+          transcriptionError.textContent = payload.error;
+          return;
+        }
+
+        if (payload.text && payload.text !== '[processing...]') {
+          finalizedTranscript = [finalizedTranscript.trim(), payload.text.trim()].filter(Boolean).join(' ');
+          updateTranscriptArea('');
+        } else if (payload.partial_text) {
+          updateTranscriptArea(payload.partial_text);
+        }
+      } catch (_) {
+        // Ignore non-JSON frames
+      }
+    };
+    transcriptionSocket.onclose = () => {
+      transcriptionSocket = null;
+    };
+  });
+}
+
 if (form) {
   form.onsubmit = async function (e) {
     e.preventDefault();
@@ -259,7 +413,7 @@ if (form) {
       saveBtn.disabled = false;
       setStatus('ready', 'Ready');
     } catch (err) {
-      errorDiv.textContent = err.message || err;
+      errorDiv.textContent = err.message || String(err);
       errorDiv.style.display = '';
     }
   };
@@ -267,20 +421,8 @@ if (form) {
 
 initializeExistingConsultation();
 
-function stopRecognition() {
-  isRecording = false;
-  if (recognition) {
-    recognition.onend = null;   // prevent auto-restart
-    recognition.onerror = null;
-    try { recognition.stop(); } catch {}
-    recognition = null;
-  }
-  finalTranscript = '';
-}
-
-// Show browser-support hint once UI is visible.
-if (startBtn && !SpeechRecognition) {
-  startBtn.title = 'Live transcription requires Chrome or Edge';
+if (startBtn && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+  startBtn.title = 'Live transcription requires browser microphone access.';
 }
 
 if (startBtn) {
@@ -291,97 +433,38 @@ if (startBtn) {
         'Could not determine which consultation to save this transcript to. Please reload the page and try again.';
       return;
     }
-    if (!SpeechRecognition) {
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
       transcriptionError.textContent =
-        '\u26a0\ufe0f Your browser does not support live transcription. '
-        + 'Please use Google Chrome or Microsoft Edge. '
-        + 'You can also type the transcript manually below and click Save.';
+        '\u26a0\ufe0f This browser cannot capture microphone audio for Faster-Whisper. '
+        + 'You can still paste the transcript manually below and click Save.';
       return;
     }
 
-    stopRecognition();
+    cleanupAudioPipeline();
+    resetTranscriptionState();
     isRecording = true;
+    usedMicrophoneCapture = true;
     startBtn.disabled = true;
     stopBtn.disabled = false;
+    saveBtn.disabled = true;
     transcriptionError.textContent = '';
     transcriptionSaved.textContent = '';
     if (transcriptArea) transcriptArea.value = '';
-    finalTranscript = '';
-    setStatus('recording', 'Starting\u2026');
+    setStatus('recording', 'Starting…');
 
-    console.log('[MedFlow] Starting SpeechRecognition, consultationId=', resolvedConsultationId);
-
-    // Start recording immediately once the backend transcription session exists.
     try {
-      await ensureTranscriptionSession();
-    } catch (err) {
-      transcriptionError.textContent = err.message || err;
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      isRecording = false;
-      setStatus('ready', 'Ready');
-      return;
-    }
-
-    recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      console.log('[MedFlow] recognition.onstart fired');
+      const activeSessionId = await ensureTranscriptionSession();
+      console.log('[MedFlow] Starting Faster-Whisper capture, consultationId=', resolvedConsultationId, 'sessionId=', activeSessionId);
+      await openTranscriptionSocket(activeSessionId);
+      await startAudioCapture();
       setStatus('recording', 'Recording');
-    };
-
-    recognition.onresult = (event) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += text + ' ';
-        } else {
-          interim += text;
-        }
-      }
-      if (transcriptArea) transcriptArea.value = finalTranscript + interim;
-    };
-
-    recognition.onerror = (event) => {
-      console.error('[MedFlow] recognition.onerror', event.error);
-      isRecording = false;
-      if (event.error === 'not-allowed' || event.error === 'permission-denied') {
-        transcriptionError.textContent =
-          '\u26a0\ufe0f Microphone access denied. '
-          + 'Click the camera/mic icon in your browser address bar and allow access, then try again.';
-      } else if (event.error === 'network') {
-        transcriptionError.textContent =
-          '\u26a0\ufe0f Speech recognition requires an internet connection to Google\'s speech servers. '
-          + 'You can type the transcript manually below instead.';
-      } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-        transcriptionError.textContent = `\u26a0\ufe0f Recording error: ${event.error}`;
-      }
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      setStatus('ready', 'Ready');
-    };
-
-    // Auto-restart on natural silence; stop if user pressed Stop.
-    recognition.onend = () => {
-      console.log('[MedFlow] recognition.onend, isRecording=', isRecording);
-      if (isRecording) {
-        try { recognition.start(); } catch (e) { console.warn('[MedFlow] restart failed', e); }
-      }
-    };
-
-    try {
-      recognition.start();
-      console.log('[MedFlow] recognition.start() called');
     } catch (err) {
-      console.error('[MedFlow] recognition.start() threw', err);
-      transcriptionError.textContent = `Could not start recording: ${err.message || err}`;
+      cleanupAudioPipeline();
+      isRecording = false;
       startBtn.disabled = false;
       stopBtn.disabled = true;
-      isRecording = false;
+      saveBtn.disabled = false;
+      transcriptionError.textContent = err.message || String(err);
       setStatus('ready', 'Ready');
     }
   };
@@ -390,7 +473,8 @@ if (startBtn) {
 if (stopBtn) {
   stopBtn.onclick = function () {
     console.log('[MedFlow] Stop clicked, transcript so far:', transcriptArea ? transcriptArea.value.substring(0, 80) : '(none)');
-    stopRecognition();
+    isRecording = false;
+    cleanupAudioPipeline();
     stopBtn.disabled = true;
     startBtn.disabled = false;
     saveBtn.disabled = false;
@@ -417,14 +501,16 @@ if (saveBtn) {
     }
 
     saveBtn.disabled = true;
-    transcriptionSaved.textContent = 'Saving transcription…';
+    transcriptionSaved.textContent = 'Saving transcription...';
     transcriptionError.textContent = '';
+    const hasManualEditsAfterRecording =
+      usedMicrophoneCapture
+      && finalizedTranscript.trim()
+      && transcriptText !== finalizedTranscript.trim();
 
     try {
       await ensureTranscriptionSession();
-      // If textarea has content but no streaming chunks were saved, persist
-      // the typed text so the save flow has something to write.
-      if (transcriptText && sessionId) {
+      if (transcriptText && sessionId && (!usedMicrophoneCapture || hasManualEditsAfterRecording)) {
         await fetch(`/transcriptions/session/${sessionId}/inject-demo`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -436,14 +522,20 @@ if (saveBtn) {
     }
 
     try {
-      const resp = await fetch('/transcriptions/save-transcription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          consultation_id: parseInt(resolvedConsultationId, 10),
-          session_id: sessionId,
-        }),
-      });
+      const saveUrl = usedMicrophoneCapture && sessionId && !hasManualEditsAfterRecording
+        ? `/transcriptions/session/${sessionId}/complete`
+        : '/transcriptions/save-transcription';
+      const saveOptions = usedMicrophoneCapture && sessionId && !hasManualEditsAfterRecording
+        ? { method: 'POST' }
+        : {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            consultation_id: parseInt(resolvedConsultationId, 10),
+            session_id: sessionId,
+          }),
+        };
+      const resp = await fetch(saveUrl, saveOptions);
       const responseText = await resp.text();
       if (!resp.ok) {
         let errorMessage = `Server error (${resp.status})`;
@@ -457,14 +549,14 @@ if (saveBtn) {
         saveBtn.disabled = false;
         return;
       }
-      transcriptionSaved.textContent = 'Transcription saved! Opening review workflow…';
+      transcriptionSaved.textContent = 'Transcription saved! Opening review workflow...';
       const reviewId = resolvedConsultationId;
       startBtn.disabled = true;
       stopBtn.disabled = true;
       setStatus('saved', 'Saved');
       setTimeout(() => { window.location.href = `/review/${reviewId}`; }, 800);
     } catch (err) {
-      transcriptionError.textContent = err.message || err;
+      transcriptionError.textContent = err.message || String(err);
       saveBtn.disabled = false;
     }
   };

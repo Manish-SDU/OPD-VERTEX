@@ -133,20 +133,12 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
             raise
 
     def get_completed_results(self, session_id: str) -> list[dict]:
-        """Get completed transcription results from Whisper API."""
-        try:
-            client = self._get_client()
-            response = client.get(f"/sessions/{session_id}/partial")
-            response.raise_for_status()
-            data = response.json()
-            return [{"text": data.get("partial_text", "")}]
-        except Exception as exc:
-            logger.warning(
-                "Failed to fetch Whisper partial results session_id=%s error=%s",
-                session_id,
-                exc,
-            )
-            return []
+        """Return empty list — live text is delivered via get_current_text / partial_text only.
+
+        Returning cumulative text here would cause the frontend to append it to
+        finalizedTranscript on every poll loop, producing duplicated transcript text.
+        """
+        return []
 
     def finalize_session(self, session_id: str) -> TranscriptResult:
         """End streaming and retrieve final transcription from Whisper API."""

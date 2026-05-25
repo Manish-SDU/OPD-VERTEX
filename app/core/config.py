@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     )
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     use_mock_adapters: bool = Field(default=True, alias="USE_MOCK_ADAPTERS")
+    use_real_whisper_streaming: bool = Field(
+        default=False, alias="USE_REAL_WHISPER_STREAMING"
+    )
 
     @field_validator("llm_model_name")
     @classmethod

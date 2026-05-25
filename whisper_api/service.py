@@ -40,6 +40,7 @@ def start_streaming_session(
             "consultation_id": consultation_id,
             "buffer": deque(),
             "results": [],
+            "threads": [],
             "chunk_count": 0,
             "timestamp": 0.0,
             "chunk_duration": chunk_duration,
@@ -75,6 +76,7 @@ def add_audio_chunk(session_id: str, audio_bytes: bytes) -> dict:
             )
             thread.daemon = True
             thread.start()
+            session["threads"].append(thread)
 
             chunk_id = session["chunk_count"]
             session["chunk_count"] += 1
@@ -177,12 +179,32 @@ def _transcribe_chunk(session_id: str, audio_chunk: np.ndarray) -> None:
 def finalize_session(session_id: str) -> dict:
     """End streaming and combine all results."""
     global _sessions
+
+    residual_audio = None
+    threads: list[threading.Thread] = []
     with _lock:
         if session_id not in _sessions:
             raise ValueError(f"Session {session_id} not found")
 
+        session = _sessions[session_id]
+        if session["buffer"]:
+            residual_audio = np.concatenate(list(session["buffer"]))
+            session["buffer"].clear()
+        threads = list(session["threads"])
+
+    if residual_audio is not None and len(residual_audio) > 0:
+        _transcribe_chunk(session_id, residual_audio)
+
+    for thread in threads:
+        thread.join(timeout=10.0)
+
+    with _lock:
+        if session_id not in _sessions:
+            raise ValueError(f"Session {session_id} not found")
         session = _sessions.pop(session_id)
-        full_text = " ".join(session["results"])
+        full_text = " ".join(
+            result.strip() for result in session["results"] if result and result.strip()
+        )
 
     return {
         "consultation_id": session["consultation_id"],

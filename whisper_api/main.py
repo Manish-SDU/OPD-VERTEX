@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import torch
+import ctranslate2
 from fastapi import FastAPI, HTTPException, Request
 
 from .models import (
@@ -22,7 +22,7 @@ from .service import (
 )
 
 # Initialize model and store in service module
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if ctranslate2.get_supported_compute_types("cuda") else "cpu"
 service.model = init_model(model_size="base", device=device)
 print(f"[Whisper] Model initialized on device: {device}")
 
