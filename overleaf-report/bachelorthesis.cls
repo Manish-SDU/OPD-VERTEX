@@ -68,7 +68,7 @@
 \RequirePackage{ragged2e}
 \RequirePackage{minted}
 \RequirePackage{csquotes}
-\RequirePackage[colorlinks=true,linkcolor=black,citecolor=black,hyperfootnotes=false]{hyperref}
+\RequirePackage[colorlinks=true,linkcolor=black,citecolor=black,hyperfootnotes=true]{hyperref}
 \RequirePackage[capitalise]{cleveref}
 \RequirePackage{biblatex}
 \RequirePackage{microtype}
