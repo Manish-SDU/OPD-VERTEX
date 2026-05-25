@@ -22,7 +22,10 @@ from .service import (
 )
 
 # Initialize model and store in service module
-device = "cuda" if ctranslate2.get_supported_compute_types("cuda") else "cpu"
+try:
+    device = "cuda" if ctranslate2.get_supported_compute_types("cuda") else "cpu"
+except Exception:
+    device = "cpu"
 service.model = init_model(model_size="base", device=device)
 print(f"[Whisper] Model initialized on device: {device}")
 

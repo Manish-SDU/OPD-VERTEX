@@ -21,6 +21,7 @@ services:
     environment:
       LOCAL_LLM_ENDPOINT: http://ollama:11434
       WHISPER_API_URL: http://whisper:8001
+      USE_REAL_WHISPER_STREAMING: "true"
       LLM_MODEL_NAME: qwen3:8b
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
@@ -47,6 +48,14 @@ services:
       - ./whisper_api:/whisper-api/whisper_api
     environment:
       HF_HOME: /whisper-api/models
+      PYTHONUNBUFFERED: "1"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   mysql:
     image: mysql:8.4
