@@ -7,14 +7,17 @@ from faster_whisper import WhisperModel
 
 def download_models():
     """Download Faster-Whisper models."""
-    models_dir = Path(__file__).parent.parent / "models" / "whisper"
-    models_dir.mkdir(parents=True, exist_ok=True)
+    if not os.environ.get("HF_HOME"):
+        models_dir = Path(__file__).parent.parent / "models" / "whisper"
+        models_dir.mkdir(parents=True, exist_ok=True)
+        os.environ["HF_HOME"] = str(models_dir)
+    else:
+        models_dir = Path(os.environ["HF_HOME"])
+        models_dir.mkdir(parents=True, exist_ok=True)
 
-    # Set HuggingFace cache to our models directory
-    os.environ["HF_HOME"] = str(models_dir)
-
-    # Download models
-    model_sizes = ["base"]  # Add "small", "medium" if needed
+    # Download models — large-v3 is the default production model
+    model_size = os.environ.get("WHISPER_MODEL_NAME", "large-v3")
+    model_sizes = [model_size]
 
     for size in model_sizes:
         print(f"Downloading Faster-Whisper {size} model...")

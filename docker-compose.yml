@@ -49,6 +49,7 @@ services:
     environment:
       HF_HOME: /whisper-api/models
       PYTHONUNBUFFERED: "1"
+      WHISPER_MODEL_NAME: large-v3
     deploy:
       resources:
         reservations:

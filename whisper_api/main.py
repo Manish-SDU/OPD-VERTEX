@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import ctranslate2
 from fastapi import FastAPI, HTTPException, Request
 
@@ -26,8 +28,9 @@ try:
     device = "cuda" if ctranslate2.get_supported_compute_types("cuda") else "cpu"
 except Exception:
     device = "cpu"
-service.model = init_model(model_size="base", device=device)
-print(f"[Whisper] Model initialized on device: {device}")
+model_size = os.environ.get("WHISPER_MODEL_NAME", "large-v3")
+service.model = init_model(model_size=model_size, device=device)
+print(f"[Whisper] Model initialized model={model_size} device={device}")
 
 app = FastAPI(title="Whisper API", version="1.0.0")
 
