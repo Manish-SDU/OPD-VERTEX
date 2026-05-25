@@ -32,7 +32,7 @@ The API layer is built using FastAPI. It defines and serves HTTP endpoints and a
 \end{table}
 \FloatBarrier
 
-FastAPI dependency injection is used to manage authentication, repositories, adapters, and shared services. Dependencies are defined in \path{app/api/deps.py}. For example, the clinical-notes dependency wires consultation repositories, the prompt repository, transcript normalization, and the note generator into the application service. This keeps route functions focused on HTTP concerns while application services own workflow orchestration. Figure~\ref{fig:implementation-fastapi-setup} shows the route registration and dependency factory pattern used for this setup.
+FastAPI dependency injection is used to manage authentication, repositories, adapters, and shared services. Dependencies are defined in \path{app/api/deps.py}. For example, the clinical-notes dependency wires consultation repositories, the prompt repository, transcript normalization, and the note generator into the application service. This keeps route functions focused on HTTP concerns while application services own workflow orchestration. \figref{fig:implementation-fastapi-setup} shows the route registration and dependency factory pattern used for this setup.
 
 \begin{figure}[htbp]
 \centering
@@ -111,7 +111,7 @@ The main authentication logic is implemented in \texttt{AuthApplicationService},
   \item \textbf{AuthService:} defines an abstract interface for authentication logic and allows alternative implementations.
 \end{itemize}
 
-The interface and application-service bridge are shown in Figure~\ref{fig:implementation-auth-service}, where authentication remains replaceable behind the domain contract.
+The interface and application-service bridge are shown in \figref{fig:implementation-auth-service}, where authentication remains replaceable behind the domain contract.
 
 \begin{figure}[htbp]
 \centering
@@ -149,7 +149,7 @@ After successful authentication, the system assigns a JWT to the user. The token
 
 The transcription component enables live conversion of audio into text, which can then be processed into clinical documentation. It is designed to be scalable, replaceable, and integrated with the other components.
 
-The transcription application service handles streaming audio data, temporary audio and text chunks, and finalization of the complete transcription. The route module \path{transcriptions.py} exposes session start, WebSocket streaming, completion endpoints, and demo-text injection for presentations. The actual speech-to-text conversion is handled by Faster-Whisper through the local Whisper adapter, which communicates with the microservice configured by \path{WHISPER_API_URL}. Figure~\ref{fig:implementation-transcription-service} shows the adapter reading this endpoint and sending session requests to the sidecar service.
+The transcription application service handles streaming audio data, temporary audio and text chunks, and finalization of the complete transcription. The route module \path{transcriptions.py} exposes session start, WebSocket streaming, completion endpoints, and demo-text injection for presentations. The actual speech-to-text conversion is handled by Faster-Whisper through the local Whisper adapter, which communicates with the microservice configured by \path{WHISPER_API_URL}. \figref{fig:implementation-transcription-service} shows the adapter reading this endpoint and sending session requests to the sidecar service.
 
 \begin{figure}[htbp]
 \centering
@@ -194,7 +194,7 @@ class StreamingFasterWhisperService(StreamingTranscriptionService):
 
 The LLM orchestration component enables transcript normalization, clinical note generation, and suggestions using the locally integrated Ollama model. The implementation uses an Ollama client for low-level HTTP communication and adapter classes in \path{ollama_adapter.py} for domain-specific tasks. Separate adapters return the normalized transcript, validated clinical notes, and structured suggestive review.
 
-The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in Section~\ref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{11,12}. The local client setup and JSON generation path are shown in Figure~\ref{fig:implementation-ollama-client-setup}.
+The configured runtime endpoint and model are read from \path{LOCAL_LLM_ENDPOINT} and \path{LLM_MODEL_NAME}. In the current implementation, \path{app/core/config.py} validates \path{LLM_MODEL_NAME} as \path{qwen3:8b}; the model comparison in \secref{subsec:model-selection} explains why that model was selected. Prompt templates stored in the prompt repository are populated with patient context, consultation metadata, transcript content, and doctor information before being sent to Ollama. This local execution supports the privacy and AI risk-management goals discussed earlier\refcite{11,12}. The local client setup and JSON generation path are shown in \figref{fig:implementation-ollama-client-setup}.
 
 \begin{figure}[htbp]
 \centering
@@ -248,7 +248,7 @@ The orchestration workflow is:
 
 The PDF generation module creates structured PDF documents from clinical data produced by consultations and prescriptions. This feature is important for shareable and printable records.
 
-PDF generation is implemented with ReportLab. The review workflow exposes a consultation PDF download action that loads the approved Markdown report, fetches consultation, patient, and clinician metadata, and delegates rendering to the ReportLab PDF adapter. The resulting file is stored in the configured PDF output directory and returned to the browser as a PDF response. Figure~\ref{fig:implementation-pdf-generator-setup} shows the adapter creating the output directory, rendering the document, and returning the generated file path.
+PDF generation is implemented with ReportLab. The review workflow exposes a consultation PDF download action that loads the approved Markdown report, fetches consultation, patient, and clinician metadata, and delegates rendering to the ReportLab PDF adapter. The resulting file is stored in the configured PDF output directory and returned to the browser as a PDF response. \figref{fig:implementation-pdf-generator-setup} shows the adapter creating the output directory, rendering the document, and returning the generated file path.
 
 \begin{figure}[htbp]
 \centering
@@ -299,7 +299,7 @@ class ReportLabPdfGenerator(PdfGenerator):
 
 The email notification service sends patient-friendly follow-up information after doctor approval. The report-send action calls the review application service, which refuses unapproved generated reports, loads the patient email address, checks that an exported PDF exists, builds a summary containing prescription, follow-up, and suggestions, attaches the latest exported PDF, and passes the message to the SMTP adapter.
 
-Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart messages using Python's \texttt{email.mime} package and sends them with \texttt{smtplib}. The SMTP adapter supports plain text, optional HTML, and optional attachments; the current patient follow-up workflow sends a plain-text summary with the exported PDF attached. During development, MailHog was used as the SMTP server so outgoing emails could be inspected without sending real messages. Figure~\ref{fig:implementation-email-sender} shows this SMTP adapter and its development fallback.
+Email sending is handled by \texttt{SmtpEmailService}. It constructs multipart messages using Python's \texttt{email.mime} package and sends them with \texttt{smtplib}. The SMTP adapter supports plain text, optional HTML, and optional attachments; the current patient follow-up workflow sends a plain-text summary with the exported PDF attached. During development, MailHog was used as the SMTP server so outgoing emails could be inspected without sending real messages. \figref{fig:implementation-email-sender} shows this SMTP adapter and its development fallback, and \figref{fig:app-mailhog-screen} documents the captured development inbox.
 
 \begin{figure}[htbp]
 \centering
@@ -350,7 +350,7 @@ class SmtpEmailService(EmailService):
 
 The system uses a dual-database architecture to manage structured and unstructured data. MySQL is used for structured data such as user accounts, patient records, appointments, consultations, prescriptions, and audit logs. MongoDB is used for semi-structured data such as clinical documents, consultation transcripts, generated reports, and finalized AI artifacts.
 
-SQLAlchemy manages the MySQL connection and session lifecycle. Reusable database access is provided through functions such as \texttt{get\_engine()} and \texttt{get\_session()}. PyMongo manages MongoDB connections, with \texttt{get\_database()} returning the database handle used by document repositories. Figure~\ref{fig:implementation-database-connection-setup} shows the two connection helpers that keep SQL and document persistence behind small factory functions.
+SQLAlchemy manages the MySQL connection and session lifecycle. Reusable database access is provided through functions such as \texttt{get\_engine()} and \texttt{get\_session()}. PyMongo manages MongoDB connections, with \texttt{get\_database()} returning the database handle used by document repositories. \figref{fig:implementation-database-connection-setup} shows the two connection helpers that keep SQL and document persistence behind small factory functions.
 
 \begin{figure}[htbp]
 \centering

@@ -18,7 +18,7 @@ The architecture also benefited from component-based thinking. FastAPI routes, a
 \subsection{Validation Evidence}
 \label{subsec:discussion-validation-evidence}
 
-The validation results are strong for a semester project. The automated suite covers unit, integration, smoke, stress, and benchmark tests, while manual UI checks cover browser interactions that were not yet automated. The test distribution, model comparison, and benchmark figures in Section~\ref{sec:validation} make the evidence easier to inspect, and Table~\ref{tab:requirements-coverage} explains which requirements are implemented, partially addressed, or intentionally reserved for future work.
+The validation results are strong for a semester project. The automated suite covers unit, integration, smoke, stress, and benchmark tests, while manual UI checks cover browser interactions that were not yet automated. The test distribution, model comparison, and benchmark figures in \secref{sec:validation} make the evidence easier to inspect, and \tabref{tab:requirements-coverage} explains which requirements are implemented, partially addressed, or intentionally reserved for future work.
 
 At the same time, the validation evidence should be interpreted with the same boundaries stated in the validation chapter. The benchmark figures prove that the application layer is lightweight, but they do not replace production load tests against real MySQL and MongoDB deployments. The LLM and ASR checks reduce obvious risks, but they do not replace testing with real annotated clinical audio or external clinical users.
 

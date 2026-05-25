@@ -6,7 +6,7 @@ This chapter describes the design of Med Flow, focusing on the principles used t
 \subsection{Design Goals and Principles}
 \label{subsec:design-goals-principles}
 
-Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. The actors and use cases are defined once in Section~\ref{subsec:actors-use-cases}; this chapter uses them as design inputs and focuses on architectural decisions, component boundaries, data ownership, and workflow design. The design principles translate the privacy and AI-governance concerns from the problem analysis into implementation boundaries\refcite{11,12,14}. Six principles guided the design decisions:
+Med Flow was designed as a privacy-first, locally hosted clinical assistant for outpatient departments. The actors and use cases are defined once in \secref{subsec:actors-use-cases}; this chapter uses them as design inputs and focuses on architectural decisions, component boundaries, data ownership, and workflow design. The design principles translate the privacy and AI-governance concerns from the problem analysis into implementation boundaries\refcite{11,12,14}. Six principles guided the design decisions:
 
 \begin{itemize}
   \item \textbf{Local-first execution:} sensitive processing runs inside the clinic environment, so no consultation data is sent to a third-party cloud LLM.
@@ -22,7 +22,7 @@ These principles keep the system maintainable through a layered architecture and
 \subsection{System Overview and Architecture}
 \label{subsec:system-overview}
 
-Before writing code, the team sketched the main user journeys and screen layouts in Figma. The mockups were intentionally lightweight because UI design was not the main focus. They were used to agree on how the actor goals from Section~\ref{subsec:actors-use-cases} would appear as screens: unified login, doctor dashboard, appointment scheduling, consultation recording, draft review, patient portal, and administrator configuration. The review page evolved during development and was split into view, editor, and print modes after the team decided to support Markdown editing.
+Before writing code, the team sketched the main user journeys and screen layouts in Figma. The mockups were intentionally lightweight because UI design was not the main focus. They were used to agree on how the actor goals from \secref{subsec:actors-use-cases} would appear as screens: unified login, doctor dashboard, appointment scheduling, consultation recording, draft review, patient portal, and administrator configuration. The review page evolved during development and was split into view, editor, and print modes after the team decided to support Markdown editing.
 
 \begin{figure}[htbp]
 \centering
@@ -49,7 +49,7 @@ The system was decomposed into loosely coupled components. Each component has a 
 \end{figure}
 \FloatBarrier
 
-The runtime architecture in Figure~\ref{fig:runtime-architecture} shows how the implemented modules are deployed inside a local clinic network. Browser-based dashboards communicate with the FastAPI application over HTTPS. The backend coordinates authentication, booking, prescription workflow, AI orchestration, PDF generation, notification, and persistence, while Whisper, Ollama, MySQL, and MongoDB remain local infrastructure services.
+The runtime architecture in \figref{fig:runtime-architecture} shows how the implemented modules are deployed inside a local clinic network. Browser-based dashboards communicate with the FastAPI application over HTTPS. The backend coordinates authentication, booking, prescription workflow, AI orchestration, PDF generation, notification, and persistence, while Whisper, Ollama, MySQL, and MongoDB remain local infrastructure services.
 
 \begin{figure}[htbp]
 \centering
@@ -59,7 +59,7 @@ The runtime architecture in Figure~\ref{fig:runtime-architecture} shows how the 
 \end{figure}
 \FloatBarrier
 
-Figure~\ref{fig:consultation-sequence} focuses on the consultation documentation path after a consultation has been started. Booking and scheduling are intentionally omitted from this sequence diagram to keep the clinical AI flow readable. In the implementation, appointment creation, confirmation, cancellation, no-show marking, and the appointment-to-consultation handoff happen through backend API routes before the consultation manager begins the recording and review workflow shown here.
+\figref{fig:consultation-sequence} focuses on the consultation documentation path after a consultation has been started. Booking and scheduling are intentionally omitted from this sequence diagram to keep the clinical AI flow readable. In the implementation, appointment creation, confirmation, cancellation, no-show marking, and the appointment-to-consultation handoff happen through backend API routes before the consultation manager begins the recording and review workflow shown here.
 
 \begin{figure}[p]
 \centering
@@ -180,7 +180,7 @@ The implementation does not claim full regulatory compliance. TLS termination, s
 
 The UI is intentionally simple and task-focused. Each screen serves one role and one job, and every page shares a common base layout and CSS bundle. The doctor dashboard is the role-aware home page for clinicians. The consultation page hosts live recording and transcription. The review page is the core human-in-the-loop screen because it shows the AI draft, structured fields, suggestive-mode alerts, Markdown editor, and approve, reject, print, and email actions.
 
-The patient portal is read-only with respect to clinical data. The admin configuration view lets administrators edit prompts and email templates while maintaining an audit trail. Appendix~\ref{app:final-application-screens} collects the final application screenshots, including the patient and doctor appointment views.
+The patient portal is read-only with respect to clinical data. The admin configuration view lets administrators edit prompts and email templates while maintaining an audit trail. \appref{app:final-application-screens} collects the final application screenshots, including the patient and doctor appointment views.
 
 \subsection{Scope Decisions and Future Enhancements}
 \label{subsec:scope-decisions}
@@ -189,7 +189,7 @@ A simple booking and scheduling capability was implemented to support the semest
 
 For this reason, Med Flow keeps scheduling behind a replaceable boundary even though a local appointment module is implemented. The current module creates the consultation shell directly from internal appointment data; a production booking service could provide the same shell through an adapter containing patient, clinician, time, and visit-type metadata. Med Flow can then take over from the moment the consultation begins: recording, transcription, AI-assisted drafting, review, approval, PDF export, and follow-up communication. This keeps the documentation pipeline independent from the appointment provider.
 
-Figure~\ref{fig:booking-identity-integration} uses a MitID booking scenario to show the intended boundary in a simpler form. The first step is outside Med Flow: the patient uses MitID in a clinic booking portal, and the clinic system records that a verified patient has booked a specific appointment. The second step is the handoff into Med Flow: a replaceable adapter translates the appointment data into the simple consultation shell that Med Flow needs before the doctor starts recording.
+\figref{fig:booking-identity-integration} uses a MitID booking scenario to show the intended boundary in a simpler form. The first step is outside Med Flow: the patient uses MitID in a clinic booking portal, and the clinic system records that a verified patient has booked a specific appointment. The second step is the handoff into Med Flow: a replaceable adapter translates the appointment data into the simple consultation shell that Med Flow needs before the doctor starts recording.
 
 For example, a patient signs in with MitID and books a follow-up visit with a doctor at 09:30. The external booking system owns the login, appointment confirmation, and calendar slot. The adapter then sends Med Flow only the useful consultation context: patient, doctor, time, visit type, and reason for visit. Med Flow can then open the consultation workflow without being responsible for MitID or the clinic's booking platform.
 
