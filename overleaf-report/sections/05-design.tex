@@ -49,7 +49,7 @@ The system was decomposed into loosely coupled components. Each component has a 
 \end{figure}
 \FloatBarrier
 
-The runtime architecture in \figref{fig:runtime-architecture} shows how the implemented modules are deployed inside a local clinic network. Browser-based dashboards communicate with the FastAPI application over HTTPS. The backend coordinates authentication, booking, prescription workflow, AI orchestration, PDF generation, notification, and persistence, while Whisper, Ollama, MySQL, and MongoDB remain local infrastructure services.
+The runtime architecture in \figref{fig:runtime-architecture} shows how the implemented modules are deployed inside a local clinic network. Browser-based dashboards communicate with the FastAPI application over HTTPS. The backend coordinates authentication, booking, prescription workflow, AI orchestration, PDF generation, notification, and persistence, while Whisper, Ollama, MySQL, and MongoDB remain local infrastructure services. The concrete Docker Compose deployment is described in \secref{subsec:deployment-containerization}.
 
 \begin{figure}[htbp]
 \centering

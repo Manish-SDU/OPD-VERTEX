@@ -406,3 +406,18 @@ Runtime configuration is centralized in \path{app/core/config.py}. The most impo
 The application currently supports \path{qwen3:8b} as the validated local LLM configuration, while the benchmark table documents other candidates that were evaluated before selecting it.
 
 Observability is implemented through request middleware and aspect decorators. The middleware logs HTTP method, path, client IP, status code, and duration. The \texttt{apply\_logging\_aspect} decorator wraps public service methods with entry, exit, error, and duration logging. Keeping this behavior outside the business logic follows the same separation-of-concerns principle as the repository and adapter boundaries, and it supports later production hardening work such as centralized metrics and tracing\refcite{17}.
+
+\subsection{Deployment and Containerization}
+\label{subsec:deployment-containerization}
+
+To make the local setup consistent, reproducible, and portable across developer machines, the Med Flow application is containerized with Docker Compose. The Compose setup starts the backend, databases, AI services, and supporting tools as isolated containers rather than requiring each dependency to be installed manually on the host machine. This is the implemented deployment view of the runtime architecture described in the design chapter.
+
+\figref{fig:deployment-containerization} shows the deployment architecture. Docker Desktop provides the Linux container runtime on the developer workstation, and the services communicate over TCP ports inside the Compose environment. The \texttt{app} container exposes the FastAPI backend on port 8000. The Whisper API provides GPU-accelerated speech-to-text on port 8001, while Ollama hosts the local \texttt{qwen3:8b} model on port 11434 for AI prompts and responses. MySQL stores structured data such as patients, appointments, and consultations on port 3306. MongoDB stores semi-structured clinical notes, generated documents, and audit-related artifacts on port 27017. MailHog supports email testing by accepting SMTP traffic on port 1025 and exposing a web inbox on port 8025.
+
+\begin{figure}[htbp]
+\centering
+\optionalgraphic[width=\textwidth]{assets/charts/Deployment_OPD_Vertex.png}
+\caption{Docker Compose deployment diagram showing the containerized OPD Vertex services and their TCP communication paths.}
+\label{fig:deployment-containerization}
+\end{figure}
+\FloatBarrier
