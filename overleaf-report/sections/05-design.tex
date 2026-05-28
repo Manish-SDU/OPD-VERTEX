@@ -19,7 +19,7 @@ Med Flow was designed as a privacy-first, locally hosted clinical assistant for 
 
 These principles keep the system maintainable through a layered architecture and make it easier to extend because each component can be replaced without rewriting the core.
 
-\subsection{System Overview and Architecture}
+\subsection{System Overview}
 \label{subsec:system-overview}
 
 Before writing code, the team sketched the main user journeys and screen layouts in Figma. The mockups were intentionally lightweight because UI design was not the main focus. They were used to agree on how the actor goals from \secref{subsec:actors-use-cases} would appear as screens: unified login, doctor dashboard, appointment scheduling, consultation recording, draft review, patient portal, and administrator configuration. The review page evolved during development and was split into view, editor, and print modes after the team decided to support Markdown editing.
@@ -36,7 +36,7 @@ The target architecture is a set of cooperating services organized around the cl
 
 In the implemented system, this design is realized on a smaller scale. The logical components live as Python modules inside a single FastAPI application. The transcription module runs as a separate Whisper sidecar, the LLM runs in Ollama, MySQL stores relational data, and MongoDB stores AI documents. All services are packaged as Docker containers and orchestrated with Docker Compose, giving the project a reproducible setup and a clear migration path toward the target architecture.
 
-\subsection{Component-Based System Design}
+\subsection{Component-Based System Design and Architecture}
 \label{subsec:component-based-design}
 
 The system was decomposed into loosely coupled components. Each component has a single responsibility and can be developed, tested, or replaced independently. In the current implementation, many of these components live as modules inside the local backend app, while the diagram represents the logical boundaries that the architecture is intended to support.

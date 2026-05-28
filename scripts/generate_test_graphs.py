@@ -145,7 +145,7 @@ def _make_svg_bar_chart(
         )
         bars.append(
             f'<text x="{x + bar_w / 2:.1f}" y="{yt - 5:.1f}" text-anchor="middle" '
-            f'font-size="11" fill="#111">{val:.2f}</text>'
+            f'font-size="11" fill="#111">{val:.3f}</text>'
         )
         # Angled label
         bars.append(
@@ -166,7 +166,7 @@ def _make_svg_bar_chart(
         )
         y_ticks.append(
             f'<text x="{margin["left"] - 8:.1f}" y="{y + 4:.1f}" text-anchor="end" '
-            f'font-size="10" fill="#666">{val:.1f}</text>'
+            f'font-size="10" fill="#666">{val:.3f}</text>'
         )
 
     svg = textwrap.dedent(f"""\
